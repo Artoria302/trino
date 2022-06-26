@@ -14,8 +14,8 @@
 package io.trino.plugin.deltalake;
 
 import com.google.common.collect.ImmutableMap;
-import io.trino.plugin.deltalake.util.DockerizedMinioDataLake;
 import io.trino.plugin.hive.TestingHivePlugin;
+import io.trino.plugin.hive.containers.HiveMinioDataLake;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
@@ -23,11 +23,9 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import java.util.Map;
-import java.util.Optional;
 
-import static io.trino.plugin.deltalake.DeltaLakeDockerizedMinioDataLake.createDockerizedMinioDataLakeForDeltaLake;
-import static io.trino.plugin.deltalake.util.MinioContainer.MINIO_ACCESS_KEY;
-import static io.trino.plugin.deltalake.util.MinioContainer.MINIO_SECRET_KEY;
+import static io.trino.plugin.hive.containers.HiveMinioDataLake.ACCESS_KEY;
+import static io.trino.plugin.hive.containers.HiveMinioDataLake.SECRET_KEY;
 import static io.trino.testing.sql.TestTable.randomTableSuffix;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,43 +36,43 @@ public class TestDeltaLakeSharedHiveMetastoreWithViews
     protected final String schema = "test_shared_schema_with_hive_views_" + randomTableSuffix();
     private final String bucketName = "delta-lake-shared-hive-with-views-" + randomTableSuffix();
 
-    private DockerizedMinioDataLake dockerizedMinioDataLake;
+    private HiveMinioDataLake hiveMinioDataLake;
 
     @Override
     protected QueryRunner createQueryRunner()
             throws Exception
     {
-        this.dockerizedMinioDataLake = closeAfterClass(createDockerizedMinioDataLakeForDeltaLake(bucketName, Optional.empty()));
+        this.hiveMinioDataLake = closeAfterClass(new HiveMinioDataLake(bucketName));
+        this.hiveMinioDataLake.start();
 
         DistributedQueryRunner queryRunner = DeltaLakeQueryRunner.createS3DeltaLakeQueryRunner(
-                "delta",
                 schema,
                 ImmutableMap.<String, String>builder()
                         .put("delta.enable-non-concurrent-writes", "true")
                         .buildOrThrow(),
-                dockerizedMinioDataLake.getMinioAddress(),
-                dockerizedMinioDataLake.getTestingHadoop());
+                hiveMinioDataLake.getMinioAddress(),
+                hiveMinioDataLake.getHiveHadoop());
         queryRunner.execute("CREATE SCHEMA " + schema + " WITH (location = 's3://" + bucketName + "/" + schema + "')");
 
         queryRunner.installPlugin(new TestingHivePlugin());
         Map<String, String> s3Properties = ImmutableMap.<String, String>builder()
-                .put("hive.s3.aws-access-key", MINIO_ACCESS_KEY)
-                .put("hive.s3.aws-secret-key", MINIO_SECRET_KEY)
-                .put("hive.s3.endpoint", dockerizedMinioDataLake.getMinioAddress())
+                .put("hive.s3.aws-access-key", ACCESS_KEY)
+                .put("hive.s3.aws-secret-key", SECRET_KEY)
+                .put("hive.s3.endpoint", hiveMinioDataLake.getMinioAddress())
                 .put("hive.s3.path-style-access", "true")
                 .buildOrThrow();
         queryRunner.createCatalog(
                 "hive",
                 "hive",
                 ImmutableMap.<String, String>builder()
-                        .put("hive.metastore.uri", dockerizedMinioDataLake.getTestingHadoop().getMetastoreAddress())
+                        .put("hive.metastore.uri", "thrift://" + hiveMinioDataLake.getHiveHadoop().getHiveMetastoreEndpoint())
                         .put("hive.allow-drop-table", "true")
                         .putAll(s3Properties)
                         .buildOrThrow());
 
         queryRunner.execute("CREATE TABLE hive." + schema + ".hive_table (a_integer integer)");
-        dockerizedMinioDataLake.getTestingHadoop().runOnHive("CREATE VIEW " + schema + ".hive_view AS SELECT *  FROM " + schema + ".hive_table");
-        queryRunner.execute("CREATE TABLE delta." + schema + ".delta_table (a_varchar varchar)");
+        hiveMinioDataLake.getHiveHadoop().runOnHive("CREATE VIEW " + schema + ".hive_view AS SELECT *  FROM " + schema + ".hive_table");
+        queryRunner.execute("CREATE TABLE delta_lake." + schema + ".delta_table (a_varchar varchar)");
 
         return queryRunner;
     }
@@ -83,8 +81,8 @@ public class TestDeltaLakeSharedHiveMetastoreWithViews
     public void cleanup()
     {
         assertQuerySucceeds("DROP TABLE IF EXISTS hive." + schema + ".hive_table");
-        dockerizedMinioDataLake.getTestingHadoop().runOnHive("DROP VIEW IF EXISTS " + schema + ".hive_view");
-        assertQuerySucceeds("DROP TABLE IF EXISTS delta." + schema + ".delta_table");
+        hiveMinioDataLake.getHiveHadoop().runOnHive("DROP VIEW IF EXISTS " + schema + ".hive_view");
+        assertQuerySucceeds("DROP TABLE IF EXISTS delta_lake." + schema + ".delta_table");
         assertQuerySucceeds("DROP SCHEMA IF EXISTS hive." + schema);
     }
 
@@ -94,30 +92,30 @@ public class TestDeltaLakeSharedHiveMetastoreWithViews
         assertThat(query("SELECT table_schema FROM hive.information_schema.tables WHERE table_name = 'hive_table' AND table_schema='" + schema + "'"))
                 .skippingTypesCheck()
                 .containsAll("VALUES '" + schema + "'");
-        assertThat(query("SELECT table_schema FROM delta.information_schema.tables WHERE table_name = 'delta_table' AND table_schema='" + schema + "'"))
+        assertThat(query("SELECT table_schema FROM delta_lake.information_schema.tables WHERE table_name = 'delta_table' AND table_schema='" + schema + "'"))
                 .skippingTypesCheck()
                 .containsAll("VALUES '" + schema + "'");
 
         assertQuery("SELECT table_name, column_name from hive.information_schema.columns WHERE table_schema = '" + schema + "'",
                 "VALUES ('hive_table', 'a_integer')");
-        assertQuery("SELECT table_name, column_name from delta.information_schema.columns WHERE table_schema = '" + schema + "'",
+        assertQuery("SELECT table_name, column_name from delta_lake.information_schema.columns WHERE table_schema = '" + schema + "'",
                 "VALUES ('delta_table', 'a_varchar')");
     }
 
     @Test
     public void testShowTables()
     {
-        assertQuery("SHOW TABLES FROM delta." + schema, "VALUES 'hive_table', 'hive_view', 'delta_table'");
+        assertQuery("SHOW TABLES FROM delta_lake." + schema, "VALUES 'hive_table', 'hive_view', 'delta_table'");
         assertQuery("SHOW TABLES FROM hive." + schema, "VALUES 'hive_table', 'hive_view', 'delta_table'");
 
-        assertThatThrownBy(() -> query("SHOW CREATE TABLE delta." + schema + ".hive_table"))
+        assertThatThrownBy(() -> query("SHOW CREATE TABLE delta_lake." + schema + ".hive_table"))
                 .hasMessageContaining("not a Delta Lake table");
-        assertThatThrownBy(() -> query("SHOW CREATE TABLE delta." + schema + ".hive_view"))
+        assertThatThrownBy(() -> query("SHOW CREATE TABLE delta_lake." + schema + ".hive_view"))
                 .hasMessageContaining("not a Delta Lake table");
         assertThatThrownBy(() -> query("SHOW CREATE TABLE hive." + schema + ".delta_table"))
                 .hasMessageContaining("Cannot query Delta Lake table");
 
-        assertThatThrownBy(() -> query("DESCRIBE delta." + schema + ".hive_table"))
+        assertThatThrownBy(() -> query("DESCRIBE delta_lake." + schema + ".hive_table"))
                 .hasMessageContaining("not a Delta Lake table");
         assertThatThrownBy(() -> query("DESCRIBE hive." + schema + ".delta_table"))
                 .hasMessageContaining("Cannot query Delta Lake table");

@@ -18,8 +18,6 @@ import io.trino.testing.QueryRunner;
 
 import java.util.Map;
 
-import static io.trino.plugin.deltalake.DeltaLakeQueryRunner.DELTA_CATALOG;
-
 public class TestDeltaLakeLegacyWriterConnectorSmokeTest
         extends BaseDeltaLakeAwsConnectorSmokeTest
 {
@@ -28,7 +26,6 @@ public class TestDeltaLakeLegacyWriterConnectorSmokeTest
             throws Exception
     {
         return DeltaLakeQueryRunner.createS3DeltaLakeQueryRunner(
-                DELTA_CATALOG,
                 SCHEMA,
                 ImmutableMap.<String, String>builder()
                         .putAll(connectorProperties)
@@ -36,7 +33,7 @@ public class TestDeltaLakeLegacyWriterConnectorSmokeTest
                         .put("delta.enable-non-concurrent-writes", "true")
                         .put("hive.s3.max-connections", "2")
                         .buildOrThrow(),
-                dockerizedMinioDataLake.getMinioAddress(),
-                dockerizedMinioDataLake.getTestingHadoop());
+                hiveMinioDataLake.getMinioAddress(),
+                hiveMinioDataLake.getHiveHadoop());
     }
 }
