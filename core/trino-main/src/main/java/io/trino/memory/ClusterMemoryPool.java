@@ -15,6 +15,7 @@ package io.trino.memory;
 
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.QueryId;
+import io.trino.spi.memory.ClusterMemoryPoolInfo;
 import io.trino.spi.memory.MemoryAllocation;
 import io.trino.spi.memory.MemoryPoolInfo;
 import org.weakref.jmx.Managed;
@@ -22,10 +23,7 @@ import org.weakref.jmx.Managed;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -73,6 +71,16 @@ public class ClusterMemoryPool
                 // not providing per-task memory info for cluster-wide pool
                 ImmutableMap.of(),
                 ImmutableMap.of());
+    }
+
+    public synchronized ClusterMemoryPoolInfo getClusterInfo()
+    {
+        return getClusterInfo(Optional.empty());
+    }
+
+    public synchronized ClusterMemoryPoolInfo getClusterInfo(Optional<QueryId> largestMemoryQuery)
+    {
+        return new ClusterMemoryPoolInfo(getInfo(), blockedNodes, assignedQueries, largestMemoryQuery);
     }
 
     @Managed
