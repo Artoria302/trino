@@ -39,13 +39,20 @@ public class InternalNode
     private final NodeVersion nodeVersion;
     private final boolean coordinator;
 
+    private final boolean resourceManager;
+
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator)
+    {
+      this(nodeIdentifier, internalUri, nodeVersion, coordinator, false);
+    }
+    public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator, boolean resourceManager)
     {
         nodeIdentifier = emptyToNull(nullToEmpty(nodeIdentifier).trim());
         this.nodeIdentifier = requireNonNull(nodeIdentifier, "nodeIdentifier is null or empty");
         this.internalUri = requireNonNull(internalUri, "internalUri is null");
         this.nodeVersion = requireNonNull(nodeVersion, "nodeVersion is null");
         this.coordinator = coordinator;
+        this.resourceManager = resourceManager;
     }
 
     @Override
@@ -100,6 +107,11 @@ public class InternalNode
         return coordinator;
     }
 
+    @Override
+    public boolean isResourceManager()
+    {
+        return resourceManager;
+    }
     public NodeVersion getNodeVersion()
     {
         return nodeVersion;
@@ -131,6 +143,8 @@ public class InternalNode
                 .add("nodeIdentifier", nodeIdentifier)
                 .add("internalUri", internalUri)
                 .add("nodeVersion", nodeVersion)
+                .add("coordinator", coordinator)
+                .add("resourceManager", resourceManager)
                 .toString();
     }
 }

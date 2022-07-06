@@ -91,6 +91,9 @@ public final class DiscoveryNodeManager
     private Set<InternalNode> coordinators;
 
     @GuardedBy("this")
+    private Set<InternalNode> resourceManagers;
+
+    @GuardedBy("this")
     private final List<Consumer<AllNodes>> listeners = new ArrayList<>();
 
     @Inject
@@ -125,7 +128,7 @@ public final class DiscoveryNodeManager
             URI uri = getHttpUri(service, httpsRequired);
             NodeVersion nodeVersion = getNodeVersion(service);
             if (uri != null && nodeVersion != null) {
-                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, isCoordinator(service));
+                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, isCoordinator(service), isResourceManager(service));
 
                 if (node.getNodeIdentifier().equals(currentNodeId)) {
                     checkState(
@@ -214,14 +217,16 @@ public final class DiscoveryNodeManager
         ImmutableSet.Builder<InternalNode> inactiveNodesBuilder = ImmutableSet.builder();
         ImmutableSet.Builder<InternalNode> shuttingDownNodesBuilder = ImmutableSet.builder();
         ImmutableSet.Builder<InternalNode> coordinatorsBuilder = ImmutableSet.builder();
+        ImmutableSet.Builder<InternalNode> resourceManagersBuilder = ImmutableSet.builder();
         ImmutableSetMultimap.Builder<CatalogName, InternalNode> byConnectorIdBuilder = ImmutableSetMultimap.builder();
 
         for (ServiceDescriptor service : services) {
             URI uri = getHttpUri(service, httpsRequired);
             NodeVersion nodeVersion = getNodeVersion(service);
             boolean coordinator = isCoordinator(service);
+            boolean resourceManager = isResourceManager(service);
             if (uri != null && nodeVersion != null) {
-                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, coordinator);
+                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, coordinator, resourceManager);
                 NodeState nodeState = getNodeState(node);
 
                 switch (nodeState) {
@@ -229,6 +234,9 @@ public final class DiscoveryNodeManager
                         activeNodesBuilder.add(node);
                         if (coordinator) {
                             coordinatorsBuilder.add(node);
+                        }
+                        if (resourceManager) {
+                            resourceManagersBuilder.add(node);
                         }
 
                         // record available active nodes organized by connector id
@@ -266,12 +274,13 @@ public final class DiscoveryNodeManager
         // nodes by connector id changes anytime a node adds or removes a connector (note: this is not part of the listener system)
         activeNodesByCatalogName = byConnectorIdBuilder.build();
 
-        AllNodes allNodes = new AllNodes(activeNodesBuilder.build(), inactiveNodesBuilder.build(), shuttingDownNodesBuilder.build(), coordinatorsBuilder.build());
+        AllNodes allNodes = new AllNodes(activeNodesBuilder.build(), inactiveNodesBuilder.build(), shuttingDownNodesBuilder.build(), coordinatorsBuilder.build(), resourceManagersBuilder.build());
         // only update if all nodes actually changed (note: this does not include the connectors registered with the nodes)
         if (!allNodes.equals(this.allNodes)) {
             // assign allNodes to a local variable for use in the callback below
             this.allNodes = allNodes;
             coordinators = coordinatorsBuilder.build();
+            resourceManagers = resourceManagersBuilder.build();
 
             // notify listeners
             List<Consumer<AllNodes>> listeners = ImmutableList.copyOf(this.listeners);
@@ -362,6 +371,12 @@ public final class DiscoveryNodeManager
     }
 
     @Override
+    public synchronized Set<InternalNode> getResourceManagers()
+    {
+        return resourceManagers;
+    }
+
+    @Override
     public synchronized void addNodeChangeListener(Consumer<AllNodes> listener)
     {
         listeners.add(requireNonNull(listener, "listener is null"));
@@ -398,4 +413,10 @@ public final class DiscoveryNodeManager
     {
         return Boolean.parseBoolean(service.getProperties().get("coordinator"));
     }
+
+    private static boolean isResourceManager(ServiceDescriptor service)
+    {
+        return Boolean.parseBoolean(service.getProperties().get("resource_manager"));
+    }
+
 }

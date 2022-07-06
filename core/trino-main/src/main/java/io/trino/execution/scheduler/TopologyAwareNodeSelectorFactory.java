@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -145,7 +146,8 @@ public class TopologyAwareNodeSelectorFactory
     {
         Set<InternalNode> nodes = catalogName
                 .map(nodeManager::getActiveConnectorNodes)
-                .orElseGet(() -> nodeManager.getNodes(ACTIVE));
+                .orElseGet(() -> nodeManager.getNodes(ACTIVE))
+                .stream().filter(node -> !node.isResourceManager()).collect(toImmutableSet());
 
         Set<String> coordinatorNodeIds = nodeManager.getCoordinators().stream()
                 .map(InternalNode::getNodeIdentifier)

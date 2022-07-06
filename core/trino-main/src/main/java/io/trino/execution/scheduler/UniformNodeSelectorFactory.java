@@ -135,7 +135,8 @@ public class UniformNodeSelectorFactory
     {
         Set<InternalNode> nodes = catalogName
                 .map(nodeManager::getActiveConnectorNodes)
-                .orElseGet(() -> nodeManager.getNodes(ACTIVE));
+                .orElseGet(() -> nodeManager.getNodes(ACTIVE))
+                .stream().filter(node -> !node.isResourceManager()).collect(toImmutableSet());
 
         Set<String> coordinatorNodeIds = nodeManager.getCoordinators().stream()
                 .map(InternalNode::getNodeIdentifier)
