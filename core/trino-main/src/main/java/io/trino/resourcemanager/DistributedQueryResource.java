@@ -186,6 +186,7 @@ public class DistributedQueryResource
             return;
         }
 
+        // forward request to real coordinator
         proxyHelper.performRequest(servletRequest, asyncResponse, uriBuilderFrom(queryInfo.get().getSelf()).replacePath(uriInfo.getPath()).build());
     }
 }

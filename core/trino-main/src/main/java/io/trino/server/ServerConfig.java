@@ -25,6 +25,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class ServerConfig
 {
+    private boolean resourceManager;
+    private boolean resourceManagerEnabled;
     private boolean coordinator = true;
     private boolean concurrentStartup;
     private boolean includeExceptionInResponse = true;
@@ -35,6 +37,30 @@ public class ServerConfig
     public boolean isCoordinator()
     {
         return coordinator;
+    }
+
+    public boolean isResourceManager()
+    {
+        return resourceManager;
+    }
+
+    @Config("resource-manager")
+    public ServerConfig setResourceManager(boolean resourceManager)
+    {
+        this.resourceManager = resourceManager;
+        return this;
+    }
+
+    public boolean isResourceManagerEnabled()
+    {
+        return resourceManagerEnabled;
+    }
+
+    @Config("resource-manager-enabled")
+    public ServerConfig setResourceManagerEnabled(boolean resourceManagerEnabled)
+    {
+        this.resourceManagerEnabled = resourceManagerEnabled;
+        return this;
     }
 
     @Config("coordinator")
