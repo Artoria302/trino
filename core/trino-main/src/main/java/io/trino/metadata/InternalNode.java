@@ -43,8 +43,9 @@ public class InternalNode
 
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator)
     {
-      this(nodeIdentifier, internalUri, nodeVersion, coordinator, false);
+        this(nodeIdentifier, internalUri, nodeVersion, coordinator, false);
     }
+
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator, boolean resourceManager)
     {
         nodeIdentifier = emptyToNull(nullToEmpty(nodeIdentifier).trim());
@@ -112,6 +113,7 @@ public class InternalNode
     {
         return resourceManager;
     }
+
     public NodeVersion getNodeVersion()
     {
         return nodeVersion;

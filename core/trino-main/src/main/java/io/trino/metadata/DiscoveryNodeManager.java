@@ -418,5 +418,4 @@ public final class DiscoveryNodeManager
     {
         return Boolean.parseBoolean(service.getProperties().get("resource_manager"));
     }
-
 }

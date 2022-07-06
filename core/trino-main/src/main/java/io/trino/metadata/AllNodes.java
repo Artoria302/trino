@@ -28,7 +28,6 @@ public class AllNodes
     private final Set<InternalNode> activeCoordinators;
     private final Set<InternalNode> activeResourceManagers;
 
-
     public AllNodes(Set<InternalNode> activeNodes, Set<InternalNode> inactiveNodes, Set<InternalNode> shuttingDownNodes, Set<InternalNode> activeCoordinators, Set<InternalNode> activeResourceManagers)
     {
         this.activeNodes = ImmutableSet.copyOf(requireNonNull(activeNodes, "activeNodes is null"));
