@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import io.airlift.units.Duration;
 import io.trino.execution.resourcegroups.ResourceGroupRuntimeInfo;
+import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.memory.ClusterMemoryPool;
 import io.trino.memory.MemoryInfo;
 import io.trino.memory.NodeMemoryConfig;
@@ -72,12 +73,14 @@ public class ResourceManagerClusterStateProvider
     private final Duration queryExpirationTimeout;
     private final Duration completedQueryExpirationTimeout;
     private final Supplier<ClusterMemoryPoolInfo> clusterMemoryPoolInfosSupplier;
+    private final boolean isIncludeCoordinator;
 
     @Inject
     public ResourceManagerClusterStateProvider(
             InternalNodeManager internalNodeManager,
             SessionPropertyManager sessionPropertyManager,
             ResourceManagerConfig resourceManagerConfig,
+            NodeSchedulerConfig nodeSchedulerConfig,
             NodeMemoryConfig nodeMemoryConfig,
             @ForResourceManager ScheduledExecutorService scheduledExecutorService)
     {
@@ -89,6 +92,7 @@ public class ResourceManagerClusterStateProvider
                 resourceManagerConfig.getCompletedQueryExpirationTimeout(),
                 resourceManagerConfig.getNodeStatusTimeout(),
                 resourceManagerConfig.getMemoryPoolInfoRefreshDuration(),
+                requireNonNull(nodeSchedulerConfig, "nodeSchedulerConfig is null").isIncludeCoordinator(),
                 requireNonNull(scheduledExecutorService, "scheduledExecutorService is null"));
     }
 
@@ -100,6 +104,7 @@ public class ResourceManagerClusterStateProvider
             Duration completedQueryExpirationTimeout,
             Duration nodeStatusTimeout,
             Duration memoryPoolInfoRefreshDuration,
+            boolean isIncludeCoordinator,
             ScheduledExecutorService scheduledExecutorService)
     {
         this.internalNodeManager = requireNonNull(internalNodeManager, "internalNodeManager is null");
@@ -116,6 +121,7 @@ public class ResourceManagerClusterStateProvider
         else {
             this.clusterMemoryPoolInfosSupplier = this::getClusterMemoryPoolInfoInternal;
         }
+        this.isIncludeCoordinator = isIncludeCoordinator;
 
         requireNonNull(scheduledExecutorService, "scheduledExecutorService is null");
         scheduledExecutorService.scheduleAtFixedRate(() -> {
@@ -245,6 +251,13 @@ public class ResourceManagerClusterStateProvider
                 .collect(toImmutableList());
     }
 
+    public int getTotalAvailableProcessors()
+    {
+        return nodeStatuses.values().stream()
+                .filter(nodeStatus -> (!nodeStatus.getNodeStatus().isResourceManager() && !nodeStatus.getNodeStatus().isCoordinator()) || (nodeStatus.getNodeStatus().isCoordinator() && isIncludeCoordinator))
+                .map(nodeStatus -> nodeStatus.getNodeStatus().getMemoryInfo().getAvailableProcessors()).reduce(0, Integer::sum);
+    }
+
     public ClusterMemoryPoolInfo getClusterMemoryPoolInfo()
     {
         return clusterMemoryPoolInfosSupplier.get();
@@ -269,8 +282,7 @@ public class ResourceManagerClusterStateProvider
 
         ClusterMemoryPool pool = new ClusterMemoryPool();
         pool.update(memoryInfos, poolSize);
-        ClusterMemoryPoolInfo clusterInfo = pool.getClusterInfo(Optional.ofNullable(largestQuery).map(Query::getQueryId));
-        return clusterInfo;
+        return pool.getClusterInfo(Optional.ofNullable(largestQuery).map(Query::getQueryId));
     }
 
     private Query getLargestMemoryQuery(Optional<Query> existingLargeQuery, Query newQuery)

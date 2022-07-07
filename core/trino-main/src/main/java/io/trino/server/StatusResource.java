@@ -41,6 +41,7 @@ public class StatusResource
     private final NodeVersion version;
     private final String environment;
     private final boolean coordinator;
+    private final boolean resourceManager;
     private final long startTime = System.nanoTime();
     private final int logicalCores;
     private final LocalMemoryManager memoryManager;
@@ -55,6 +56,7 @@ public class StatusResource
         this.version = requireNonNull(nodeVersion, "nodeVersion is null");
         this.environment = requireNonNull(nodeInfo, "nodeInfo is null").getEnvironment();
         this.coordinator = requireNonNull(serverConfig, "serverConfig is null").isCoordinator();
+        this.resourceManager = requireNonNull(serverConfig, "serverConfig is null").isResourceManager();
         this.memoryManager = requireNonNull(memoryManager, "memoryManager is null");
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
         this.logicalCores = Runtime.getRuntime().availableProcessors();
@@ -83,6 +85,7 @@ public class StatusResource
                 version,
                 environment,
                 coordinator,
+                resourceManager,
                 nanosSince(startTime),
                 nodeInfo.getExternalAddress(),
                 nodeInfo.getInternalAddress(),
