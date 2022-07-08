@@ -38,7 +38,6 @@ public class InternalNode
     private final URI internalUri;
     private final NodeVersion nodeVersion;
     private final boolean coordinator;
-
     private final boolean resourceManager;
 
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator)
