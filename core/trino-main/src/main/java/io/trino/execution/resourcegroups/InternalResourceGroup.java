@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.airlift.stats.CounterStat;
 import io.trino.execution.ManagedQueryExecution;
-import io.trino.execution.SqlQueryExecution;
 import io.trino.execution.resourcegroups.WeightedFairQueue.Usage;
 import io.trino.server.QueryStateInfo;
 import io.trino.server.ResourceGroupInfo;
@@ -143,10 +142,17 @@ public class InternalResourceGroup
     private final CounterStat timeBetweenStartsSec = new CounterStat();
 
     @GuardedBy("root")
-    private AtomicLong lastRunningQueryStartTime = new AtomicLong(currentTimeMillis());
+    private final AtomicLong lastRunningQueryStartTime = new AtomicLong(currentTimeMillis());
     @GuardedBy("root")
-    private AtomicBoolean isDirty = new AtomicBoolean();
+    private final AtomicBoolean isDirty = new AtomicBoolean();
 
+    public InternalResourceGroup(
+            String name,
+            BiConsumer<InternalResourceGroup, Boolean> jmxExportListener,
+            Executor executor)
+    {
+        this(Optional.empty(), name, jmxExportListener, executor, ignored -> Optional.empty(), rg -> false);
+    }
 
     public InternalResourceGroup(
             String name,
@@ -800,39 +806,6 @@ public class InternalResourceGroup
 
             updateEligibility();
             root.triggerProcessQueuedQueries();
-            return;
-        }
-    }
-
-    // Memory usage stats are expensive to maintain, so this method must be called periodically to update them
-    protected void internalRefreshStats()
-    {
-        checkState(Thread.holdsLock(root), "Must hold lock to refresh stats");
-        synchronized (root) {
-            if (subGroups.isEmpty()) {
-                cachedMemoryUsageBytes = 0;
-                for (ManagedQueryExecution query : runningQueries.keySet()) {
-                    cachedMemoryUsageBytes += query.getUserMemoryReservation().toBytes();
-                }
-                Optional<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfo = getAdditionalRuntimeInfo();
-                resourceGroupRuntimeInfo.ifPresent(groupRuntimeInfo -> cachedMemoryUsageBytes += groupRuntimeInfo.getMemoryUsageBytes());
-            }
-            else {
-                for (Iterator<InternalResourceGroup> iterator = dirtySubGroups.iterator(); iterator.hasNext(); ) {
-                    InternalResourceGroup subGroup = iterator.next();
-                    long oldMemoryUsageBytes = subGroup.cachedResourceUsage.getMemoryUsageBytes();
-                    cachedMemoryUsageBytes -= oldMemoryUsageBytes;
-                    subGroup.internalRefreshStats();
-                    cachedMemoryUsageBytes += subGroup.cachedResourceUsage.getMemoryUsageBytes();
-                    if (!subGroup.isDirty()) {
-                        iterator.remove();
-                    }
-                    if (oldMemoryUsageBytes != subGroup.cachedResourceUsage.getMemoryUsageBytes()|| subGroup.isDirty.get()) {
-                        subGroup.updateEligibility();
-                        subGroup.isDirty.set(false);
-                    }
-                }
-            }
         }
     }
 
@@ -858,6 +831,11 @@ public class InternalResourceGroup
                     groupUsageDelta = groupUsageDelta.add(queryUsageDelta);
                 }
 
+                Optional<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfo = getAdditionalRuntimeInfo();
+                if (resourceGroupRuntimeInfo.isPresent()) {
+                    groupUsageDelta = groupUsageDelta.add(new ResourceUsage(0L, resourceGroupRuntimeInfo.get().getMemoryUsageBytes()));
+                }
+
                 cachedResourceUsage = cachedResourceUsage.add(groupUsageDelta);
             }
             else {
@@ -868,9 +846,12 @@ public class InternalResourceGroup
                     ResourceUsage subGroupUsageDelta = subGroup.updateResourceUsageAndGetDelta();
                     groupUsageDelta = groupUsageDelta.add(subGroupUsageDelta);
                     cachedResourceUsage = cachedResourceUsage.add(subGroupUsageDelta);
-
-                    if (!subGroupUsageDelta.equals(new ResourceUsage(0, 0))) {
+                    if (!subGroup.isDirty()) {
+                        iterator.remove();
+                    }
+                    if (!subGroupUsageDelta.equals(new ResourceUsage(0, 0)) || subGroup.isDirty.get()) {
                         subGroup.updateEligibility();
+                        subGroup.isDirty.set(false);
                     }
                 }
             }
@@ -1002,6 +983,10 @@ public class InternalResourceGroup
     {
         checkState(Thread.holdsLock(root), "Must hold lock");
         synchronized (root) {
+            Optional<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfo = getAdditionalRuntimeInfo();
+            if (resourceGroupRuntimeInfo.isPresent()) {
+                return descendantQueuedQueries + queuedQueries.size() + resourceGroupRuntimeInfo.get().getQueuedQueries() + resourceGroupRuntimeInfo.get().getDescendantQueuedQueries() < maxQueuedQueries;
+            }
             return descendantQueuedQueries + queuedQueries.size() < maxQueuedQueries;
         }
     }
@@ -1017,18 +1002,20 @@ public class InternalResourceGroup
                 return false;
             }
 
-            int hardConcurrencyLimit = this.hardConcurrencyLimit;
-            if (cpuUsageMillis >= softCpuLimitMillis) {
-                // TODO: Consider whether CPU limit math should be performed on softConcurrency or hardConcurrency
-                // Linear penalty between soft and hard limit
-                double penalty = (cpuUsageMillis - softCpuLimitMillis) / (double) (hardCpuLimitMillis - softCpuLimitMillis);
-                hardConcurrencyLimit = (int) Math.floor(hardConcurrencyLimit * (1 - penalty));
-                // Always penalize by at least one
-                hardConcurrencyLimit = min(this.hardConcurrencyLimit - 1, hardConcurrencyLimit);
-                // Always allow at least one running query
-                hardConcurrencyLimit = Math.max(1, hardConcurrencyLimit);
+            if (shouldWaitForResourceManagerUpdate()) {
+                return false;
             }
-            return runningQueries.size() + descendantRunningQueries < hardConcurrencyLimit;
+
+            int hardConcurrencyLimit = getHardConcurrencyLimitBasedOnCpuUsage();
+
+            int totalRunningQueries = runningQueries.size() + descendantRunningQueries;
+
+            Optional<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfo = getAdditionalRuntimeInfo();
+            if (resourceGroupRuntimeInfo.isPresent()) {
+                totalRunningQueries += resourceGroupRuntimeInfo.get().getRunningQueries() + resourceGroupRuntimeInfo.get().getDescendantRunningQueries();
+            }
+
+            return totalRunningQueries < hardConcurrencyLimit;
         }
     }
 
@@ -1092,7 +1079,6 @@ public class InternalResourceGroup
         }
     }
 
-
     @Override
     public String toString()
     {
@@ -1118,41 +1104,5 @@ public class InternalResourceGroup
     public int hashCode()
     {
         return Objects.hash(id);
-    }
-
-    @ThreadSafe
-    public static final class RootInternalResourceGroup
-            extends InternalResourceGroup
-    {
-        public RootInternalResourceGroup(
-                String name,
-                BiConsumer<InternalResourceGroup, Boolean> jmxExportListener,
-                Executor executor,
-                Function<ResourceGroupId, Optional<ResourceGroupRuntimeInfo>> additionalRuntimeInfo,
-                Predicate<InternalResourceGroup> shouldWaitForResourceManagerUpdate)
-        {
-            super(Optional.empty(),
-                    name,
-                    jmxExportListener,
-                    executor,
-                    additionalRuntimeInfo,
-                    shouldWaitForResourceManagerUpdate);
-        }
-
-        public synchronized void processQueuedQueries()
-        {
-            internalRefreshStats();
-
-            while (internalStartNext()) {
-                // start all the queries we can
-            }
-        }
-
-        public synchronized void generateCpuQuota(long elapsedSeconds)
-        {
-            if (elapsedSeconds > 0) {
-                internalGenerateCpuQuota(elapsedSeconds);
-            }
-        }
     }
 }

@@ -17,23 +17,42 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.dispatcher.DispatchManager;
 import io.trino.execution.QueryState;
+import io.trino.execution.resourcegroups.InternalResourceGroupManager;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.memory.ClusterMemoryManager;
 import io.trino.metadata.InternalNode;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.NodeState;
+import io.trino.resourcemanager.ResourceManagerProxy;
 import io.trino.server.BasicQueryInfo;
+import io.trino.server.ServerConfig;
 import io.trino.server.security.ResourceSecurity;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
+import java.net.URI;
+import java.util.Iterator;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static io.trino.server.security.ResourceSecurity.AccessType.WEB_UI;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 
 @Path("/ui/api/stats")
 public class ClusterStatsResource
@@ -41,22 +60,45 @@ public class ClusterStatsResource
     private final InternalNodeManager nodeManager;
     private final DispatchManager dispatchManager;
     private final boolean isIncludeCoordinator;
+    private final boolean resourceManagerEnabled;
     private final ClusterMemoryManager clusterMemoryManager;
+    private final Optional<ResourceManagerProxy> proxyHelper;
+    private final InternalResourceGroupManager internalResourceGroupManager;
 
     @Inject
-    public ClusterStatsResource(NodeSchedulerConfig nodeSchedulerConfig, InternalNodeManager nodeManager, DispatchManager dispatchManager, ClusterMemoryManager clusterMemoryManager)
+    public ClusterStatsResource(
+            NodeSchedulerConfig nodeSchedulerConfig,
+            ServerConfig serverConfig,
+            InternalNodeManager nodeManager,
+            DispatchManager dispatchManager,
+            ClusterMemoryManager clusterMemoryManager,
+            Optional<ResourceManagerProxy> proxyHelper,
+            InternalResourceGroupManager internalResourceGroupManager)
     {
         this.isIncludeCoordinator = requireNonNull(nodeSchedulerConfig, "nodeSchedulerConfig is null").isIncludeCoordinator();
+        this.resourceManagerEnabled = requireNonNull(serverConfig, "serverConfig is null").isResourceManagerEnabled();
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.dispatchManager = requireNonNull(dispatchManager, "dispatchManager is null");
         this.clusterMemoryManager = requireNonNull(clusterMemoryManager, "clusterMemoryManager is null");
+        this.proxyHelper = requireNonNull(proxyHelper, "internalNodeManager is null");
+        this.internalResourceGroupManager = requireNonNull(internalResourceGroupManager, "internalResourceGroupManager is null");
     }
 
     @ResourceSecurity(WEB_UI)
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public ClusterStats getClusterStats()
+    public void getClusterStats(
+            @HeaderParam(X_FORWARDED_PROTO) String xForwardedProto,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest servletRequest,
+            @Suspended AsyncResponse asyncResponse,
+            @QueryParam("includeLocalInfoOnly") @DefaultValue("false") boolean includeLocalInfoOnly)
     {
+        if (resourceManagerEnabled && !includeLocalInfoOnly) {
+            proxyClusterStats(servletRequest, asyncResponse, xForwardedProto, uriInfo);
+            return;
+        }
+
         long runningQueries = 0;
         long blockedQueries = 0;
         long queuedQueries = 0;
@@ -98,8 +140,7 @@ public class ClusterStatsResource
                 runningDrivers += query.getQueryStats().getRunningDrivers();
             }
         }
-
-        return new ClusterStats(
+        asyncResponse.resume(Response.ok(new ClusterStats(
                 runningQueries,
                 blockedQueries,
                 queuedQueries,
@@ -110,7 +151,31 @@ public class ClusterStatsResource
                 memoryReservation,
                 totalInputRows,
                 totalInputBytes,
-                totalCpuTimeSecs);
+                totalCpuTimeSecs,
+                internalResourceGroupManager.getQueriesQueuedOnInternal())).build());
+    }
+
+    private void proxyClusterStats(HttpServletRequest servletRequest, AsyncResponse asyncResponse, String xForwardedProto, UriInfo uriInfo)
+    {
+        try {
+            checkState(proxyHelper.isPresent());
+            Iterator<InternalNode> resourceManagers = nodeManager.getResourceManagers().iterator();
+            if (!resourceManagers.hasNext()) {
+                asyncResponse.resume(Response.status(SERVICE_UNAVAILABLE).build());
+                return;
+            }
+            InternalNode resourceManagerNode = resourceManagers.next();
+
+            URI uri = uriInfo.getRequestUriBuilder()
+                    .scheme(resourceManagerNode.getInternalUri().getScheme())
+                    .host(resourceManagerNode.getHostAndPort().toInetAddress().getHostName())
+                    .port(resourceManagerNode.getInternalUri().getPort())
+                    .build();
+            proxyHelper.get().performRequest(servletRequest, asyncResponse, uri);
+        }
+        catch (Exception e) {
+            asyncResponse.resume(e);
+        }
     }
 
     public static class ClusterStats
@@ -130,6 +195,7 @@ public class ClusterStatsResource
         private final long totalInputRows;
         private final long totalInputBytes;
         private final long totalCpuTimeSecs;
+        private final long adjustedQueueSize;
 
         @JsonCreator
         public ClusterStats(
@@ -143,7 +209,8 @@ public class ClusterStatsResource
                 @JsonProperty("reservedMemory") double reservedMemory,
                 @JsonProperty("totalInputRows") long totalInputRows,
                 @JsonProperty("totalInputBytes") long totalInputBytes,
-                @JsonProperty("totalCpuTimeSecs") long totalCpuTimeSecs)
+                @JsonProperty("totalCpuTimeSecs") long totalCpuTimeSecs,
+                @JsonProperty("adjustedQueueSize") long adjustedQueueSize)
         {
             this.runningQueries = runningQueries;
             this.blockedQueries = blockedQueries;
@@ -156,6 +223,7 @@ public class ClusterStatsResource
             this.totalInputRows = totalInputRows;
             this.totalInputBytes = totalInputBytes;
             this.totalCpuTimeSecs = totalCpuTimeSecs;
+            this.adjustedQueueSize = adjustedQueueSize;
         }
 
         @JsonProperty
@@ -222,6 +290,12 @@ public class ClusterStatsResource
         public long getTotalCpuTimeSecs()
         {
             return totalCpuTimeSecs;
+        }
+
+        @JsonProperty
+        public long getAdjustedQueueSize()
+        {
+            return adjustedQueueSize;
         }
     }
 }

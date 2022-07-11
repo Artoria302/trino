@@ -21,7 +21,6 @@ import io.airlift.node.NodeInfo;
 import io.airlift.units.Duration;
 import io.trino.execution.ManagedQueryExecution;
 import io.trino.execution.QueryManagerConfig;
-import io.trino.execution.resourcegroups.InternalResourceGroup.RootInternalResourceGroup;
 import io.trino.resourcemanager.ResourceGroupService;
 import io.trino.server.ResourceGroupInfo;
 import io.trino.server.ServerConfig;
@@ -49,7 +48,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -85,7 +83,7 @@ public final class InternalResourceGroupManager<C>
 
     private final ScheduledExecutorService refreshExecutor = newScheduledThreadPool(2, daemonThreadsNamed("ResourceGroupManager"));
     private final PeriodicTaskExecutor resourceGroupRuntimeExecutor;
-    private final List<RootInternalResourceGroup> rootGroups = new CopyOnWriteArrayList<>();
+    private final List<InternalResourceGroup> rootGroups = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<ResourceGroupId, InternalResourceGroup> groups = new ConcurrentHashMap<>();
     private final AtomicReference<ResourceGroupConfigurationManager<C>> configurationManager;
     private final ResourceGroupConfigurationManagerContext configurationManagerContext;
@@ -340,13 +338,12 @@ public final class InternalResourceGroupManager<C>
                 group = parent.getOrCreateSubGroup(id.getLastSegment());
             }
             else {
-                RootInternalResourceGroup root;
+                InternalResourceGroup root;
                 if (!isResourceManagerEnabled) {
-                    //root = new RootInternalResourceGroup(id.getSegments().get(0), this::exportGroup, executor, ignored -> Optional.empty(), rg -> false);
-                    root = new RootInternalResourceGroup(id.getSegments().get(0), this::exportGroup, executor,  ignored -> Optional.empty(), rg -> false);
+                    root = new InternalResourceGroup(id.getSegments().get(0), this::exportGroup, executor);
                 }
                 else {
-                    root = new RootInternalResourceGroup(
+                    root = new InternalResourceGroup(
                             id.getSegments().get(0),
                             this::exportGroup,
                             executor,

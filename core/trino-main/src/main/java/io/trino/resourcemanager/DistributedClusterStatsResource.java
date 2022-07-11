@@ -40,7 +40,10 @@ public class DistributedClusterStatsResource
     private final InternalNodeManager internalNodeManager;
 
     @Inject
-    public DistributedClusterStatsResource(NodeSchedulerConfig nodeSchedulerConfig, ResourceManagerClusterStateProvider clusterStateProvider, InternalNodeManager internalNodeManager)
+    public DistributedClusterStatsResource(
+            NodeSchedulerConfig nodeSchedulerConfig,
+            ResourceManagerClusterStateProvider clusterStateProvider,
+            InternalNodeManager internalNodeManager)
     {
         this.isIncludeCoordinator = requireNonNull(nodeSchedulerConfig, "nodeSchedulerConfig is null").isIncludeCoordinator();
         this.clusterStateProvider = requireNonNull(clusterStateProvider, "nodeStateManager is null");
@@ -106,7 +109,8 @@ public class DistributedClusterStatsResource
                         memoryReservation,
                         totalInputRows,
                         totalInputBytes,
-                        totalCpuTimeSecs))
+                        totalCpuTimeSecs,
+                        clusterStateProvider.getAdjustedQueueSize()))
                 .build();
     }
 
