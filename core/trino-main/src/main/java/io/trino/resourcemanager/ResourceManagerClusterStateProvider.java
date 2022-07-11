@@ -251,11 +251,12 @@ public class ResourceManagerClusterStateProvider
                 .collect(toImmutableList());
     }
 
-    public int getTotalAvailableProcessors()
+    public long getTotalAvailableProcessors()
     {
         return nodeStatuses.values().stream()
                 .filter(nodeStatus -> (!nodeStatus.getNodeStatus().isResourceManager() && !nodeStatus.getNodeStatus().isCoordinator()) || (nodeStatus.getNodeStatus().isCoordinator() && isIncludeCoordinator))
-                .map(nodeStatus -> nodeStatus.getNodeStatus().getMemoryInfo().getAvailableProcessors()).reduce(0, Integer::sum);
+                .mapToLong(nodeStatus -> nodeStatus.getNodeStatus().getMemoryInfo().getAvailableProcessors())
+                .sum();
     }
 
     public ClusterMemoryPoolInfo getClusterMemoryPoolInfo()

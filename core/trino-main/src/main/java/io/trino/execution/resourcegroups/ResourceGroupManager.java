@@ -13,6 +13,7 @@
  */
 package io.trino.execution.resourcegroups;
 
+import com.google.common.collect.ImmutableList;
 import io.trino.execution.ManagedQueryExecution;
 import io.trino.server.ResourceGroupInfo;
 import io.trino.spi.resourcegroups.ResourceGroupConfigurationManagerFactory;
@@ -45,4 +46,6 @@ public interface ResourceGroupManager<C>
 
     void loadConfigurationManager()
             throws Exception;
+
+    List<ResourceGroupRuntimeInfo> getResourceGroupRuntimeInfos();
 }

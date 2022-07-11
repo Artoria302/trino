@@ -496,6 +496,8 @@ public class ClusterMemoryManager
 
         pool.update(nodeMemoryInfos, queryCount);
         if (!changeListeners.isEmpty()) {
+            // TODO try to update from rm, if rm enabled
+            // MemoryPoolInfo info = getClusterInfo().getMemoryPoolInfo();
             MemoryPoolInfo info = pool.getInfo();
             for (Consumer<MemoryPoolInfo> listener : changeListeners) {
                 listenerExecutor.execute(() -> listener.accept(info));

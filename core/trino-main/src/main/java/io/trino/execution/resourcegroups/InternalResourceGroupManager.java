@@ -14,11 +14,17 @@
 package io.trino.execution.resourcegroups;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.airlift.node.NodeInfo;
+import io.airlift.units.Duration;
 import io.trino.execution.ManagedQueryExecution;
+import io.trino.execution.QueryManagerConfig;
+import io.trino.execution.resourcegroups.InternalResourceGroup.RootInternalResourceGroup;
+import io.trino.resourcemanager.ResourceGroupService;
 import io.trino.server.ResourceGroupInfo;
+import io.trino.server.ServerConfig;
 import io.trino.spi.TrinoException;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.memory.ClusterMemoryPoolManager;
@@ -28,6 +34,7 @@ import io.trino.spi.resourcegroups.ResourceGroupConfigurationManagerFactory;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 import io.trino.spi.resourcegroups.SelectionContext;
 import io.trino.spi.resourcegroups.SelectionCriteria;
+import io.trino.util.PeriodicTaskExecutor;
 import org.weakref.jmx.JmxException;
 import org.weakref.jmx.MBeanExporter;
 import org.weakref.jmx.Managed;
@@ -42,24 +49,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.configuration.ConfigurationLoader.loadPropertiesFrom;
 import static io.trino.spi.StandardErrorCode.QUERY_REJECTED;
 import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 @ThreadSafe
@@ -72,7 +84,8 @@ public final class InternalResourceGroupManager<C>
     private static final String NAME_PROPERTY = "resource-groups.configuration-manager";
 
     private final ScheduledExecutorService refreshExecutor = newScheduledThreadPool(2, daemonThreadsNamed("ResourceGroupManager"));
-    private final List<InternalResourceGroup> rootGroups = new CopyOnWriteArrayList<>();
+    private final PeriodicTaskExecutor resourceGroupRuntimeExecutor;
+    private final List<RootInternalResourceGroup> rootGroups = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<ResourceGroupId, InternalResourceGroup> groups = new ConcurrentHashMap<>();
     private final AtomicReference<ResourceGroupConfigurationManager<C>> configurationManager;
     private final ResourceGroupConfigurationManagerContext configurationManagerContext;
@@ -81,14 +94,35 @@ public final class InternalResourceGroupManager<C>
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicLong lastCpuQuotaGenerationNanos = new AtomicLong(System.nanoTime());
     private final Map<String, ResourceGroupConfigurationManagerFactory> configurationManagerFactories = new ConcurrentHashMap<>();
+    private final AtomicLong lastSchedulingCycleRunTimeMs = new AtomicLong(currentTimeMillis());
+    private final ResourceGroupService resourceGroupService;
+    private final AtomicReference<Map<ResourceGroupId, ResourceGroupRuntimeInfo>> resourceGroupRuntimeInfos = new AtomicReference<>(ImmutableMap.of());
+    private final AtomicReference<Map<ResourceGroupId, ResourceGroupRuntimeInfo>> resourceGroupRuntimeInfosSnapshot = new AtomicReference<>(ImmutableMap.of());
+    private final AtomicLong lastUpdatedResourceGroupRuntimeInfo = new AtomicLong(-1L);
+    private final double concurrencyThreshold;
+    private final Duration resourceGroupRuntimeInfoRefreshInterval;
+    private final boolean isResourceManagerEnabled;
 
     @Inject
-    public InternalResourceGroupManager(LegacyResourceGroupConfigurationManager legacyManager, ClusterMemoryPoolManager memoryPoolManager, NodeInfo nodeInfo, MBeanExporter exporter)
+    public InternalResourceGroupManager(
+            LegacyResourceGroupConfigurationManager legacyManager,
+            ClusterMemoryPoolManager memoryPoolManager,
+            NodeInfo nodeInfo,
+            MBeanExporter exporter,
+            ResourceGroupService resourceGroupService,
+            QueryManagerConfig queryManagerConfig,
+            ServerConfig serverConfig)
     {
+        requireNonNull(queryManagerConfig, "queryManagerConfig is null");
         this.exporter = requireNonNull(exporter, "exporter is null");
         this.configurationManagerContext = new ResourceGroupConfigurationManagerContextInstance(memoryPoolManager, nodeInfo.getEnvironment());
         this.legacyManager = requireNonNull(legacyManager, "legacyManager is null");
         this.configurationManager = new AtomicReference<>(cast(legacyManager));
+        this.resourceGroupService = requireNonNull(resourceGroupService, "resourceGroupService is null");
+        this.concurrencyThreshold = queryManagerConfig.getConcurrencyThresholdToEnableResourceGroupRefresh();
+        this.resourceGroupRuntimeInfoRefreshInterval = queryManagerConfig.getResourceGroupRunTimeInfoRefreshInterval();
+        this.isResourceManagerEnabled = requireNonNull(serverConfig, "serverConfig is null").isResourceManagerEnabled();
+        this.resourceGroupRuntimeExecutor = new PeriodicTaskExecutor(resourceGroupRuntimeInfoRefreshInterval.toMillis(), refreshExecutor, this::refreshResourceGroupRuntimeInfo);
     }
 
     @Override
@@ -181,13 +215,65 @@ public final class InternalResourceGroupManager<C>
     public void destroy()
     {
         refreshExecutor.shutdownNow();
+        resourceGroupRuntimeExecutor.stop();
     }
 
     @PostConstruct
     public void start()
     {
         if (started.compareAndSet(false, true)) {
-            refreshExecutor.scheduleWithFixedDelay(this::refreshAndStartQueries, 1, 100, TimeUnit.MILLISECONDS);
+            refreshExecutor.scheduleWithFixedDelay(() -> {
+                try {
+                    refreshAndStartQueries();
+                    lastSchedulingCycleRunTimeMs.getAndSet(currentTimeMillis());
+                }
+                catch (Throwable t) {
+                    log.error(t, "Error while executing refreshAndStartQueries");
+                    throw t;
+                }
+            }, 1, 1, MILLISECONDS);
+            if (isResourceManagerEnabled) {
+                resourceGroupRuntimeExecutor.start();
+            }
+        }
+    }
+
+    @Override
+    public List<ResourceGroupRuntimeInfo> getResourceGroupRuntimeInfos()
+    {
+        ImmutableList.Builder<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfos = ImmutableList.builder();
+        rootGroups.forEach(resourceGroup -> buildResourceGroupRuntimeInfo(resourceGroupRuntimeInfos, resourceGroup));
+        return resourceGroupRuntimeInfos.build();
+    }
+
+    private void buildResourceGroupRuntimeInfo(ImmutableList.Builder<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfos, InternalResourceGroup resourceGroup)
+    {
+        if (!resourceGroup.subGroups().isEmpty()) {
+            resourceGroup.subGroups().stream().forEach(subGroup -> buildResourceGroupRuntimeInfo(resourceGroupRuntimeInfos, subGroup));
+            return;
+        }
+        if (resourceGroup.getQueuedQueries() > 0 || resourceGroup.getRunningQueries() > 0) {
+            ResourceGroupRuntimeInfo.Builder resourceGroupRuntimeInfo = ResourceGroupRuntimeInfo.builder(resourceGroup.getId());
+            resourceGroupRuntimeInfo.addRunningQueries(resourceGroup.getRunningQueries());
+            resourceGroupRuntimeInfo.addQueuedQueries(resourceGroup.getQueuedQueries());
+            resourceGroupRuntimeInfo.setResourceGroupSpecInfo(new ResourceGroupSpecInfo(resourceGroup.getSoftConcurrencyLimit()));
+            resourceGroupRuntimeInfos.add(resourceGroupRuntimeInfo.build());
+        }
+    }
+
+    private void refreshResourceGroupRuntimeInfo()
+    {
+        try {
+            List<ResourceGroupRuntimeInfo> resourceGroupInfos = resourceGroupService.getResourceGroupInfo();
+            resourceGroupRuntimeInfos.set(resourceGroupInfos.stream().collect(toImmutableMap(ResourceGroupRuntimeInfo::getResourceGroupId, i -> i)));
+            lastUpdatedResourceGroupRuntimeInfo.set(currentTimeMillis());
+            boolean updatedSnapshot = updateResourceGroupsSnapshot();
+            if (updatedSnapshot) {
+                rootGroups.forEach(group -> group.setDirty());
+            }
+        }
+        catch (Throwable t) {
+            log.error(t, "Error while executing refreshAndStartQueries");
         }
     }
 
@@ -221,6 +307,27 @@ public final class InternalResourceGroupManager<C>
         }
     }
 
+    private boolean updateResourceGroupsSnapshot()
+    {
+        if (!isResourceManagerEnabled) {
+            return false;
+        }
+        Map<ResourceGroupId, ResourceGroupRuntimeInfo> snapshotValue = resourceGroupRuntimeInfos.getAndAccumulate(
+                resourceGroupRuntimeInfosSnapshot.get(),
+                (current, update) -> current != update ? update : null);
+        if (snapshotValue != null) {
+            resourceGroupRuntimeInfosSnapshot.set(snapshotValue);
+            return true;
+        }
+        return false;
+    }
+
+    @VisibleForTesting
+    public Map<ResourceGroupId, ResourceGroupRuntimeInfo> getResourceGroupRuntimeInfosSnapshot()
+    {
+        return resourceGroupRuntimeInfosSnapshot.get();
+    }
+
     private synchronized void createGroupIfNecessary(SelectionContext<C> context, Executor executor)
     {
         ResourceGroupId id = context.getResourceGroupId();
@@ -233,7 +340,23 @@ public final class InternalResourceGroupManager<C>
                 group = parent.getOrCreateSubGroup(id.getLastSegment());
             }
             else {
-                InternalResourceGroup root = new InternalResourceGroup(id.getSegments().get(0), this::exportGroup, executor);
+                RootInternalResourceGroup root;
+                if (!isResourceManagerEnabled) {
+                    //root = new RootInternalResourceGroup(id.getSegments().get(0), this::exportGroup, executor, ignored -> Optional.empty(), rg -> false);
+                    root = new RootInternalResourceGroup(id.getSegments().get(0), this::exportGroup, executor,  ignored -> Optional.empty(), rg -> false);
+                }
+                else {
+                    root = new RootInternalResourceGroup(
+                            id.getSegments().get(0),
+                            this::exportGroup,
+                            executor,
+                            resourceGroupId -> Optional.ofNullable(resourceGroupRuntimeInfosSnapshot.get().get(resourceGroupId)),
+                            rg -> shouldWaitForResourceManagerUpdate(
+                                    rg,
+                                    resourceGroupRuntimeInfosSnapshot::get,
+                                    lastUpdatedResourceGroupRuntimeInfo::get,
+                                    concurrencyThreshold));
+                }
                 group = root;
                 rootGroups.add(root);
             }
@@ -257,6 +380,21 @@ public final class InternalResourceGroupManager<C>
         }
     }
 
+    private static boolean shouldWaitForResourceManagerUpdate(
+            InternalResourceGroup resourceGroup,
+            Supplier<Map<ResourceGroupId, ResourceGroupRuntimeInfo>> resourceGroupRuntimeInfos,
+            LongSupplier lastUpdatedResourceGroupRuntimeInfo,
+            double concurrencyThreshold)
+    {
+        int hardConcurrencyLimit = resourceGroup.getHardConcurrencyLimitBasedOnCpuUsage();
+        int totalRunningQueries = resourceGroup.getRunningQueries();
+        ResourceGroupRuntimeInfo resourceGroupRuntimeInfo = resourceGroupRuntimeInfos.get().get(resourceGroup.getId());
+        if (resourceGroupRuntimeInfo != null) {
+            totalRunningQueries += resourceGroupRuntimeInfo.getRunningQueries() + resourceGroupRuntimeInfo.getDescendantRunningQueries();
+        }
+        return totalRunningQueries >= (hardConcurrencyLimit * concurrencyThreshold) && lastUpdatedResourceGroupRuntimeInfo.getAsLong() <= resourceGroup.getLastRunningQueryStartTime();
+    }
+
     @Managed
     public int getQueriesQueuedOnInternal()
     {
@@ -270,10 +408,19 @@ public final class InternalResourceGroupManager<C>
         return queriesQueuedInternal;
     }
 
-    private static int getQueriesQueuedOnInternal(InternalResourceGroup resourceGroup)
+    private int getQueriesQueuedOnInternal(InternalResourceGroup resourceGroup)
     {
         if (resourceGroup.subGroups().isEmpty()) {
-            return Math.min(resourceGroup.getQueuedQueries(), resourceGroup.getSoftConcurrencyLimit() - resourceGroup.getRunningQueries());
+            int queuedQueries = resourceGroup.getQueuedQueries();
+            int runningQueries = resourceGroup.getRunningQueries();
+            if (isResourceManagerEnabled) {
+                ResourceGroupRuntimeInfo resourceGroupRuntimeInfo = resourceGroupRuntimeInfos.get().get(resourceGroup.getId());
+                if (resourceGroupRuntimeInfo != null) {
+                    queuedQueries += resourceGroupRuntimeInfo.getQueuedQueries();
+                    runningQueries += resourceGroupRuntimeInfo.getRunningQueries();
+                }
+            }
+            return Math.max(Math.min(queuedQueries, resourceGroup.getSoftConcurrencyLimit() - runningQueries), 0);
         }
 
         int queriesQueuedInternal = 0;
@@ -282,6 +429,12 @@ public final class InternalResourceGroupManager<C>
         }
 
         return queriesQueuedInternal;
+    }
+
+    @Managed
+    public long getLastSchedulingCycleRuntimeDelayMs()
+    {
+        return currentTimeMillis() - lastSchedulingCycleRunTimeMs.get();
     }
 
     @SuppressWarnings("unchecked")
