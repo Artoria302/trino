@@ -247,7 +247,7 @@ public final class InternalResourceGroupManager<C>
     private void buildResourceGroupRuntimeInfo(ImmutableList.Builder<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfos, InternalResourceGroup resourceGroup)
     {
         if (!resourceGroup.subGroups().isEmpty()) {
-            resourceGroup.subGroups().stream().forEach(subGroup -> buildResourceGroupRuntimeInfo(resourceGroupRuntimeInfos, subGroup));
+            resourceGroup.subGroups().forEach(subGroup -> buildResourceGroupRuntimeInfo(resourceGroupRuntimeInfos, subGroup));
             return;
         }
         if (resourceGroup.getQueuedQueries() > 0 || resourceGroup.getRunningQueries() > 0) {
@@ -267,7 +267,7 @@ public final class InternalResourceGroupManager<C>
             lastUpdatedResourceGroupRuntimeInfo.set(currentTimeMillis());
             boolean updatedSnapshot = updateResourceGroupsSnapshot();
             if (updatedSnapshot) {
-                rootGroups.forEach(group -> group.setDirty());
+                rootGroups.forEach(InternalResourceGroup::setDirty);
             }
         }
         catch (Throwable t) {
