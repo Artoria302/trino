@@ -13,6 +13,8 @@
  */
 package io.trino.execution.resourcegroups;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.resourcegroups.ResourceGroupId;
 
 import java.util.Optional;
@@ -30,7 +32,15 @@ public class ResourceGroupRuntimeInfo
     private final int descendantRunningQueries;
     private final Optional<ResourceGroupSpecInfo> resourceGroupConfigSpec;
 
-    public ResourceGroupRuntimeInfo(ResourceGroupId resourceGroupId, long memoryUsageBytes, int queuedQueries, int descendantQueuedQueries, int runningQueries, int descendantRunningQueries, Optional<ResourceGroupSpecInfo> resourceGroupConfigSpec)
+    @JsonCreator
+    public ResourceGroupRuntimeInfo(
+            @JsonProperty("resourceGroupId") ResourceGroupId resourceGroupId,
+            @JsonProperty("memoryUsageBytes") long memoryUsageBytes,
+            @JsonProperty("queuedQueries") int queuedQueries,
+            @JsonProperty("descendantQueuedQueries") int descendantQueuedQueries,
+            @JsonProperty("runningQueries") int runningQueries,
+            @JsonProperty("descendantRunningQueries") int descendantRunningQueries,
+            @JsonProperty("resourceGroupConfigSpec") Optional<ResourceGroupSpecInfo> resourceGroupConfigSpec)
     {
         this.resourceGroupId = requireNonNull(resourceGroupId, "resourceGroupId is null");
         this.memoryUsageBytes = memoryUsageBytes;
@@ -46,36 +56,43 @@ public class ResourceGroupRuntimeInfo
         return new Builder(resourceGroupId);
     }
 
+    @JsonProperty
     public ResourceGroupId getResourceGroupId()
     {
         return resourceGroupId;
     }
 
+    @JsonProperty
     public long getMemoryUsageBytes()
     {
         return memoryUsageBytes;
     }
 
+    @JsonProperty
     public int getQueuedQueries()
     {
         return queuedQueries;
     }
 
+    @JsonProperty
     public int getDescendantQueuedQueries()
     {
         return descendantQueuedQueries;
     }
 
+    @JsonProperty
     public int getRunningQueries()
     {
         return runningQueries;
     }
 
+    @JsonProperty
     public int getDescendantRunningQueries()
     {
         return descendantRunningQueries;
     }
 
+    @JsonProperty
     public Optional<ResourceGroupSpecInfo> getResourceGroupConfigSpec()
     {
         return resourceGroupConfigSpec;

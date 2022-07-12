@@ -14,8 +14,6 @@
 package io.trino.resourcemanager;
 
 import com.google.common.collect.ImmutableMap;
-import io.airlift.http.client.HttpClient;
-import io.trino.memory.NodeMemoryConfig;
 import io.trino.spi.memory.ClusterMemoryPoolInfo;
 import io.trino.spi.memory.MemoryPoolInfo;
 import io.trino.util.PeriodicTaskExecutor;
@@ -30,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.Objects.requireNonNull;
 
 public class ClusterMemoryManagerService
+        implements MemoryManagerService
 {
     private static final ClusterMemoryPoolInfo EMPTY_MEMORY_POOL = new ClusterMemoryPoolInfo(
             new MemoryPoolInfo(
@@ -38,7 +37,7 @@ public class ClusterMemoryManagerService
             0,
             0);
 
-    private final HttpClient httpClient;
+    private final ResourceManagerClient resourceManagerClient;
     private final ScheduledExecutorService executorService;
     private final AtomicReference<ClusterMemoryPoolInfo> memoryPool;
     private final long memoryPoolFetchIntervalMillis;
@@ -46,15 +45,13 @@ public class ClusterMemoryManagerService
 
     @Inject
     public ClusterMemoryManagerService(
-            @ForResourceManager HttpClient httpClient,
+            @ForResourceManager ResourceManagerClient resourceManagerClient,
             @ForResourceManager ScheduledExecutorService executorService,
-            ResourceManagerConfig resourceManagerConfig,
-            NodeMemoryConfig nodeMemoryConfig)
+            ResourceManagerConfig resourceManagerConfig)
     {
-        this.httpClient = requireNonNull(httpClient, "httpClient is null");
+        this.resourceManagerClient = requireNonNull(resourceManagerClient, "resourceManagerClient is null");
         this.executorService = requireNonNull(executorService, "executorService is null");
         this.memoryPoolFetchIntervalMillis = requireNonNull(resourceManagerConfig, "resourceManagerConfig is null").getMemoryPoolFetchInterval().toMillis();
-
         this.memoryPool = new AtomicReference<>(EMPTY_MEMORY_POOL);
         this.memoryPoolUpdater = new PeriodicTaskExecutor(memoryPoolFetchIntervalMillis, executorService, () -> memoryPool.set(updateMemoryPoolInfo()));
     }
@@ -71,14 +68,13 @@ public class ClusterMemoryManagerService
         memoryPoolUpdater.stop();
     }
 
-    public ClusterMemoryPoolInfo getMemoryPoolInfo()
+    public ClusterMemoryPoolInfo getClusterMemoryPoolInfo()
     {
         return memoryPool.get();
     }
 
     private ClusterMemoryPoolInfo updateMemoryPoolInfo()
     {
-        ClusterMemoryPoolInfo memoryPoolInfo = null;
-        return memoryPoolInfo;
+        return resourceManagerClient.getMemoryPoolInfo();
     }
 }

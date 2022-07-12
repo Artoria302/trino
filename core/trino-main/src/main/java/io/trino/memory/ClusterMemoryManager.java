@@ -39,6 +39,7 @@ import io.trino.memory.LowMemoryKiller.RunningQueryInfo;
 import io.trino.metadata.InternalNode;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.operator.RetryPolicy;
+import io.trino.resourcemanager.MemoryManagerService;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.ServerConfig;
 import io.trino.spi.QueryId;
@@ -100,6 +101,7 @@ public class ClusterMemoryManager
     private final ClusterMemoryLeakDetector memoryLeakDetector = new ClusterMemoryLeakDetector();
     private final InternalNodeManager nodeManager;
     private final LocationFactory locationFactory;
+    private final Optional<MemoryManagerService> memoryManagerService;
     private final HttpClient httpClient;
     private final MBeanExporter exporter;
     private final JsonCodec<MemoryInfo> memoryInfoCodec;
@@ -133,6 +135,7 @@ public class ClusterMemoryManager
             @ForMemoryManager HttpClient httpClient,
             InternalNodeManager nodeManager,
             LocationFactory locationFactory,
+            Optional<MemoryManagerService> memoryManagerService,
             MBeanExporter exporter,
             JsonCodec<MemoryInfo> memoryInfoCodec,
             QueryIdGenerator queryIdGenerator,
@@ -149,6 +152,7 @@ public class ClusterMemoryManager
 
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.locationFactory = requireNonNull(locationFactory, "locationFactory is null");
+        this.memoryManagerService = requireNonNull(memoryManagerService, "memoryManagerService is null");
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.exporter = requireNonNull(exporter, "exporter is null");
         this.memoryInfoCodec = requireNonNull(memoryInfoCodec, "memoryInfoCodec is null");
@@ -496,13 +500,19 @@ public class ClusterMemoryManager
 
         pool.update(nodeMemoryInfos, queryCount);
         if (!changeListeners.isEmpty()) {
-            // TODO try to update from rm, if rm enabled
-            // MemoryPoolInfo info = getClusterInfo().getMemoryPoolInfo();
-            MemoryPoolInfo info = pool.getInfo();
+            MemoryPoolInfo info = getClusterMemoryPoolInfo();
             for (Consumer<MemoryPoolInfo> listener : changeListeners) {
                 listenerExecutor.execute(() -> listener.accept(info));
             }
         }
+    }
+
+    @VisibleForTesting
+    synchronized MemoryPoolInfo getClusterMemoryPoolInfo()
+    {
+        return memoryManagerService
+                .map(service -> service.getClusterMemoryPoolInfo().getMemoryPoolInfo())
+                .orElseGet(pool::getInfo);
     }
 
     public synchronized Map<String, Optional<MemoryInfo>> getWorkerMemoryInfo()

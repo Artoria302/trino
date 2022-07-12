@@ -13,24 +13,17 @@
  */
 package io.trino.resourcemanager;
 
+import com.google.common.collect.ImmutableList;
 import io.trino.execution.resourcegroups.ResourceGroupRuntimeInfo;
-import io.trino.server.BasicQueryInfo;
-import io.trino.server.NodeStatus;
-import io.trino.spi.memory.ClusterMemoryPoolInfo;
 
-import java.net.URI;
 import java.util.List;
 
-public interface ResourceManagerClient
+public class NoopResourceGroupService
+        implements ResourceGroupService
 {
-    void queryHeartbeat(URI uri, String nodeId, BasicQueryInfo basicQueryInfo, long sequenceId);
-
-    void nodeHeartbeat(URI uri, NodeStatus nodeStatus);
-
-    void resourceGroupRuntimeHeartbeat(URI uri, String nodeId, List<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfo);
-
-    ClusterMemoryPoolInfo getMemoryPoolInfo();
-
-    List<ResourceGroupRuntimeInfo> getResourceGroupInfo(String excludingNode)
-            throws ResourceManagerInconsistentException;
+    @Override
+    public List<ResourceGroupRuntimeInfo> getResourceGroupInfo()
+    {
+        return ImmutableList.of();
+    }
 }

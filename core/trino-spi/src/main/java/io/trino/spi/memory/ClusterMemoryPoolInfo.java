@@ -39,9 +39,9 @@ public final class ClusterMemoryPoolInfo
     @JsonCreator
     public ClusterMemoryPoolInfo(
             @JsonProperty("memoryPoolInfo") MemoryPoolInfo memoryPoolInfo,
-            int blockedNodes,
-            int assignedQueries,
-            Optional<QueryId> largestMemoryQuery)
+            @JsonProperty("blockedNodes") int blockedNodes,
+            @JsonProperty("assignedQueries") int assignedQueries,
+            @JsonProperty("largestMemoryQuery") Optional<QueryId> largestMemoryQuery)
     {
         this.memoryPoolInfo = requireNonNull(memoryPoolInfo, "memoryPoolInfo is null");
         this.blockedNodes = blockedNodes;

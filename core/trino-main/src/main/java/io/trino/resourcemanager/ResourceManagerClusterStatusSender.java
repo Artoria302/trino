@@ -23,7 +23,6 @@ import io.trino.server.BasicQueryInfo;
 import io.trino.server.NodeStatus;
 import io.trino.server.ServerConfig;
 import io.trino.server.StatusResource;
-import io.trino.spi.HostAddress;
 import io.trino.spi.QueryId;
 import io.trino.util.PeriodicTaskExecutor;
 
@@ -31,6 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -101,9 +101,7 @@ public class ResourceManagerClusterStatusSender
     public void init()
     {
         nodeHeartbeatSender.start();
-        if (resourceRuntimeHeartbeatSender.isPresent()) {
-            resourceRuntimeHeartbeatSender.get().start();
-        }
+        resourceRuntimeHeartbeatSender.ifPresent(PeriodicTaskExecutor::start);
     }
 
     @PreDestroy
@@ -113,9 +111,7 @@ public class ResourceManagerClusterStatusSender
         if (nodeHeartbeatSender != null) {
             nodeHeartbeatSender.stop();
         }
-        if (resourceRuntimeHeartbeatSender.isPresent()) {
-            resourceRuntimeHeartbeatSender.get().stop();
-        }
+        resourceRuntimeHeartbeatSender.ifPresent(PeriodicTaskExecutor::stop);
     }
 
     @Override
@@ -146,27 +142,27 @@ public class ResourceManagerClusterStatusSender
     {
         BasicQueryInfo basicQueryInfo = queryExecution.getBasicQueryInfo();
         String nodeIdentifier = internalNodeManager.getCurrentNode().getNodeIdentifier();
-        getResourceManagers().forEach(hostAndPort ->
-                resourceManagerClient.queryHeartbeat(hostAndPort, nodeIdentifier, basicQueryInfo, sequenceId));
+        getResourceManagers().forEach(uri ->
+                resourceManagerClient.queryHeartbeat(uri, nodeIdentifier, basicQueryInfo, sequenceId));
     }
 
     private void sendNodeHeartbeat()
     {
-        getResourceManagers().forEach(hostAndPort ->
-                resourceManagerClient.nodeHeartbeat(hostAndPort, statusSupplier.get()));
+        getResourceManagers().forEach(uri ->
+                resourceManagerClient.nodeHeartbeat(uri, statusSupplier.get()));
     }
 
-    private List<HostAddress> getResourceManagers()
+    private List<URI> getResourceManagers()
     {
         return internalNodeManager.getResourceManagers().stream()
-                .map(InternalNode::getHostAndPort)
+                .map(InternalNode::getInternalUri)
                 .collect(toImmutableList());
     }
 
     public void sendResourceGroupRuntimeHeartbeat()
     {
         List<ResourceGroupRuntimeInfo> resourceGroupRuntimeInfos = resourceGroupManager.getResourceGroupRuntimeInfos();
-        getResourceManagers().forEach(hostAndPort ->
-                resourceManagerClient.resourceGroupRuntimeHeartbeat(hostAndPort, internalNodeManager.getCurrentNode().getNodeIdentifier(), resourceGroupRuntimeInfos));
+        getResourceManagers().forEach(uri ->
+                resourceManagerClient.resourceGroupRuntimeHeartbeat(uri, internalNodeManager.getCurrentNode().getNodeIdentifier(), resourceGroupRuntimeInfos));
     }
 }
