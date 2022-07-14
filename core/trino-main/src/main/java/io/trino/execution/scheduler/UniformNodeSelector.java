@@ -179,14 +179,14 @@ public class UniformNodeSelector
             remainingSplits = splits;
         }
 
-        Optional<ResettableRandomizedIterator<HostAddress>> randomLabelNode = Optional.ofNullable(nodeScheduleLabelLevel == SOURCE ? new ResettableRandomizedIterator<>(nodeMap.getHostAndPortByLabels()) : null);
+        Optional<ResettableRandomizedIterator<HostAddress>> randomLabelNodes = Optional.ofNullable(nodeScheduleLabelLevel == SOURCE ? new ResettableRandomizedIterator<>(nodeMap.getHostAndPortByLabels()) : null);
 
         for (Split split : remainingSplits) {
             randomCandidates.reset();
 
             List<InternalNode> candidateNodes;
             if (!split.isRemotelyAccessible()) {
-                List<HostAddress> hostAddresses = randomLabelNode.map(this::selectRandomLabelNodes).orElseGet(split::getAddresses);
+                List<HostAddress> hostAddresses = randomLabelNodes.map(this::selectRandomLabelNodes).orElseGet(split::getAddresses);
                 candidateNodes = selectExactNodes(nodeMap, hostAddresses, includeCoordinator);
             }
             else {
