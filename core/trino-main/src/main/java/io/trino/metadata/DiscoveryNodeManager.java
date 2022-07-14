@@ -128,7 +128,7 @@ public final class DiscoveryNodeManager
             URI uri = getHttpUri(service, httpsRequired);
             NodeVersion nodeVersion = getNodeVersion(service);
             if (uri != null && nodeVersion != null) {
-                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, isCoordinator(service), isResourceManager(service));
+                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, isCoordinator(service), isResourceManager(service), getNodeLabels(service));
 
                 if (node.getNodeIdentifier().equals(currentNodeId)) {
                     checkState(
@@ -225,8 +225,9 @@ public final class DiscoveryNodeManager
             NodeVersion nodeVersion = getNodeVersion(service);
             boolean coordinator = isCoordinator(service);
             boolean resourceManager = isResourceManager(service);
+            String nodeLabels = getNodeLabels(service);
             if (uri != null && nodeVersion != null) {
-                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, coordinator, resourceManager);
+                InternalNode node = new InternalNode(service.getNodeId(), uri, nodeVersion, coordinator, resourceManager, nodeLabels);
                 NodeState nodeState = getNodeState(node);
 
                 switch (nodeState) {
@@ -417,5 +418,10 @@ public final class DiscoveryNodeManager
     private static boolean isResourceManager(ServiceDescriptor service)
     {
         return Boolean.parseBoolean(service.getProperties().get("resource_manager"));
+    }
+
+    private static String getNodeLabels(ServiceDescriptor service)
+    {
+        return service.getProperties().get("node_labels");
     }
 }

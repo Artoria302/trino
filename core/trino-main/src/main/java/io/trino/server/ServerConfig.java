@@ -28,6 +28,7 @@ public class ServerConfig
     private boolean resourceManager;
     private boolean resourceManagerEnabled;
     private boolean coordinator = true;
+    private Optional<String> nodeLabels = Optional.empty();
     private boolean concurrentStartup;
     private boolean includeExceptionInResponse = true;
     private Duration gracePeriod = new Duration(2, MINUTES);
@@ -37,6 +38,13 @@ public class ServerConfig
     public boolean isCoordinator()
     {
         return coordinator;
+    }
+
+    @Config("coordinator")
+    public ServerConfig setCoordinator(boolean coordinator)
+    {
+        this.coordinator = coordinator;
+        return this;
     }
 
     public boolean isResourceManager()
@@ -63,10 +71,15 @@ public class ServerConfig
         return this;
     }
 
-    @Config("coordinator")
-    public ServerConfig setCoordinator(boolean coordinator)
+    public Optional<String> getNodeLabels()
     {
-        this.coordinator = coordinator;
+        return nodeLabels;
+    }
+
+    @Config("node-labels")
+    public ServerConfig setNodeLabel(String nodeLabels)
+    {
+        this.nodeLabels = Optional.ofNullable(nodeLabels);
         return this;
     }
 

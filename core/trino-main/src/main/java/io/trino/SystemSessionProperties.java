@@ -13,13 +13,16 @@
  */
 package io.trino;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.execution.DynamicFilterConfig;
 import io.trino.execution.QueryManagerConfig;
 import io.trino.execution.TaskManagerConfig;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
+import io.trino.execution.scheduler.NodeSchedulerConfig.NodeScheduleLabelLevel;
 import io.trino.memory.MemoryManagerConfig;
 import io.trino.memory.NodeMemoryConfig;
 import io.trino.operator.RetryPolicy;
@@ -34,6 +37,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.plugin.base.session.PropertyMetadataUtil.dataSizeProperty;
@@ -168,6 +172,8 @@ public final class SystemSessionProperties
     public static final String ADAPTIVE_PARTIAL_AGGREGATION_UNIQUE_ROWS_RATIO_THRESHOLD = "adaptive_partial_aggregation_unique_rows_ratio_threshold";
     public static final String JOIN_PARTITIONED_BUILD_MIN_ROW_COUNT = "join_partitioned_build_min_row_count";
     public static final String USE_EXACT_PARTITIONING = "use_exact_partitioning";
+    public static final String NODE_SCHEDULE_LABEL = "node_schedule_label";
+    public static final String NODE_SCHEDULE_LABEL_LEVEL = "node_schedule_label_level";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -823,6 +829,16 @@ public final class SystemSessionProperties
                         USE_EXACT_PARTITIONING,
                         "When enabled this forces data repartitioning unless the partitioning of upstream stage matches exactly what downstream stage expects",
                         optimizerConfig.isUseExactPartitioning(),
+                        false),
+                stringProperty(
+                        NODE_SCHEDULE_LABEL,
+                        "Splits will scheduled to node with those labels",
+                        "",
+                        false),
+                stringProperty(
+                        NODE_SCHEDULE_LABEL_LEVEL,
+                        "'none' means disable node label feature, 'source' means only source splits affected by node labels and 'all' means all splits will affected by node labels.",
+                        nodeSchedulerConfig.getNodeScheduleLabelLevel().toString(),
                         false));
     }
 
@@ -1474,5 +1490,16 @@ public final class SystemSessionProperties
     public static boolean isUseExactPartitioning(Session session)
     {
         return session.getSystemProperty(USE_EXACT_PARTITIONING, Boolean.class);
+    }
+
+    public static NodeScheduleLabelLevel getNodeScheduleLabelLevel(Session session)
+    {
+        return NodeSchedulerConfig.toNodeScheduleLabelLevel(session.getSystemProperty(NODE_SCHEDULE_LABEL_LEVEL, String.class));
+    }
+
+    public static Set<String> getNodeScheduleLabel(Session session)
+    {
+        String labels = session.getSystemProperty(NODE_SCHEDULE_LABEL, String.class);
+        return ImmutableSet.copyOf(Splitter.on(",").trimResults().omitEmptyStrings().split(labels));
     }
 }

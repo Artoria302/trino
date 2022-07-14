@@ -425,7 +425,8 @@ public class ServerMainModule
         discoveryBinder(binder).bindHttpAnnouncement("trino")
                 .addProperty("node_version", nodeVersion)
                 .addProperty("coordinator", String.valueOf(serverConfig.isCoordinator()))
-                .addProperty("resource_manager", String.valueOf(serverConfig.isResourceManager()));
+                .addProperty("resource_manager", String.valueOf(serverConfig.isResourceManager()))
+                .addProperty("node_labels", serverConfig.getNodeLabels().orElseGet(() -> ""));
 
         // server info resource
         jaxrsBinder(binder).bind(ServerInfoResource.class);

@@ -16,6 +16,7 @@ package io.trino.execution.scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
@@ -23,6 +24,7 @@ import io.trino.Session;
 import io.trino.collect.cache.NonEvictableCache;
 import io.trino.connector.CatalogName;
 import io.trino.execution.NodeTaskMap;
+import io.trino.execution.scheduler.NodeSchedulerConfig.NodeScheduleLabelLevel;
 import io.trino.execution.scheduler.NodeSchedulerConfig.SplitsBalancingPolicy;
 import io.trino.metadata.InternalNode;
 import io.trino.metadata.InternalNodeManager;
@@ -41,6 +43,8 @@ import java.util.function.Supplier;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.trino.SystemSessionProperties.getMaxUnacknowledgedSplitsPerTask;
+import static io.trino.SystemSessionProperties.getNodeScheduleLabel;
+import static io.trino.SystemSessionProperties.getNodeScheduleLabelLevel;
 import static io.trino.collect.cache.CacheUtils.uncheckedCacheGet;
 import static io.trino.collect.cache.SafeCaches.buildNonEvictableCache;
 import static io.trino.metadata.NodeState.ACTIVE;
@@ -108,14 +112,17 @@ public class UniformNodeSelectorFactory
 
         // this supplier is thread-safe. TODO: this logic should probably move to the scheduler since the choice of which node to run in should be
         // done as close to when the split is about to be scheduled
+        NodeScheduleLabelLevel nodeScheduleLabelLevel = getNodeScheduleLabelLevel(session);
+        Set<String> nodeScheduleLabel = getNodeScheduleLabel(session);
+
         Supplier<NodeMap> nodeMap;
         if (nodeMapMemoizationDuration.toMillis() > 0) {
             nodeMap = Suppliers.memoizeWithExpiration(
-                    () -> createNodeMap(catalogName),
+                    () -> createNodeMap(catalogName, nodeScheduleLabelLevel, nodeScheduleLabel),
                     nodeMapMemoizationDuration.toMillis(), MILLISECONDS);
         }
         else {
-            nodeMap = () -> createNodeMap(catalogName);
+            nodeMap = () -> createNodeMap(catalogName, nodeScheduleLabelLevel, nodeScheduleLabel);
         }
 
         return new UniformNodeSelector(
@@ -127,16 +134,28 @@ public class UniformNodeSelectorFactory
                 maxSplitsWeightPerNode,
                 maxPendingSplitsWeightPerTask,
                 getMaxUnacknowledgedSplitsPerTask(session),
+                nodeScheduleLabelLevel,
                 splitsBalancingPolicy,
                 optimizedLocalScheduling);
     }
 
-    private NodeMap createNodeMap(Optional<CatalogName> catalogName)
+    private NodeMap createNodeMap(
+            Optional<CatalogName> catalogName,
+            NodeScheduleLabelLevel nodeScheduleLabelLevel,
+            Set<String> nodeScheduleLabels)
     {
         Set<InternalNode> nodes = catalogName
                 .map(nodeManager::getActiveConnectorNodes)
-                .orElseGet(() -> nodeManager.getNodes(ACTIVE))
-                .stream().filter(node -> !node.isResourceManager()).collect(toImmutableSet());
+                .orElseGet(() -> nodeManager.getNodes(ACTIVE));
+
+        if (nodeScheduleLabelLevel == NodeScheduleLabelLevel.ALL) {
+            nodes = nodes.stream()
+                    .filter(node -> !node.isResourceManager() && (nodeScheduleLabels.isEmpty() || node.getNodeLabels().containsAll(nodeScheduleLabels)))
+                    .collect(toImmutableSet());
+        }
+        else {
+            nodes = nodes.stream().filter(node -> !node.isResourceManager()).collect(toImmutableSet());
+        }
 
         Set<String> coordinatorNodeIds = nodeManager.getCoordinators().stream()
                 .map(InternalNode::getNodeIdentifier)
@@ -144,10 +163,14 @@ public class UniformNodeSelectorFactory
 
         ImmutableSetMultimap.Builder<HostAddress, InternalNode> byHostAndPort = ImmutableSetMultimap.builder();
         ImmutableSetMultimap.Builder<InetAddress, InternalNode> byHost = ImmutableSetMultimap.builder();
+        ImmutableSet.Builder<HostAddress> byLabels = ImmutableSet.builder();
         for (InternalNode node : nodes) {
             try {
                 byHostAndPort.put(node.getHostAndPort(), node);
                 byHost.put(node.getInternalAddress(), node);
+                if (nodeScheduleLabels.isEmpty() || node.getNodeLabels().containsAll(nodeScheduleLabels)) {
+                    byLabels.add(node.getHostAndPort());
+                }
             }
             catch (UnknownHostException e) {
                 if (markInaccessibleNode(node)) {
@@ -156,7 +179,7 @@ public class UniformNodeSelectorFactory
             }
         }
 
-        return new NodeMap(byHostAndPort.build(), byHost.build(), ImmutableSetMultimap.of(), coordinatorNodeIds);
+        return new NodeMap(byHostAndPort.build(), byHost.build(), ImmutableSetMultimap.of(), coordinatorNodeIds, byLabels.build());
     }
 
     /**

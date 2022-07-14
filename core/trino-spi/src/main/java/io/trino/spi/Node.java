@@ -14,6 +14,7 @@
 package io.trino.spi;
 
 import java.net.URI;
+import java.util.Set;
 
 public interface Node
 {
@@ -34,4 +35,6 @@ public interface Node
     boolean isCoordinator();
 
     boolean isResourceManager();
+
+    Set<String> getNodeLabels();
 }
