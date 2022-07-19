@@ -53,6 +53,7 @@ public class NodeSchedulerConfig
     private int maxUnacknowledgedSplitsPerTask = 500;
     private Duration allowedNoMatchingNodePeriod = new Duration(2, TimeUnit.MINUTES);
     private NodeAllocatorType nodeAllocatorType = NodeAllocatorType.BIN_PACKING;
+    private NodeScheduleLabelLevel nodeScheduleLabelLevel = NodeScheduleLabelLevel.NONE;
 
     @NotNull
     public NodeSchedulerPolicy getNodeSchedulerPolicy()
@@ -214,5 +215,51 @@ public class NodeSchedulerConfig
                 return NodeAllocatorType.BIN_PACKING;
         }
         throw new IllegalArgumentException("Unknown node allocator type: " + nodeAllocatorType);
+    }
+
+    public enum NodeScheduleLabelLevel
+    {
+        NONE("none"),
+        SOURCE("source"),
+        ALL("all");
+
+        NodeScheduleLabelLevel(String value)
+        {
+            this.value = value;
+        }
+
+        private final String value;
+
+        @Override
+        public String toString()
+        {
+            return value;
+        }
+    }
+
+    @NotNull
+    public NodeScheduleLabelLevel getNodeScheduleLabelLevel()
+    {
+        return nodeScheduleLabelLevel;
+    }
+
+    @Config("node-scheduler.label-level")
+    public NodeSchedulerConfig setNodeScheduleLabelLevel(String nodeScheduleLabelLever)
+    {
+        this.nodeScheduleLabelLevel = toNodeScheduleLabelLevel(nodeScheduleLabelLever);
+        return this;
+    }
+
+    public static NodeScheduleLabelLevel toNodeScheduleLabelLevel(String nodeScheduleLabelLevel)
+    {
+        switch (nodeScheduleLabelLevel.toLowerCase(ENGLISH)) {
+            case "none":
+                return NodeScheduleLabelLevel.NONE;
+            case "source":
+                return NodeScheduleLabelLevel.SOURCE;
+            case "all":
+                return NodeScheduleLabelLevel.ALL;
+        }
+        throw new IllegalArgumentException("Unknown node schedule label level: " + nodeScheduleLabelLevel);
     }
 }

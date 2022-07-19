@@ -57,7 +57,7 @@ public class TestingNodeSelectorFactory
             }
             CatalogName catalogName = catalogNameOptional.get();
             return allNodes.entrySet().stream()
-                    .filter(entry -> entry.getValue().contains(catalogName))
+                    .filter(entry -> !entry.getKey().isResourceManager() && entry.getValue().contains(catalogName))
                     .map(Map.Entry::getKey)
                     .collect(toImmutableList());
         };

@@ -13,11 +13,14 @@
  */
 package io.trino.execution.scheduler;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
 import io.trino.metadata.InternalNode;
 import io.trino.spi.HostAddress;
 
 import java.net.InetAddress;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class NodeMap
@@ -26,16 +29,27 @@ public class NodeMap
     private final SetMultimap<InetAddress, InternalNode> nodesByHost;
     private final SetMultimap<NetworkLocation, InternalNode> workersByNetworkPath;
     private final Set<String> coordinatorNodeIds;
+    private final List<HostAddress> hostAndPortByLabels;
 
     public NodeMap(SetMultimap<HostAddress, InternalNode> nodesByHostAndPort,
             SetMultimap<InetAddress, InternalNode> nodesByHost,
             SetMultimap<NetworkLocation, InternalNode> workersByNetworkPath,
             Set<String> coordinatorNodeIds)
     {
+        this(nodesByHostAndPort, nodesByHost, workersByNetworkPath, coordinatorNodeIds, Collections.emptySet());
+    }
+
+    public NodeMap(SetMultimap<HostAddress, InternalNode> nodesByHostAndPort,
+            SetMultimap<InetAddress, InternalNode> nodesByHost,
+            SetMultimap<NetworkLocation, InternalNode> workersByNetworkPath,
+            Set<String> coordinatorNodeIds,
+            Set<HostAddress> hostAndPortByLabels)
+    {
         this.nodesByHostAndPort = nodesByHostAndPort;
         this.nodesByHost = nodesByHost;
         this.workersByNetworkPath = workersByNetworkPath;
         this.coordinatorNodeIds = coordinatorNodeIds;
+        this.hostAndPortByLabels = ImmutableList.copyOf(hostAndPortByLabels);
     }
 
     public SetMultimap<HostAddress, InternalNode> getNodesByHostAndPort()
@@ -56,5 +70,10 @@ public class NodeMap
     public Set<String> getCoordinatorNodeIds()
     {
         return coordinatorNodeIds;
+    }
+
+    public List<HostAddress> getHostAndPortByLabels()
+    {
+        return hostAndPortByLabels;
     }
 }

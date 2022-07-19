@@ -58,6 +58,8 @@ public class QueryManagerConfig
     private int maxQueryLength = 1_000_000;
     private int maxStageCount = 150;
     private int stageCountWarningThreshold = 50;
+    private double concurrencyThresholdToEnableResourceGroupRefresh = 1.0;
+    private Duration resourceGroupRunTimeInfoRefreshInterval = new Duration(100, TimeUnit.MILLISECONDS);
 
     private Duration clientTimeout = new Duration(5, TimeUnit.MINUTES);
 
@@ -231,6 +233,32 @@ public class QueryManagerConfig
     public QueryManagerConfig setStageCountWarningThreshold(int stageCountWarningThreshold)
     {
         this.stageCountWarningThreshold = stageCountWarningThreshold;
+        return this;
+    }
+
+    public Double getConcurrencyThresholdToEnableResourceGroupRefresh()
+    {
+        return concurrencyThresholdToEnableResourceGroupRefresh;
+    }
+
+    @Config("concurrency-threshold-to-enable-resource-group-refresh")
+    @ConfigDescription("Resource group concurrency threshold percentage, once crossed new queries won't run till updated resource group info comes from resource manager")
+    public QueryManagerConfig setConcurrencyThresholdToEnableResourceGroupRefresh(double concurrencyThresholdToEnableResourceGroupRefresh)
+    {
+        this.concurrencyThresholdToEnableResourceGroupRefresh = concurrencyThresholdToEnableResourceGroupRefresh;
+        return this;
+    }
+
+    public Duration getResourceGroupRunTimeInfoRefreshInterval()
+    {
+        return resourceGroupRunTimeInfoRefreshInterval;
+    }
+
+    @Config("resource-group-runtimeinfo-refresh-interval")
+    @ConfigDescription("How frequently to poll the resource manager for resource group updates")
+    public QueryManagerConfig setResourceGroupRunTimeInfoRefreshInterval(Duration resourceGroupRunTimeInfoRefreshInterval)
+    {
+        this.resourceGroupRunTimeInfoRefreshInterval = resourceGroupRunTimeInfoRefreshInterval;
         return this;
     }
 

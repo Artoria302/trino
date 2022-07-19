@@ -11,30 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.spi;
+package io.trino.resourcemanager;
 
 import java.net.URI;
-import java.util.Set;
+import java.util.Optional;
 
-public interface Node
+public interface ResourceManagerAddressSelector
 {
-    String getHost();
-
-    HostAddress getHostAndPort();
-
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
-
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    boolean isResourceManager();
-
-    Set<String> getNodeLabels();
+    Optional<URI> selectAddress();
 }

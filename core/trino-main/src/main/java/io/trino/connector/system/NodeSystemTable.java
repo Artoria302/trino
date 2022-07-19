@@ -31,6 +31,7 @@ import javax.inject.Inject;
 
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.trino.metadata.MetadataUtil.TableMetadataBuilder.tableMetadataBuilder;
 import static io.trino.metadata.NodeState.ACTIVE;
@@ -51,7 +52,9 @@ public class NodeSystemTable
             .column("http_uri", createUnboundedVarcharType())
             .column("node_version", createUnboundedVarcharType())
             .column("coordinator", BOOLEAN)
+            .column("resource_manager", BOOLEAN)
             .column("state", createUnboundedVarcharType())
+            .column("node_labels", createUnboundedVarcharType())
             .build();
 
     private final InternalNodeManager nodeManager;
@@ -88,7 +91,7 @@ public class NodeSystemTable
     private void addRows(Builder table, Set<InternalNode> nodes, NodeState state)
     {
         for (InternalNode node : nodes) {
-            table.addRow(node.getNodeIdentifier(), node.getInternalUri().toString(), getNodeVersion(node), isCoordinator(node), state.toString().toLowerCase(Locale.ENGLISH));
+            table.addRow(node.getNodeIdentifier(), node.getInternalUri().toString(), getNodeVersion(node), isCoordinator(node), isResourceManager(node), state.toString().toLowerCase(Locale.ENGLISH), getNodeLabels(node));
         }
     }
 
@@ -100,5 +103,15 @@ public class NodeSystemTable
     private boolean isCoordinator(InternalNode node)
     {
         return nodeManager.getCoordinators().contains(node);
+    }
+
+    private boolean isResourceManager(InternalNode node)
+    {
+        return nodeManager.getResourceManagers().contains(node);
+    }
+
+    private String getNodeLabels(InternalNode node)
+    {
+        return node.getNodeLabels().stream().sorted().collect(Collectors.joining(","));
     }
 }

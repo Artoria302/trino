@@ -25,6 +25,7 @@ import io.airlift.log.Logger;
 import io.trino.execution.NodeTaskMap;
 import io.trino.execution.RemoteTask;
 import io.trino.execution.resourcegroups.IndexedPriorityQueue;
+import io.trino.execution.scheduler.NodeSchedulerConfig.NodeScheduleLabelLevel;
 import io.trino.execution.scheduler.NodeSchedulerConfig.SplitsBalancingPolicy;
 import io.trino.metadata.InternalNode;
 import io.trino.metadata.InternalNodeManager;
@@ -37,6 +38,7 @@ import javax.annotation.Nullable;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,6 +57,7 @@ import static io.trino.execution.scheduler.NodeScheduler.selectDistributionNodes
 import static io.trino.execution.scheduler.NodeScheduler.selectExactNodes;
 import static io.trino.execution.scheduler.NodeScheduler.selectNodes;
 import static io.trino.execution.scheduler.NodeScheduler.toWhenHasSplitQueueSpaceFuture;
+import static io.trino.execution.scheduler.NodeSchedulerConfig.NodeScheduleLabelLevel.SOURCE;
 import static io.trino.spi.StandardErrorCode.NO_NODES_AVAILABLE;
 import static java.util.Comparator.comparingLong;
 import static java.util.Objects.requireNonNull;
@@ -74,6 +77,7 @@ public class UniformNodeSelector
     private final int maxUnacknowledgedSplitsPerTask;
     private final SplitsBalancingPolicy splitsBalancingPolicy;
     private final boolean optimizedLocalScheduling;
+    private final NodeScheduleLabelLevel nodeScheduleLabelLevel;
 
     public UniformNodeSelector(
             InternalNodeManager nodeManager,
@@ -84,6 +88,7 @@ public class UniformNodeSelector
             long maxSplitsWeightPerNode,
             long maxPendingSplitsWeightPerTask,
             int maxUnacknowledgedSplitsPerTask,
+            NodeScheduleLabelLevel nodeScheduleLabelLevel,
             SplitsBalancingPolicy splitsBalancingPolicy,
             boolean optimizedLocalScheduling)
     {
@@ -96,6 +101,7 @@ public class UniformNodeSelector
         this.maxPendingSplitsWeightPerTask = maxPendingSplitsWeightPerTask;
         this.maxUnacknowledgedSplitsPerTask = maxUnacknowledgedSplitsPerTask;
         checkArgument(maxUnacknowledgedSplitsPerTask > 0, "maxUnacknowledgedSplitsPerTask must be > 0, found: %s", maxUnacknowledgedSplitsPerTask);
+        this.nodeScheduleLabelLevel = requireNonNull(nodeScheduleLabelLevel, "nodeScheduleLabelLevel is null");
         this.splitsBalancingPolicy = requireNonNull(splitsBalancingPolicy, "splitsBalancingPolicy is null");
         this.optimizedLocalScheduling = optimizedLocalScheduling;
     }
@@ -123,6 +129,16 @@ public class UniformNodeSelector
     public List<InternalNode> selectRandomNodes(int limit, Set<InternalNode> excludedNodes)
     {
         return selectNodes(limit, randomizedNodes(nodeMap.get().get(), includeCoordinator, excludedNodes));
+    }
+
+    public List<HostAddress> selectRandomLabelNodes(ResettableRandomizedIterator<HostAddress> randomizedCandidates)
+    {
+        randomizedCandidates.reset();
+        List<HostAddress> selected = new ArrayList<>(3);
+        while (selected.size() < 3 && randomizedCandidates.hasNext()) {
+            selected.add(randomizedCandidates.next());
+        }
+        return selected;
     }
 
     @Override
@@ -163,12 +179,15 @@ public class UniformNodeSelector
             remainingSplits = splits;
         }
 
+        Optional<ResettableRandomizedIterator<HostAddress>> randomLabelNodes = Optional.ofNullable(nodeScheduleLabelLevel == SOURCE ? new ResettableRandomizedIterator<>(nodeMap.getHostAndPortByLabels()) : null);
+
         for (Split split : remainingSplits) {
             randomCandidates.reset();
 
             List<InternalNode> candidateNodes;
             if (!split.isRemotelyAccessible()) {
-                candidateNodes = selectExactNodes(nodeMap, split.getAddresses(), includeCoordinator);
+                List<HostAddress> hostAddresses = randomLabelNodes.map(this::selectRandomLabelNodes).orElseGet(split::getAddresses);
+                candidateNodes = selectExactNodes(nodeMap, hostAddresses, includeCoordinator);
             }
             else {
                 candidateNodes = selectNodes(minCandidates, randomCandidates);

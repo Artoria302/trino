@@ -29,8 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Stream.concat;
 
 public class InMemoryNodeManager
         implements InternalNodeManager
@@ -119,7 +122,12 @@ public class InMemoryNodeManager
     @Override
     public AllNodes getAllNodes()
     {
-        return new AllNodes(ImmutableSet.<InternalNode>builder().add(localNode).addAll(remoteNodes.values()).build(), ImmutableSet.of(), ImmutableSet.of(), ImmutableSet.of(localNode));
+        return new AllNodes(
+                ImmutableSet.<InternalNode>builder().add(localNode).addAll(remoteNodes.values()).build(),
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                concat(Stream.of(localNode), remoteNodes.values().stream()).collect(toImmutableSet()).stream().filter(InternalNode::isCoordinator).collect(toImmutableSet()),
+                concat(Stream.of(localNode), remoteNodes.values().stream()).collect(toImmutableSet()).stream().filter(InternalNode::isResourceManager).collect(toImmutableSet()));
     }
 
     @Override
@@ -133,6 +141,12 @@ public class InMemoryNodeManager
     {
         // always use localNode as coordinator
         return ImmutableSet.of(localNode);
+    }
+
+    @Override
+    public Set<InternalNode> getResourceManagers()
+    {
+        return getAllNodes().getActiveResourceManagers();
     }
 
     @Override

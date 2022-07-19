@@ -11,30 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.spi;
+package io.trino.resourcemanager;
 
-import java.net.URI;
-import java.util.Set;
+import javax.inject.Qualifier;
 
-public interface Node
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Retention(RUNTIME)
+@Target({FIELD, PARAMETER, METHOD})
+@Qualifier
+public @interface ForResourceManager
 {
-    String getHost();
-
-    HostAddress getHostAndPort();
-
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
-
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    boolean isResourceManager();
-
-    Set<String> getNodeLabels();
 }

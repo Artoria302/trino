@@ -25,7 +25,10 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class ServerConfig
 {
+    private boolean resourceManager;
+    private boolean resourceManagerEnabled;
     private boolean coordinator = true;
+    private Optional<String> nodeLabels = Optional.empty();
     private boolean concurrentStartup;
     private boolean includeExceptionInResponse = true;
     private Duration gracePeriod = new Duration(2, MINUTES);
@@ -41,6 +44,42 @@ public class ServerConfig
     public ServerConfig setCoordinator(boolean coordinator)
     {
         this.coordinator = coordinator;
+        return this;
+    }
+
+    public boolean isResourceManager()
+    {
+        return resourceManager;
+    }
+
+    @Config("resource-manager")
+    public ServerConfig setResourceManager(boolean resourceManager)
+    {
+        this.resourceManager = resourceManager;
+        return this;
+    }
+
+    public boolean isResourceManagerEnabled()
+    {
+        return resourceManagerEnabled;
+    }
+
+    @Config("resource-manager-enabled")
+    public ServerConfig setResourceManagerEnabled(boolean resourceManagerEnabled)
+    {
+        this.resourceManagerEnabled = resourceManagerEnabled;
+        return this;
+    }
+
+    public Optional<String> getNodeLabels()
+    {
+        return nodeLabels;
+    }
+
+    @Config("node-labels")
+    public ServerConfig setNodeLabel(String nodeLabels)
+    {
+        this.nodeLabels = Optional.ofNullable(nodeLabels);
         return this;
     }
 

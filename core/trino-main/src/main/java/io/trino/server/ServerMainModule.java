@@ -165,6 +165,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
@@ -418,10 +419,14 @@ public class ServerMainModule
         binder.bind(SplitMonitor.class).in(Scopes.SINGLETON);
 
         // version and announcement
+        checkArgument(!(serverConfig.isResourceManager() && serverConfig.isCoordinator()),
+                "Server cannot be configured as both resource manager and coordinator");
         binder.bind(NodeVersion.class).toInstance(new NodeVersion(nodeVersion));
         discoveryBinder(binder).bindHttpAnnouncement("trino")
                 .addProperty("node_version", nodeVersion)
-                .addProperty("coordinator", String.valueOf(serverConfig.isCoordinator()));
+                .addProperty("coordinator", String.valueOf(serverConfig.isCoordinator()))
+                .addProperty("resource_manager", String.valueOf(serverConfig.isResourceManager()))
+                .addProperty("node_labels", serverConfig.getNodeLabels().orElseGet(() -> ""));
 
         // server info resource
         jaxrsBinder(binder).bind(ServerInfoResource.class);

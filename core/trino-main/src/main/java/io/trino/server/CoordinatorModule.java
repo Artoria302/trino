@@ -91,6 +91,8 @@ import io.trino.memory.TotalReservationOnBlockedNodesQueryLowMemoryKiller;
 import io.trino.memory.TotalReservationOnBlockedNodesTaskLowMemoryKiller;
 import io.trino.operator.ForScheduler;
 import io.trino.operator.OperatorStats;
+import io.trino.resourcemanager.ForResourceManager;
+import io.trino.resourcemanager.ResourceManagerProxy;
 import io.trino.server.protocol.ExecutingStatementResource;
 import io.trino.server.protocol.QueryInfoUrlFactory;
 import io.trino.server.remotetask.RemoteTaskStats;
@@ -330,6 +332,15 @@ public class CoordinatorModule
         executionPolicyBinder.addBinding("phased").to(PhasedExecutionPolicy.class);
 
         install(new QueryExecutionFactoryModule());
+
+        newOptionalBinder(binder, ResourceManagerProxy.class);
+        install(conditionalModule(
+                ServerConfig.class,
+                ServerConfig::isResourceManagerEnabled,
+                rmBinder -> {
+                    httpClientBinder(rmBinder).bindHttpClient("resourceManager", ForResourceManager.class);
+                    rmBinder.bind(ResourceManagerProxy.class).in(Scopes.SINGLETON);
+                }));
 
         // cleanup
         binder.bind(ExecutorCleanup.class).asEagerSingleton();

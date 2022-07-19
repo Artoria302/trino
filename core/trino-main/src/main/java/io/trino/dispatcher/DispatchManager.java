@@ -26,6 +26,7 @@ import io.trino.execution.QueryPreparer.PreparedQuery;
 import io.trino.execution.QueryTracker;
 import io.trino.execution.resourcegroups.ResourceGroupManager;
 import io.trino.metadata.SessionPropertyManager;
+import io.trino.resourcemanager.ClusterStatusSender;
 import io.trino.security.AccessControl;
 import io.trino.server.BasicQueryInfo;
 import io.trino.server.SessionContext;
@@ -72,6 +73,8 @@ public class DispatchManager
 
     private final Executor dispatchExecutor;
 
+    private final ClusterStatusSender clusterStatusSender;
+
     private final QueryTracker<DispatchQuery> queryTracker;
 
     private final QueryManagerStats stats = new QueryManagerStats();
@@ -88,7 +91,8 @@ public class DispatchManager
             SessionPropertyDefaults sessionPropertyDefaults,
             SessionPropertyManager sessionPropertyManager,
             QueryManagerConfig queryManagerConfig,
-            DispatchExecutor dispatchExecutor)
+            DispatchExecutor dispatchExecutor,
+            ClusterStatusSender clusterStatusSender)
     {
         this.queryIdGenerator = requireNonNull(queryIdGenerator, "queryIdGenerator is null");
         this.queryPreparer = requireNonNull(queryPreparer, "queryPreparer is null");
@@ -104,6 +108,8 @@ public class DispatchManager
         this.maxQueryLength = queryManagerConfig.getMaxQueryLength();
 
         this.dispatchExecutor = requireNonNull(dispatchExecutor, "dispatchExecutor is null").getExecutor();
+
+        this.clusterStatusSender = requireNonNull(clusterStatusSender, "clusterStatusSender is null");
 
         this.queryTracker = new QueryTracker<>(queryManagerConfig, dispatchExecutor.getScheduledExecutor());
     }
@@ -204,6 +210,7 @@ public class DispatchManager
             boolean queryAdded = queryCreated(dispatchQuery);
             if (queryAdded && !dispatchQuery.isDone()) {
                 try {
+                    clusterStatusSender.registerQuery(dispatchQuery);
                     resourceGroupManager.submit(dispatchQuery, selectionContext, dispatchExecutor);
                 }
                 catch (Throwable e) {

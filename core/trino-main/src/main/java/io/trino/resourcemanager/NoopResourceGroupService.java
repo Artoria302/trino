@@ -11,30 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.spi;
+package io.trino.resourcemanager;
 
-import java.net.URI;
-import java.util.Set;
+import com.google.common.collect.ImmutableList;
+import io.trino.execution.resourcegroups.ResourceGroupRuntimeInfo;
 
-public interface Node
+import java.util.List;
+
+public class NoopResourceGroupService
+        implements ResourceGroupService
 {
-    String getHost();
-
-    HostAddress getHostAndPort();
-
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
-
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    boolean isResourceManager();
-
-    Set<String> getNodeLabels();
+    @Override
+    public List<ResourceGroupRuntimeInfo> getResourceGroupInfo()
+    {
+        return ImmutableList.of();
+    }
 }

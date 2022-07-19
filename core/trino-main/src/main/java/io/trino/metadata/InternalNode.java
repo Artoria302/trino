@@ -13,6 +13,8 @@
  */
 package io.trino.metadata;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import io.trino.client.NodeVersion;
 import io.trino.spi.HostAddress;
 import io.trino.spi.Node;
@@ -21,6 +23,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Strings.emptyToNull;
@@ -38,14 +41,23 @@ public class InternalNode
     private final URI internalUri;
     private final NodeVersion nodeVersion;
     private final boolean coordinator;
+    private final boolean resourceManager;
+    private final Set<String> nodeLabels;
 
     public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator)
+    {
+        this(nodeIdentifier, internalUri, nodeVersion, coordinator, false, "");
+    }
+
+    public InternalNode(String nodeIdentifier, URI internalUri, NodeVersion nodeVersion, boolean coordinator, boolean resourceManager, String nodeLabels)
     {
         nodeIdentifier = emptyToNull(nullToEmpty(nodeIdentifier).trim());
         this.nodeIdentifier = requireNonNull(nodeIdentifier, "nodeIdentifier is null or empty");
         this.internalUri = requireNonNull(internalUri, "internalUri is null");
         this.nodeVersion = requireNonNull(nodeVersion, "nodeVersion is null");
         this.coordinator = coordinator;
+        this.resourceManager = resourceManager;
+        this.nodeLabels = ImmutableSet.copyOf(Splitter.on(",").trimResults().omitEmptyStrings().split(requireNonNull(nodeLabels, "node labels is null")));
     }
 
     @Override
@@ -100,6 +112,18 @@ public class InternalNode
         return coordinator;
     }
 
+    @Override
+    public boolean isResourceManager()
+    {
+        return resourceManager;
+    }
+
+    @Override
+    public Set<String> getNodeLabels()
+    {
+        return nodeLabels;
+    }
+
     public NodeVersion getNodeVersion()
     {
         return nodeVersion;
@@ -131,6 +155,8 @@ public class InternalNode
                 .add("nodeIdentifier", nodeIdentifier)
                 .add("internalUri", internalUri)
                 .add("nodeVersion", nodeVersion)
+                .add("coordinator", coordinator)
+                .add("resourceManager", resourceManager)
                 .toString();
     }
 }

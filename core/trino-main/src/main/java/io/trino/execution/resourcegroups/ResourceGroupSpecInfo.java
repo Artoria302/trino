@@ -11,30 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.spi;
+package io.trino.execution.resourcegroups;
 
-import java.net.URI;
-import java.util.Set;
-
-public interface Node
+public class ResourceGroupSpecInfo
 {
-    String getHost();
+    private final int softConcurrencyLimit;
 
-    HostAddress getHostAndPort();
+    public ResourceGroupSpecInfo(int softConcurrencyLimit)
+    {
+        this.softConcurrencyLimit = softConcurrencyLimit;
+    }
 
-    /**
-     * @deprecated Connectors should not access the HTTP endpoints of other nodes.
-     */
-    @Deprecated
-    URI getHttpUri();
-
-    String getNodeIdentifier();
-
-    String getVersion();
-
-    boolean isCoordinator();
-
-    boolean isResourceManager();
-
-    Set<String> getNodeLabels();
+    public int getSoftConcurrencyLimit()
+    {
+        return softConcurrencyLimit;
+    }
 }
