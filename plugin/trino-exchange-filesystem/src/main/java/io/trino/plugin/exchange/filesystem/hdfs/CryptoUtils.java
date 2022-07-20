@@ -88,9 +88,13 @@ public class CryptoUtils
     public static FSDataInputStream wrapIfNecessary(
             Configuration conf,
             Optional<SecretKey> secretKey,
-            FSDataInputStream in)
+            FSDataInputStream in,
+            long position)
             throws IOException
     {
+        if (position != 0) {
+            in.seek(position);
+        }
         if (secretKey.isEmpty()) {
             return in;
         }
