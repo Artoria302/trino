@@ -259,15 +259,15 @@ public class HdfsFileSystemExchangeStorage
         @GuardedBy("this")
         private void fillBuffer()
         {
-            Configuration conf = hdfsEnvironment.getHdfsConfiguration();
             if (currentFile == null || fileOffset == currentFile.getFileSize()) {
                 currentFile = sourceFiles.poll();
                 if (currentFile == null) {
                     close();
                     return;
                 }
-                fileOffset = CryptoUtils.getCryptoHeaderSize(currentFile.getSecretKey());
+                fileOffset = 0;
             }
+
 
             byte[] buffer = new byte[bufferSize];
             int bufferFill = 0;
@@ -277,6 +277,7 @@ public class HdfsFileSystemExchangeStorage
                 bufferFill += length;
             }
 
+            Configuration conf = hdfsEnvironment.getHdfsConfiguration();
             ImmutableList.Builder<ListenableFuture<Void>> readFutures = ImmutableList.builder();
             while (true) {
                 long fileSize = currentFile.getFileSize();
@@ -293,19 +294,22 @@ public class HdfsFileSystemExchangeStorage
 
                 Path f = new Path(currentFile.getFileUri());
                 Optional<SecretKey> secretKey = currentFile.getSecretKey();
+                int cryptoHeaderSize = CryptoUtils.getCryptoHeaderSize(secretKey);
+                // Blocks start with iv data if crypto is enabled
                 for (int i = 0; i < readableBlocks && fileOffset < fileSize; ++i) {
                     int length = (int) min(blockSize, fileSize - fileOffset);
+                    int dataLength = length - cryptoHeaderSize;
                     int bufferOffset = bufferFill;
                     Futures.submit(() -> {
-                        try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(f).open(f))) {
-                            in.readFully(fileOffset, buffer, bufferOffset, length);
+                        try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(f).open(f), fileOffset)) {
+                            in.readFully(buffer, bufferOffset, dataLength);
                         }
                         catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     }, executor);
 
-                    bufferFill += length;
+                    bufferFill += dataLength;
                     fileOffset += length;
                 }
 
@@ -314,7 +318,7 @@ public class HdfsFileSystemExchangeStorage
                     if (currentFile == null) {
                         break;
                     }
-                    fileOffset = CryptoUtils.getCryptoHeaderSize(currentFile.getSecretKey());
+                    fileOffset = 0;
                 }
             }
 
