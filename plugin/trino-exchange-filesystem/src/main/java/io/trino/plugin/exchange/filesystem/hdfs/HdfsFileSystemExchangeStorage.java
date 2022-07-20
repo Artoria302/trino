@@ -64,6 +64,17 @@ public class HdfsFileSystemExchangeStorage
     private final int blockSize;
     private final Executor executor;
 
+    public static final byte[] IV;
+
+    static {
+        int len = CipherSuite.AES_CTR_NOPADDING.getAlgorithmBlockSize();
+        IV = new byte[len];
+        for (int i = 0; i < len; i++) {
+            IV[i] = (byte) i;
+        }
+    }
+
+
     @Inject
     public HdfsFileSystemExchangeStorage(
             ExchangeHdfsEnvironment hdfsEnvironment,
@@ -292,25 +303,20 @@ public class HdfsFileSystemExchangeStorage
 
                 Path f = new Path(currentFile.getFileUri());
                 Optional<SecretKey> secretKey = currentFile.getSecretKey();
-                int ivLen = secretKey.isPresent() ? CipherSuite.AES_CTR_NOPADDING.getAlgorithmBlockSize() : 0;
-
                 for (int i = 0; i < readableBlocks && fileOffset < fileSize; ++i) {
                     int length = (int) min(blockSize, fileSize - fileOffset);
                     int bufferOffset = bufferFill;
                     Futures.submit(() -> {
                         CryptoCodec codec = null;
                         try (FSDataInputStream in = hdfsEnvironment.getFileSystem(f).open(f)) {
-                            in.seek(fileSize);
-
                             FSDataInputStream in2 = in;
                             if (secretKey.isPresent()) {
-                                byte[] iv = new byte[ivLen];
-                                IOUtils.readFully(in, iv, 0, ivLen);
+                                byte[] iv = HdfsFileSystemExchangeStorage.IV.clone();
                                 codec = CryptoCodec.getInstance(hdfsEnvironment.getHdfsConfiguration(), CipherSuite.AES_CTR_NOPADDING);
                                 in2 = new CryptoFSDataInputStream(in, codec, secretKey.get().getEncoded(), iv);
                             }
-
-                            IOUtils.readFully(in2, buffer, bufferOffset, length - ivLen);
+                            in2.seek(fileSize);
+                            IOUtils.readFully(in2, buffer, bufferOffset, length);
                         }
                         catch (IOException e) {
                             throw new RuntimeException(e);
@@ -326,7 +332,7 @@ public class HdfsFileSystemExchangeStorage
                         }
                     }, executor);
 
-                    bufferFill += length - ivLen;
+                    bufferFill += length;
                     fileOffset += length;
                 }
 
