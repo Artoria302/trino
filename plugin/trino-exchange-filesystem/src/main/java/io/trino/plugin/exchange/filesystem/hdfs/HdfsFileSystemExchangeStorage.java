@@ -26,6 +26,7 @@ import io.trino.plugin.exchange.filesystem.ExchangeStorageWriter;
 import io.trino.plugin.exchange.filesystem.FileStatus;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeStorage;
 import io.trino.spi.VersionEmbedder;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.crypto.CipherSuite;
 import org.apache.hadoop.crypto.CryptoCodec;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -33,7 +34,6 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.crypto.CryptoFSDataInputStream;
-import org.apache.hadoop.io.IOUtils;
 import org.openjdk.jol.info.ClassLayout;
 
 import javax.annotation.PreDestroy;
@@ -63,17 +63,6 @@ public class HdfsFileSystemExchangeStorage
     private final ExchangeHdfsEnvironment hdfsEnvironment;
     private final int blockSize;
     private final Executor executor;
-
-    public static final byte[] IV;
-
-    static {
-        int len = CipherSuite.AES_CTR_NOPADDING.getAlgorithmBlockSize();
-        IV = new byte[len];
-        for (int i = 0; i < len; i++) {
-            IV[i] = (byte) i;
-        }
-    }
-
 
     @Inject
     public HdfsFileSystemExchangeStorage(
@@ -270,13 +259,14 @@ public class HdfsFileSystemExchangeStorage
         @GuardedBy("this")
         private void fillBuffer()
         {
+            Configuration conf = hdfsEnvironment.getHdfsConfiguration();
             if (currentFile == null || fileOffset == currentFile.getFileSize()) {
                 currentFile = sourceFiles.poll();
                 if (currentFile == null) {
                     close();
                     return;
                 }
-                fileOffset = 0;
+                fileOffset = CryptoUtils.getCryptoHeaderSize(currentFile.getSecretKey());
             }
 
             byte[] buffer = new byte[bufferSize];
@@ -307,28 +297,11 @@ public class HdfsFileSystemExchangeStorage
                     int length = (int) min(blockSize, fileSize - fileOffset);
                     int bufferOffset = bufferFill;
                     Futures.submit(() -> {
-                        CryptoCodec codec = null;
-                        try (FSDataInputStream in = hdfsEnvironment.getFileSystem(f).open(f)) {
-                            FSDataInputStream in2 = in;
-                            if (secretKey.isPresent()) {
-                                byte[] iv = HdfsFileSystemExchangeStorage.IV.clone();
-                                codec = CryptoCodec.getInstance(hdfsEnvironment.getHdfsConfiguration(), CipherSuite.AES_CTR_NOPADDING);
-                                in2 = new CryptoFSDataInputStream(in, codec, secretKey.get().getEncoded(), iv);
-                            }
-                            in2.seek(fileSize);
-                            IOUtils.readFully(in2, buffer, bufferOffset, length);
+                        try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(f).open(f))) {
+                            in.readFully(fileOffset, buffer, bufferOffset, length);
                         }
                         catch (IOException e) {
                             throw new RuntimeException(e);
-                        }
-                        finally {
-                            if (codec != null) {
-                                try {
-                                    codec.close();
-                                }
-                                catch (IOException ignore) {
-                                }
-                            }
                         }
                     }, executor);
 
@@ -341,7 +314,7 @@ public class HdfsFileSystemExchangeStorage
                     if (currentFile == null) {
                         break;
                     }
-                    fileOffset = 0;
+                    fileOffset = CryptoUtils.getCryptoHeaderSize(currentFile.getSecretKey());
                 }
             }
 
