@@ -37,7 +37,6 @@ public class TestHdfsFileSystemExchangeManager
         extends AbstractTestExchangeManager
 {
     private HiveHadoop hiveHadoop;
-
     private String baseDir;
 
     @Override
@@ -51,8 +50,10 @@ public class TestHdfsFileSystemExchangeManager
             throw new RuntimeException(e);
         }
 
+        System.setProperty("HADOOP_USER_NAME", "root");
+
         hiveHadoop = HiveHadoop.builder()
-                .withExposePorts(ImmutableSet.of(HiveHadoop.HIVE_METASTORE_PORT, 9000, 8020, 9866))
+                .withExposePorts(ImmutableSet.of(HiveHadoop.HIVE_METASTORE_PORT, HiveHadoop.NAMENODE_PORT))
                 .withImage(HiveHadoop.HIVE3_IMAGE)
                 .withNetwork(Network.newNetwork())
                 .withFilesToMount(ImmutableMap.of(
@@ -60,18 +61,19 @@ public class TestHdfsFileSystemExchangeManager
                 .build();
         hiveHadoop.start();
 
-        baseDir = "hdfs://localhost:9000/user/hadoop";
+        baseDir = "hdfs://hadoop-master:9000/user/root";
+        String endpoint = hiveHadoop.getNamenodeEndpoint().toString();
 
         hiveHadoop.executeInContainerFailOnError("hadoop", "fs", "-mkdir", "-p", baseDir);
 
-        String dir1 = baseDir + "/trino-hdfs-file-system-exchange-manager-1";
-        String dir2 = baseDir + "/trino-hdfs-file-system-exchange-manager-2";
+        String dir1 = "hdfs://" + endpoint + "/user/root/trino-hdfs-file-system-exchange-manager-1";
+        String dir2 = "hdfs://" + endpoint + "/user/root/trino-hdfs-file-system-exchange-manager-2";
         Map<String, String> config = ImmutableMap.<String, String>builder()
                 .put("exchange.base-directories", dir1 + "," + dir2)
                 .put("exchange.encryption-enabled", "false")
                 // to trigger file split in some tests
                 .put("exchange.sink-max-file-size", "16MB")
-                .put("exchange.hdfs.block-size", "4MB")
+                .put("exchange.hdfs.block-size", "16MB")
                 .buildOrThrow();
         return new FileSystemExchangeManagerFactory().create(config);
     }
@@ -82,7 +84,7 @@ public class TestHdfsFileSystemExchangeManager
             throws Exception
     {
         if (hiveHadoop != null) {
-            hiveHadoop.executeInContainerFailOnError("hadoop", "fs", "-rm", "-f", "-r", baseDir);
+            hiveHadoop.executeInContainerFailOnError("hadoop", "fs", "-rm", "-f", "-r", baseDir + "/*");
             hiveHadoop.stop();
             hiveHadoop = null;
         }

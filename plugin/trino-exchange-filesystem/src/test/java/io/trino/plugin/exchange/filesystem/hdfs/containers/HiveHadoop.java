@@ -39,6 +39,7 @@ public class HiveHadoop
     public static final String HOST_NAME = "hadoop-master";
 
     public static final int HIVE_METASTORE_PORT = 9083;
+    public static final int NAMENODE_PORT = 9000;
 
     public static Builder builder()
     {
@@ -81,7 +82,7 @@ public class HiveHadoop
     public void start()
     {
         super.start();
-        log.info("Hive container started with addresses for metastore: %s", getHiveMetastoreEndpoint());
+        log.info("Hive container started with addresses for metastore: %s and for namenode: %s", getHiveMetastoreEndpoint(), getNamenodeEndpoint());
     }
 
     public void runOnHive(String query)
@@ -92,6 +93,11 @@ public class HiveHadoop
     public HostAndPort getHiveMetastoreEndpoint()
     {
         return getMappedHostAndPortForExposedPort(HIVE_METASTORE_PORT);
+    }
+
+    public HostAndPort getNamenodeEndpoint()
+    {
+        return getMappedHostAndPortForExposedPort(NAMENODE_PORT);
     }
 
     public static class Builder

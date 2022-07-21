@@ -13,7 +13,7 @@
  */
 package io.trino.plugin.exchange.filesystem.hdfs.authentication;
 
-public class NoHdfsAuthentication
+public class SampleHdfsAuthentication
         implements HdfsAuthentication
 {
     @Override

@@ -43,8 +43,6 @@ public class ExchangeHdfsConfig
     private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
     private HdfsAuthenticationType hdfsAuthenticationType = HdfsAuthenticationType.NONE;
-    private String hdfsPrincipal;
-    private String hdfsKeytab;
 
     private List<File> resourceConfigFiles = ImmutableList.of();
     private String newDirectoryPermissions = "0777";
@@ -75,34 +73,6 @@ public class ExchangeHdfsConfig
     }
 
     @NotNull
-    public String getHdfsPrincipal()
-    {
-        return hdfsPrincipal;
-    }
-
-    @Config("exchange.hdfs.krb5.principal")
-    @ConfigDescription("HDFS kerberos principal")
-    public ExchangeHdfsConfig setHdfsPrincipal(String principal)
-    {
-        this.hdfsPrincipal = principal;
-        return this;
-    }
-
-    @NotNull
-    public String getHdfsKeytab()
-    {
-        return hdfsKeytab;
-    }
-
-    @Config("exchange.hdfs.krb5.keytab")
-    @ConfigDescription("HDFS kerberos keytab")
-    public ExchangeHdfsConfig setHdfsKeytab(String keytab)
-    {
-        this.hdfsKeytab = keytab;
-        return this;
-    }
-
-    @NotNull
     @MinDataSize("4MB")
     @MaxDataSize("256MB")
     public DataSize getHdfsStorageBlockSize()
@@ -112,7 +82,7 @@ public class ExchangeHdfsConfig
 
     @Config("exchange.hdfs.block-size")
     @ConfigDescription("Block size for Hdfs High-Throughput Block Size")
-    public ExchangeHdfsConfig setAzureStorageBlockSize(DataSize hdfsStorageBlockSize)
+    public ExchangeHdfsConfig setHdfsStorageBlockSize(DataSize hdfsStorageBlockSize)
     {
         this.hdfsStorageBlockSize = hdfsStorageBlockSize;
         return this;
