@@ -14,7 +14,6 @@
 package io.trino.plugin.exchange.filesystem.hdfs;
 
 import io.airlift.log.Logger;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.crypto.CipherSuite;
 import org.apache.hadoop.crypto.CryptoCodec;
@@ -35,6 +34,10 @@ import static org.apache.hadoop.crypto.CryptoStreamUtils.getBufferSize;
 public class CryptoUtils
 {
     private static final Logger log = Logger.get(CryptoUtils.class);
+
+    private CryptoUtils()
+    {
+    }
 
     public static int getCryptoHeaderSize(Optional<SecretKey> secretKey)
     {
@@ -80,7 +83,8 @@ public class CryptoUtils
         byte[] iv = createIV(conf);
         out.write(iv);
         if (log.isDebugEnabled()) {
-            log.debug("IV written to Stream [%s]", Base64.encodeBase64URLSafeString(iv));
+            log.debug("IV written to Stream [%s]",
+                    io.trino.hadoop.$internal.org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(iv));
         }
         return new CryptoFSDataOutputStream(out, CryptoCodec.getInstance(conf, CipherSuite.AES_CTR_NOPADDING), getBufferSize(conf), secretKey.get().getEncoded(), iv, closeOutputStream);
     }
@@ -105,7 +109,8 @@ public class CryptoUtils
         byte[] iv = new byte[cryptoCodec.getCipherSuite().getAlgorithmBlockSize()];
         IOUtils.readFully(in, iv, 0, cryptoCodec.getCipherSuite().getAlgorithmBlockSize());
         if (log.isDebugEnabled()) {
-            log.debug("IV read from Stream [%s]", Base64.encodeBase64URLSafeString(iv));
+            log.debug("IV read from Stream [%s]",
+                    io.trino.hadoop.$internal.org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(iv));
         }
         return new CryptoFSDataInputStream(in, cryptoCodec, getBufferSize(conf), secretKey.get().getEncoded(), iv);
     }

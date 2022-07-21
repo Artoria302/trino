@@ -19,6 +19,12 @@ import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 import io.trino.plugin.exchange.filesystem.azure.AzureBlobFileSystemExchangeStorage;
 import io.trino.plugin.exchange.filesystem.azure.ExchangeAzureConfig;
+import io.trino.plugin.exchange.filesystem.hdfs.ExchangeFileSystemCache;
+import io.trino.plugin.exchange.filesystem.hdfs.ExchangeFileSystemCacheStats;
+import io.trino.plugin.exchange.filesystem.hdfs.ExchangeHdfsConfig;
+import io.trino.plugin.exchange.filesystem.hdfs.ExchangeHdfsEnvironment;
+import io.trino.plugin.exchange.filesystem.hdfs.HdfsFileSystemExchangeStorage;
+import io.trino.plugin.exchange.filesystem.hdfs.authentication.HdfsAuthenticationModule;
 import io.trino.plugin.exchange.filesystem.local.LocalFileSystemExchangeStorage;
 import io.trino.plugin.exchange.filesystem.s3.ExchangeS3Config;
 import io.trino.plugin.exchange.filesystem.s3.S3FileSystemExchangeStorage;
@@ -66,6 +72,18 @@ public class FileSystemExchangeModule
         else if (ImmutableSet.of("abfs", "abfss").contains(scheme)) {
             binder.bind(FileSystemExchangeStorage.class).to(AzureBlobFileSystemExchangeStorage.class).in(Scopes.SINGLETON);
             configBinder(binder).bindConfig(ExchangeAzureConfig.class);
+        }
+        else if (ImmutableSet.of("hdfs", "viewfs").contains(scheme)) {
+            binder.bind(ExchangeFileSystemCacheStats.class).toInstance(ExchangeFileSystemCache.INSTANCE.getFileSystemCacheStats());
+            newExporter(binder).export(ExchangeFileSystemCacheStats.class)
+                    .as(generator -> generator.generatedNameOf(ExchangeFileSystemCache.class));
+
+            binder.bind(FileSystemExchangeStorage.class).to(HdfsFileSystemExchangeStorage.class).in(Scopes.SINGLETON);
+            configBinder(binder).bindConfig(ExchangeHdfsConfig.class);
+
+            binder.bind(ExchangeHdfsEnvironment.class).in(Scopes.SINGLETON);
+
+            install(new HdfsAuthenticationModule());
         }
         else {
             throw new TrinoException(NOT_SUPPORTED, format("Scheme %s is not supported as exchange spooling storage", scheme));
