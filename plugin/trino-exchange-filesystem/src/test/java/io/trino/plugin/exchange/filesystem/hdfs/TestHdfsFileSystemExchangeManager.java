@@ -14,6 +14,7 @@
 package io.trino.plugin.exchange.filesystem.hdfs;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import io.trino.plugin.exchange.filesystem.AbstractTestExchangeManager;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeManagerFactory;
@@ -51,6 +52,7 @@ public class TestHdfsFileSystemExchangeManager
         }
 
         hiveHadoop = HiveHadoop.builder()
+                .withExposePorts(ImmutableSet.of(HiveHadoop.HIVE_METASTORE_PORT, 9000, 8020, 9866))
                 .withImage(HiveHadoop.HIVE3_IMAGE)
                 .withNetwork(Network.newNetwork())
                 .withFilesToMount(ImmutableMap.of(
@@ -58,7 +60,7 @@ public class TestHdfsFileSystemExchangeManager
                 .build();
         hiveHadoop.start();
 
-        baseDir = "hdfs:///user/hadoop";
+        baseDir = "hdfs://localhost:9000/user/hadoop";
 
         hiveHadoop.executeInContainerFailOnError("hadoop", "fs", "-mkdir", "-p", baseDir);
 
