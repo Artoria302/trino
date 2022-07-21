@@ -300,8 +300,9 @@ public class HdfsFileSystemExchangeStorage
                     int length = (int) min(blockSize, fileSize - fileOffset);
                     int dataLength = length - cryptoHeaderSize;
                     int bufferOffset = bufferFill;
-                    Futures.submit(() -> {
-                        try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(f).open(f), fileOffset)) {
+                    long curFileOffset = fileOffset;
+                    ListenableFuture<Void> future = Futures.submit(() -> {
+                        try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(f).open(f), curFileOffset)) {
                             in.readFully(buffer, bufferOffset, dataLength);
                         }
                         catch (IOException e) {
@@ -309,6 +310,7 @@ public class HdfsFileSystemExchangeStorage
                         }
                     }, executor);
 
+                    readFutures.add(future);
                     bufferFill += dataLength;
                     fileOffset += length;
                 }

@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 
 import static com.google.inject.Scopes.SINGLETON;
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
+import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.trino.plugin.exchange.filesystem.hdfs.authentication.KerberosHadoopAuthentication.createKerberosHadoopAuthentication;
 
 public class HdfsAuthenticationModule
@@ -37,8 +38,8 @@ public class HdfsAuthenticationModule
     protected void setup(Binder binder)
     {
         bindAuthenticationModule(
-                HdfsAuthenticationModule::noHdfsAuth,
-                noHdfsAuthenticationModule());
+                HdfsAuthenticationModule::simpleHdfsAuth,
+                simpleHdfsAuthenticationModule());
 
         bindAuthenticationModule(
                 HdfsAuthenticationModule::kerberosHdfsAuth,
@@ -50,7 +51,7 @@ public class HdfsAuthenticationModule
         install(conditionalModule(ExchangeHdfsConfig.class, predicate, module));
     }
 
-    private static boolean noHdfsAuth(ExchangeHdfsConfig config)
+    private static boolean simpleHdfsAuth(ExchangeHdfsConfig config)
     {
         return config.getHdfsAuthenticationType() == HdfsAuthenticationType.NONE;
     }
@@ -60,11 +61,11 @@ public class HdfsAuthenticationModule
         return config.getHdfsAuthenticationType() == HdfsAuthenticationType.KERBEROS;
     }
 
-    public static Module noHdfsAuthenticationModule()
+    public static Module simpleHdfsAuthenticationModule()
     {
         return binder -> binder
                 .bind(HdfsAuthentication.class)
-                .to(NoHdfsAuthentication.class)
+                .to(SampleHdfsAuthentication.class)
                 .in(SINGLETON);
     }
 
@@ -78,15 +79,16 @@ public class HdfsAuthenticationModule
                 binder.bind(HdfsAuthentication.class)
                         .to(DirectHdfsAuthentication.class)
                         .in(SINGLETON);
+                configBinder(binder).bindConfig(HdfsKerberosConfig.class);
             }
 
             @Inject
             @Provides
             @Singleton
-            HadoopAuthentication createHadoopAuthentication(ExchangeHdfsConfig config)
+            HadoopAuthentication createHadoopAuthentication(ExchangeHdfsConfig config, HdfsKerberosConfig hdfsKerberosConfig)
             {
-                String principal = config.getHdfsPrincipal();
-                String keytabLocation = config.getHdfsKeytab();
+                String principal = hdfsKerberosConfig.getHdfsPrincipal();
+                String keytabLocation = hdfsKerberosConfig.getHdfsKeytab();
                 KerberosAuthentication kerberosAuthentication = new KerberosAuthentication(principal, keytabLocation);
                 KerberosHadoopAuthentication kerberosHadoopAuthentication = createKerberosHadoopAuthentication(kerberosAuthentication, config);
                 return new CachingKerberosHadoopAuthentication(kerberosHadoopAuthentication);
