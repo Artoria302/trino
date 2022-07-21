@@ -13,8 +13,6 @@
  */
 package io.trino.plugin.exchange.filesystem.hdfs.authentication;
 
-import io.trino.plugin.exchange.filesystem.hdfs.ForHdfs;
-
 import javax.inject.Inject;
 
 import static io.trino.plugin.exchange.filesystem.hdfs.authentication.UserGroupInformationUtils.executeActionInDoAs;
@@ -26,7 +24,7 @@ public class DirectHdfsAuthentication
     private final HadoopAuthentication hadoopAuthentication;
 
     @Inject
-    public DirectHdfsAuthentication(@ForHdfs HadoopAuthentication hadoopAuthentication)
+    public DirectHdfsAuthentication(HadoopAuthentication hadoopAuthentication)
     {
         this.hadoopAuthentication = requireNonNull(hadoopAuthentication);
     }

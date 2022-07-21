@@ -14,9 +14,11 @@
 package io.trino.plugin.exchange.filesystem.hdfs;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.concurrent.BoundedExecutor;
+import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceInput;
 import io.airlift.slice.Slices;
@@ -25,37 +27,39 @@ import io.trino.plugin.exchange.filesystem.ExchangeStorageReader;
 import io.trino.plugin.exchange.filesystem.ExchangeStorageWriter;
 import io.trino.plugin.exchange.filesystem.FileStatus;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeStorage;
-import io.trino.spi.VersionEmbedder;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.crypto.CipherSuite;
-import org.apache.hadoop.crypto.CryptoCodec;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.hadoop.fs.crypto.CryptoFSDataInputStream;
 import org.openjdk.jol.info.ClassLayout;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 import static com.google.common.util.concurrent.Futures.immediateVoidFuture;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.asVoid;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
+import static io.airlift.concurrent.Threads.daemonThreadsNamed;
+import static io.trino.plugin.exchange.filesystem.FileSystemExchangeFutures.translateFailures;
 import static java.lang.Math.min;
 import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class HdfsFileSystemExchangeStorage
         implements FileSystemExchangeStorage
@@ -67,14 +71,12 @@ public class HdfsFileSystemExchangeStorage
     @Inject
     public HdfsFileSystemExchangeStorage(
             ExchangeHdfsEnvironment hdfsEnvironment,
-            ExchangeHdfsConfig config,
-            ExecutorService executorService,
-            VersionEmbedder versionEmbedder)
+            ExchangeHdfsConfig config)
     {
         requireNonNull(config, "config is null");
         this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
         this.blockSize = toIntExact(config.getHdfsStorageBlockSize().toBytes());
-        this.executor = versionEmbedder.embedVersion(new BoundedExecutor(executorService, config.getMaxBackgroundThreads()));
+        this.executor = new BoundedExecutor(newCachedThreadPool(daemonThreadsNamed("hdfs-exchange-storage-%s")), config.getMaxBackgroundThreads());
     }
 
     @Override
@@ -93,7 +95,7 @@ public class HdfsFileSystemExchangeStorage
     @Override
     public ExchangeStorageWriter createExchangeStorageWriter(URI file, Optional<SecretKey> secretKey)
     {
-        return null;
+        return new HdfsExchangeStorageWriter(hdfsEnvironment, file, blockSize, secretKey, executor);
     }
 
     @Override
@@ -123,11 +125,11 @@ public class HdfsFileSystemExchangeStorage
             ImmutableList.Builder<FileStatus> builder = ImmutableList.builder();
             Path p = new Path(dir);
             RemoteIterator<LocatedFileStatus> iterator = hdfsEnvironment.getFileSystem(p).listFiles(p, true);
-            LocatedFileStatus fileStatus;
+            LocatedFileStatus status;
             while (iterator.hasNext()) {
-                fileStatus = iterator.next();
-                if (fileStatus.isFile()) {
-                    builder.add(new FileStatus(fileStatus.getPath().toString(), fileStatus.getLen()));
+                status = iterator.next();
+                if (status.isFile()) {
+                    builder.add(new FileStatus(status.getPath().toString(), status.getLen()));
                 }
             }
             return builder.build();
@@ -184,7 +186,6 @@ public class HdfsFileSystemExchangeStorage
             this.bufferSize = maxPageStorageSize + blockSize;
             this.executor = executor;
 
-            // Safe publication of S3ExchangeStorageReader is required as it's a mutable class
             fillBuffer();
         }
 
@@ -268,7 +269,6 @@ public class HdfsFileSystemExchangeStorage
                 fileOffset = 0;
             }
 
-
             byte[] buffer = new byte[bufferSize];
             int bufferFill = 0;
             if (sliceInput != null) {
@@ -325,6 +325,112 @@ public class HdfsFileSystemExchangeStorage
             inProgressReadFuture = asVoid(Futures.allAsList(readFutures.build()));
             sliceInput = Slices.wrappedBuffer(buffer, 0, bufferFill).getInput();
             bufferRetainedSize = sliceInput.getRetainedSize();
+        }
+    }
+
+    @NotThreadSafe
+    private static class HdfsExchangeStorageWriter
+            implements ExchangeStorageWriter
+    {
+        private static final Logger log = Logger.get(HdfsExchangeStorageWriter.class);
+        private static final int INSTANCE_SIZE = ClassLayout.parseClass(HdfsFileSystemExchangeStorage.HdfsExchangeStorageWriter.class).instanceSize();
+
+        private final FSDataOutputStream outputStream;
+        private final BackgroundHdfsUploader backgroundHdfsUploader;
+        private final List<ListenableFuture<Void>> uploadFutures = new ArrayList<>();
+        private volatile boolean closed;
+
+        public HdfsExchangeStorageWriter(
+                ExchangeHdfsEnvironment hdfsEnvironment,
+                URI file,
+                int blockSize,
+                Optional<SecretKey> secretKey,
+                Executor executor)
+        {
+            Path f = new Path(requireNonNull(file, "file is null"));
+            try {
+                this.outputStream = hdfsEnvironment.getFileSystem(f).create(f, true);
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            this.backgroundHdfsUploader = new BackgroundHdfsUploader(hdfsEnvironment, outputStream, blockSize, secretKey);
+            requireNonNull(executor, "executor is null").execute(this.backgroundHdfsUploader);
+        }
+
+        @Override
+        public ListenableFuture<Void> write(Slice slice)
+        {
+            if (closed) {
+                // Ignore writes after writer is closed
+                return immediateVoidFuture();
+            }
+            ListenableFuture<Void> future = backgroundHdfsUploader.submit(slice);
+            uploadFutures.add(future);
+            return translateFailures(future);
+        }
+
+        @Override
+        public ListenableFuture<Void> finish()
+        {
+            if (closed) {
+                return immediateVoidFuture();
+            }
+
+            ListenableFuture<Void> finishFuture = translateFailures(Futures.transformAsync(
+                    Futures.allAsList(uploadFutures),
+                    ignore -> Futures.submit(() -> {
+                        try {
+                            outputStream.close();
+                        }
+                        catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, directExecutor()), directExecutor()));
+
+            Futures.addCallback(finishFuture, new FutureCallback<>()
+            {
+                @Override
+                public void onSuccess(Void result)
+                {
+                    closed = true;
+                    backgroundHdfsUploader.stop();
+                }
+
+                @Override
+                public void onFailure(Throwable ignored)
+                {
+                    // Rely on caller to abort in case of exceptions during finish
+                }
+            }, directExecutor());
+
+            return finishFuture;
+        }
+
+        @Override
+        public ListenableFuture<Void> abort()
+        {
+            if (closed) {
+                return immediateVoidFuture();
+            }
+            closed = true;
+            backgroundHdfsUploader.stop();
+            uploadFutures.forEach(future -> future.cancel(true));
+
+            try {
+                outputStream.close();
+            }
+            catch (IOException e) {
+                log.warn(e, "Failed to close outputStream %s", outputStream);
+            }
+
+            return immediateVoidFuture();
+        }
+
+        @Override
+        public long getRetainedSize()
+        {
+            return INSTANCE_SIZE;
         }
     }
 }

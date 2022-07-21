@@ -43,8 +43,8 @@ public class ExchangeHdfsConfig
     private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
     private HdfsAuthenticationType hdfsAuthenticationType = HdfsAuthenticationType.NONE;
-    private Optional<String> hdfsTrinoPrincipal = Optional.empty();
-    private Optional<String> hdfsTrinoKeytab = Optional.empty();
+    private String hdfsPrincipal;
+    private String hdfsKeytab;
 
     private List<File> resourceConfigFiles = ImmutableList.of();
     private String newDirectoryPermissions = "0777";
@@ -71,6 +71,34 @@ public class ExchangeHdfsConfig
     public ExchangeHdfsConfig setHdfsAuthenticationType(HdfsAuthenticationType hdfsAuthenticationType)
     {
         this.hdfsAuthenticationType = hdfsAuthenticationType;
+        return this;
+    }
+
+    @NotNull
+    public String getHdfsPrincipal()
+    {
+        return hdfsPrincipal;
+    }
+
+    @Config("exchange.hdfs.krb5.principal")
+    @ConfigDescription("HDFS kerberos principal")
+    public ExchangeHdfsConfig setHdfsPrincipal(String principal)
+    {
+        this.hdfsPrincipal = principal;
+        return this;
+    }
+
+    @NotNull
+    public String getHdfsKeytab()
+    {
+        return hdfsKeytab;
+    }
+
+    @Config("exchange.hdfs.krb5.keytab")
+    @ConfigDescription("HDFS kerberos keytab")
+    public ExchangeHdfsConfig setHdfsKeytab(String keytab)
+    {
+        this.hdfsKeytab = keytab;
         return this;
     }
 
