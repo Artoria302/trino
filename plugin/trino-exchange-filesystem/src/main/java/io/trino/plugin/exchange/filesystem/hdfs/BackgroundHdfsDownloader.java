@@ -38,7 +38,6 @@ import static com.google.common.util.concurrent.Futures.immediateVoidFuture;
 import static java.util.Objects.requireNonNull;
 
 public class BackgroundHdfsDownloader
-        implements ResumableTask
 {
     private static final Logger log = Logger.get(BackgroundHdfsDownloader.class);
 
@@ -48,7 +47,7 @@ public class BackgroundHdfsDownloader
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
     private final Executor executor;
-    private boolean stopped;
+    private volatile boolean stopped;
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     public BackgroundHdfsDownloader(
@@ -66,7 +65,7 @@ public class BackgroundHdfsDownloader
     public void start()
     {
         if (started.compareAndSet(false, true)) {
-            ResumableTasks.submit(executor, this);
+            ResumableTasks.submit(executor, new ResumableDownloadTask());
         }
     }
 
@@ -85,32 +84,6 @@ public class BackgroundHdfsDownloader
         return completionFuture;
     }
 
-    @Override
-    public TaskStatus process()
-    {
-        DequeueStatus<ListenableTask> status;
-        ListenableTask task;
-        while (true) {
-            if (stopped) {
-                return TaskStatus.finished();
-            }
-            try {
-                status = queue.pollListenable(10, TimeUnit.MILLISECONDS);
-                task = status.getElement();
-                if (task == null) {
-                    // make sure task can receive stop signal
-                    if (stopped) {
-                        return TaskStatus.finished();
-                    }
-                    return TaskStatus.continueOn(status.getListenableFuture());
-                }
-                task.process();
-            }
-            catch (InterruptedException ignore) {
-            }
-        }
-    }
-
     public void stop()
     {
         if (stopped) {
@@ -118,6 +91,36 @@ public class BackgroundHdfsDownloader
         }
         stopped = true;
         queue.signalWaiting();
+    }
+
+    private class ResumableDownloadTask
+            implements ResumableTask
+    {
+        @Override
+        public TaskStatus process()
+        {
+            DequeueStatus<ListenableTask> status;
+            ListenableTask task;
+            while (true) {
+                if (stopped) {
+                    return TaskStatus.finished();
+                }
+                try {
+                    status = queue.pollListenable(10, TimeUnit.MILLISECONDS);
+                    task = status.getElement();
+                    if (task == null) {
+                        // make sure task can receive stop signal
+                        if (stopped) {
+                            return TaskStatus.finished();
+                        }
+                        return TaskStatus.continueOn(status.getListenableFuture());
+                    }
+                    task.process();
+                }
+                catch (InterruptedException ignore) {
+                }
+            }
+        }
     }
 
     private class DownloadTask
