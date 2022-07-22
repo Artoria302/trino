@@ -19,6 +19,7 @@ import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue.DequeueStatus;
+import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTasks;
 import org.apache.hadoop.conf.Configuration;
@@ -38,7 +39,6 @@ import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 
 public class BackgroundHdfsUploader
-        implements ResumableTask
 {
     private static final Logger log = Logger.get(BackgroundHdfsUploader.class);
 
@@ -75,7 +75,7 @@ public class BackgroundHdfsUploader
     public void start()
     {
         if (started.compareAndSet(false, true)) {
-            ResumableTasks.submit(executor, this);
+            ResumableTasks.submit(executor, new ResumableUploadTask());
         }
     }
 
@@ -84,7 +84,7 @@ public class BackgroundHdfsUploader
         if (stopped) {
             return immediateVoidFuture();
         }
-        ListenableTask task = new ListenableTask(slice);
+        ListenableTask task = new UploadTask(slice);
         SettableFuture<Void> completionFuture = task.getCompletionFuture();
         boolean added = queue.offer(task);
         if (!added) {
@@ -92,32 +92,6 @@ public class BackgroundHdfsUploader
             completionFuture.setException(new RuntimeException("Failed to add upload task to queue"));
         }
         return completionFuture;
-    }
-
-    @Override
-    public TaskStatus process()
-    {
-        DequeueStatus<ListenableTask> status;
-        ListenableTask task;
-        while (true) {
-            if (stopped) {
-                return TaskStatus.finished();
-            }
-            try {
-                status = queue.pollListenable(10, TimeUnit.MILLISECONDS);
-                task = status.getElement();
-                if (task == null) {
-                    // make sure task can receive stop signal
-                    if (stopped) {
-                        return TaskStatus.finished();
-                    }
-                    return TaskStatus.continueOn(status.getListenableFuture());
-                }
-                task.process();
-            }
-            catch (InterruptedException ignore) {
-            }
-        }
     }
 
     public void stop()
@@ -129,12 +103,42 @@ public class BackgroundHdfsUploader
         queue.signalWaiting();
     }
 
-    private class ListenableTask
-            extends io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask
+    private class ResumableUploadTask
+            implements ResumableTask
+    {
+        @Override
+        public TaskStatus process()
+        {
+            DequeueStatus<ListenableTask> status;
+            ListenableTask task;
+            while (true) {
+                if (stopped) {
+                    return TaskStatus.finished();
+                }
+                try {
+                    status = queue.pollListenable(10, TimeUnit.MILLISECONDS);
+                    task = status.getElement();
+                    if (task == null) {
+                        // make sure task can receive stop signal
+                        if (stopped) {
+                            return TaskStatus.finished();
+                        }
+                        return TaskStatus.continueOn(status.getListenableFuture());
+                    }
+                    task.process();
+                }
+                catch (InterruptedException ignore) {
+                }
+            }
+        }
+    }
+
+    private class UploadTask
+            extends ListenableTask
     {
         final Slice slice;
 
-        ListenableTask(Slice slice)
+        UploadTask(Slice slice)
         {
             this.slice = slice;
         }

@@ -27,7 +27,6 @@ import io.trino.plugin.exchange.filesystem.ExchangeStorageReader;
 import io.trino.plugin.exchange.filesystem.ExchangeStorageWriter;
 import io.trino.plugin.exchange.filesystem.FileStatus;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeStorage;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -278,7 +277,6 @@ public class HdfsFileSystemExchangeStorage
                 bufferFill += length;
             }
 
-            Configuration conf = hdfsEnvironment.getHdfsConfiguration();
             ImmutableList.Builder<ListenableFuture<Void>> readFutures = ImmutableList.builder();
             while (true) {
                 long fileSize = currentFile.getFileSize();
