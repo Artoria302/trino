@@ -16,13 +16,15 @@ package io.trino.plugin.exchange.filesystem.hdfs;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.airlift.log.Logger;
-import io.airlift.slice.Slice;
+import io.trino.plugin.exchange.filesystem.hdfs.HdfsFileSystemExchangeStorage.DownloadTaskEnvironment;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue.DequeueStatus;
+import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTasks;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.Path;
 
 import javax.crypto.SecretKey;
 
@@ -32,22 +34,16 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.immediateVoidFuture;
-import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 
-public class BackgroundHdfsUploader
+public class BackgroundHdfsDownloader
         implements ResumableTask
 {
-    private static final Logger log = Logger.get(BackgroundHdfsUploader.class);
+    private static final Logger log = Logger.get(BackgroundHdfsDownloader.class);
 
     private final Configuration conf;
-    private final Optional<SecretKey> secretKey;
-    private final FSDataOutputStream outputStream;
-    private volatile FSDataOutputStream wrappedOutputStream;
     private final int blockSize;
-    private final int cryptoHeaderSize;
     private volatile int curBlockOffset;
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
@@ -55,19 +51,14 @@ public class BackgroundHdfsUploader
     private boolean stopped;
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    public BackgroundHdfsUploader(
+    public BackgroundHdfsDownloader(
             ExchangeHdfsEnvironment hdfsEnvironment,
-            FSDataOutputStream outputStream,
             int blockSize,
-            Optional<SecretKey> secretKey,
             Executor executor)
     {
         requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
         this.conf = hdfsEnvironment.getHdfsConfiguration();
         this.blockSize = blockSize;
-        this.secretKey = requireNonNull(secretKey, "secretKey is null");
-        this.cryptoHeaderSize = CryptoUtils.getCryptoHeaderSize(secretKey);
-        this.outputStream = requireNonNull(outputStream, "outputStream is null");
         this.executor = requireNonNull(executor, "executor is null");
         this.queue = new ListenableLinkedListBlockingQueue<>(executor);
     }
@@ -79,12 +70,12 @@ public class BackgroundHdfsUploader
         }
     }
 
-    public ListenableFuture<Void> submit(Slice slice)
+    public ListenableFuture<Void> submit(DownloadTaskEnvironment taskEnvironment)
     {
         if (stopped) {
             return immediateVoidFuture();
         }
-        ListenableTask task = new ListenableTask(slice);
+        ListenableTask task = new DownloadTask(taskEnvironment);
         SettableFuture<Void> completionFuture = task.getCompletionFuture();
         boolean added = queue.offer(task);
         if (!added) {
@@ -129,44 +120,29 @@ public class BackgroundHdfsUploader
         queue.signalWaiting();
     }
 
-    private class ListenableTask
-            extends io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask
+    private class DownloadTask
+            extends ListenableTask
     {
-        final Slice slice;
+        private final DownloadTaskEnvironment taskEnvironment;
 
-        ListenableTask(Slice slice)
+        DownloadTask(DownloadTaskEnvironment taskEnvironment)
         {
-            this.slice = slice;
+            this.taskEnvironment = taskEnvironment;
         }
 
         @Override
         protected void internalProcess()
                 throws IOException
         {
-            int curBlockOffset = BackgroundHdfsUploader.this.curBlockOffset;
-            FSDataOutputStream wrappedOutputStream = BackgroundHdfsUploader.this.wrappedOutputStream;
-            try {
-                byte[] buffer = slice.getBytes();
-                int offset = 0;
-                int remain = slice.length();
-                int length;
-                while (remain > 0) {
-                    if (curBlockOffset == 0) {
-                        wrappedOutputStream = CryptoUtils.wrapIfNecessary(conf, secretKey, outputStream, false);
-                        curBlockOffset = cryptoHeaderSize;
-                    }
-                    length = min(blockSize - curBlockOffset, remain);
-                    checkState(length > 0, "Try to write non positive length buffer, length: %d", length);
-                    remain -= length;
-                    curBlockOffset = (curBlockOffset + length) % blockSize;
-                    wrappedOutputStream.write(buffer, offset, length);
-                    offset += length;
-                    checkState(remain == 0, "Remain non zero length buffer to write, length: %d", remain);
-                }
-            }
-            finally {
-                BackgroundHdfsUploader.this.curBlockOffset = curBlockOffset;
-                BackgroundHdfsUploader.this.wrappedOutputStream = wrappedOutputStream;
+            ExchangeHdfsEnvironment hdfsEnvironment = taskEnvironment.hdfsEnvironment;
+            long fileOffset = taskEnvironment.fileOffset;
+            Path file = taskEnvironment.file;
+            Optional<SecretKey> secretKey = taskEnvironment.secretKey;
+            byte[] buffer = taskEnvironment.buffer;
+            int offset = taskEnvironment.offset;
+            int length = taskEnvironment.length;
+            try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(file).open(file), fileOffset)) {
+                in.readFully(buffer, offset, length);
             }
         }
     }
