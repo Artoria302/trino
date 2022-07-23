@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.viewfs.ViewFileSystem;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 import static java.lang.String.format;
 
@@ -71,24 +72,15 @@ public final class WriteUtils
     }
 
     public static void createDirectory(ExchangeHdfsEnvironment hdfsEnvironment, Path path)
+            throws IOException
     {
-        try {
-            if (!hdfsEnvironment.getFileSystem(path).mkdirs(path, hdfsEnvironment.getNewDirectoryPermissions().orElse(null))) {
-                throw new IOException("mkdirs returned false");
-            }
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Failed to create directory: " + path, e);
+        if (!hdfsEnvironment.getFileSystem(path).mkdirs(path, hdfsEnvironment.getNewDirectoryPermissions().orElse(null))) {
+            throw new IOException("mkdirs returned false, Failed to create directory: " + path);
         }
 
         if (hdfsEnvironment.getNewDirectoryPermissions().isPresent()) {
             // explicitly set permission since the default umask overrides it on creation
-            try {
-                hdfsEnvironment.getFileSystem(path).setPermission(path, hdfsEnvironment.getNewDirectoryPermissions().get());
-            }
-            catch (IOException e) {
-                throw new RuntimeException("Failed to set permission on directory: " + path, e);
-            }
+            hdfsEnvironment.getFileSystem(path).setPermission(path, hdfsEnvironment.getNewDirectoryPermissions().get());
         }
     }
 
@@ -100,7 +92,7 @@ public final class WriteUtils
             }
         }
         catch (IOException e) {
-            throw new RuntimeException("Failed to create empty file: " + file, e);
+            throw new UncheckedIOException("Failed to create empty file: " + file, e);
         }
     }
 
