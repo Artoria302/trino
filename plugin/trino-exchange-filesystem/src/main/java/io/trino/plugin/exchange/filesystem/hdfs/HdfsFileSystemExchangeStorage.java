@@ -53,7 +53,6 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.MoreFutures.asVoid;
 import static io.airlift.concurrent.MoreFutures.getFutureValue;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
-import static io.trino.plugin.exchange.filesystem.FileSystemExchangeFutures.translateFailures;
 import static java.lang.Math.min;
 import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
@@ -389,7 +388,7 @@ public class HdfsFileSystemExchangeStorage
             }
             ListenableFuture<Void> future = backgroundHdfsUploader.submit(slice);
             uploadFutures.add(future);
-            return translateFailures(future);
+            return future;
         }
 
         @Override
@@ -399,7 +398,7 @@ public class HdfsFileSystemExchangeStorage
                 return immediateVoidFuture();
             }
 
-            ListenableFuture<Void> finishFuture = translateFailures(Futures.transformAsync(
+            ListenableFuture<Void> finishFuture = Futures.transformAsync(
                     Futures.allAsList(uploadFutures),
                     ignore -> Futures.submit(() -> {
                         try {
@@ -408,7 +407,7 @@ public class HdfsFileSystemExchangeStorage
                         catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-                    }, directExecutor()), directExecutor()));
+                    }, directExecutor()), directExecutor());
 
             Futures.addCallback(finishFuture, new FutureCallback<>()
             {
