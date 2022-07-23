@@ -41,6 +41,7 @@ import javax.crypto.SecretKey;
 import javax.inject.Inject;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,7 +111,7 @@ public class HdfsFileSystemExchangeStorage
                         WriteUtils.checkedDelete(hdfsEnvironment, new Path(dir), true);
                     }
                     catch (IOException e) {
-                        throw new RuntimeException(e);
+                        throw new UncheckedIOException(e);
                     }
                 }), executor);
     }
@@ -373,7 +374,7 @@ public class HdfsFileSystemExchangeStorage
                 this.outputStream = hdfsEnvironment.getFileSystem(f).create(f, true);
             }
             catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
             this.backgroundHdfsUploader = new BackgroundHdfsUploader(hdfsEnvironment, outputStream, blockSize, secretKey, executor);
             this.backgroundHdfsUploader.start();
@@ -405,7 +406,7 @@ public class HdfsFileSystemExchangeStorage
                             outputStream.close();
                         }
                         catch (IOException e) {
-                            throw new RuntimeException(e);
+                            throw new UncheckedIOException(e);
                         }
                     }, directExecutor()), directExecutor());
 
