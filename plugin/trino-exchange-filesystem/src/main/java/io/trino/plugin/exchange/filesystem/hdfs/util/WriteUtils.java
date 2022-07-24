@@ -11,8 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.exchange.filesystem.hdfs;
+package io.trino.plugin.exchange.filesystem.hdfs.util;
 
+import io.trino.plugin.exchange.filesystem.hdfs.ExchangeHdfsEnvironment;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FilterFileSystem;

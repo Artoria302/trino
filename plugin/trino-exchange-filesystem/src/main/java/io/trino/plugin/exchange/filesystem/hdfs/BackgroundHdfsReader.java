@@ -16,7 +16,8 @@ package io.trino.plugin.exchange.filesystem.hdfs;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.airlift.log.Logger;
-import io.trino.plugin.exchange.filesystem.hdfs.HdfsFileSystemExchangeStorage.DownloadTaskEnvironment;
+import io.trino.plugin.exchange.filesystem.hdfs.HdfsFileSystemExchangeStorage.ReadTaskEnvironment;
+import io.trino.plugin.exchange.filesystem.hdfs.util.CryptoUtils;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue.DequeueStatus;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask;
@@ -37,27 +38,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.google.common.util.concurrent.Futures.immediateVoidFuture;
 import static java.util.Objects.requireNonNull;
 
-public class BackgroundHdfsDownloader
+public class BackgroundHdfsReader
 {
-    private static final Logger log = Logger.get(BackgroundHdfsDownloader.class);
+    private static final Logger log = Logger.get(BackgroundHdfsReader.class);
 
     private final Configuration conf;
-    private final int blockSize;
-    private volatile int curBlockOffset;
+    private volatile FSDataInputStream in;
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
     private final Executor executor;
     private volatile boolean stopped;
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    public BackgroundHdfsDownloader(
+    public BackgroundHdfsReader(
             ExchangeHdfsEnvironment hdfsEnvironment,
-            int blockSize,
             Executor executor)
     {
         requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
         this.conf = hdfsEnvironment.getHdfsConfiguration();
-        this.blockSize = blockSize;
         this.executor = requireNonNull(executor, "executor is null");
         this.queue = new ListenableLinkedListBlockingQueue<>(executor);
     }
@@ -65,16 +63,16 @@ public class BackgroundHdfsDownloader
     public void start()
     {
         if (started.compareAndSet(false, true)) {
-            ResumableTasks.submit(executor, new ResumableDownloadTask());
+            ResumableTasks.submit(executor, new ResumableReadTask());
         }
     }
 
-    public ListenableFuture<Void> submit(DownloadTaskEnvironment taskEnvironment)
+    public ListenableFuture<Void> submit(ReadTaskEnvironment taskEnvironment)
     {
         if (stopped) {
             return immediateVoidFuture();
         }
-        ListenableTask task = new DownloadTask(taskEnvironment);
+        ListenableTask task = new ReadTask(taskEnvironment);
         SettableFuture<Void> completionFuture = task.getCompletionFuture();
         boolean added = queue.offer(task);
         if (!added) {
@@ -93,7 +91,16 @@ public class BackgroundHdfsDownloader
         queue.signalWaiting();
     }
 
-    private class ResumableDownloadTask
+    public void close()
+            throws IOException
+    {
+        if (in != null) {
+            in.close();
+            in = null;
+        }
+    }
+
+    private class ResumableReadTask
             implements ResumableTask
     {
         @Override
@@ -123,12 +130,12 @@ public class BackgroundHdfsDownloader
         }
     }
 
-    private class DownloadTask
+    private class ReadTask
             extends ListenableTask
     {
-        private final DownloadTaskEnvironment taskEnvironment;
+        private final ReadTaskEnvironment taskEnvironment;
 
-        DownloadTask(DownloadTaskEnvironment taskEnvironment)
+        ReadTask(ReadTaskEnvironment taskEnvironment)
         {
             this.taskEnvironment = taskEnvironment;
         }
@@ -144,9 +151,14 @@ public class BackgroundHdfsDownloader
             byte[] buffer = taskEnvironment.buffer;
             int offset = taskEnvironment.offset;
             int length = taskEnvironment.length;
-            try (FSDataInputStream in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(file).open(file), fileOffset)) {
-                in.readFully(buffer, offset, length);
+            if (fileOffset == CryptoUtils.cryptoPadding(secretKey)) {
+                if (in != null) {
+                    in.close();
+                    in = null;
+                }
+                in = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(file).open(file));
             }
+            in.readFully(buffer, offset, length);
         }
     }
 }

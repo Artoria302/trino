@@ -27,7 +27,8 @@ import io.trino.plugin.exchange.filesystem.ExchangeStorageReader;
 import io.trino.plugin.exchange.filesystem.ExchangeStorageWriter;
 import io.trino.plugin.exchange.filesystem.FileStatus;
 import io.trino.plugin.exchange.filesystem.FileSystemExchangeStorage;
-import org.apache.hadoop.fs.FSDataOutputStream;
+import io.trino.plugin.exchange.filesystem.hdfs.util.CryptoUtils;
+import io.trino.plugin.exchange.filesystem.hdfs.util.WriteUtils;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
@@ -63,7 +64,7 @@ public class HdfsFileSystemExchangeStorage
         implements FileSystemExchangeStorage
 {
     private final ExchangeHdfsEnvironment hdfsEnvironment;
-    private final int blockSize;
+    private final int bufferSize;
     private final Executor executor;
 
     @Inject
@@ -73,7 +74,7 @@ public class HdfsFileSystemExchangeStorage
     {
         requireNonNull(config, "config is null");
         this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
-        this.blockSize = toIntExact(config.getHdfsStorageBlockSize().toBytes());
+        this.bufferSize = toIntExact(config.getHdfsBufferSize().toBytes());
         this.executor = new BoundedExecutor(newCachedThreadPool(daemonThreadsNamed("hdfs-exchange-storage-%s")), config.getMaxBackgroundThreads());
     }
 
@@ -87,13 +88,13 @@ public class HdfsFileSystemExchangeStorage
     @Override
     public ExchangeStorageReader createExchangeStorageReader(Queue<ExchangeSourceFile> sourceFiles, int maxPageStorageSize)
     {
-        return new HdfsExchangeStorageReader(hdfsEnvironment, sourceFiles, blockSize, maxPageStorageSize, executor);
+        return new HdfsExchangeStorageReader(hdfsEnvironment, sourceFiles, bufferSize, maxPageStorageSize, executor);
     }
 
     @Override
     public ExchangeStorageWriter createExchangeStorageWriter(URI file, Optional<SecretKey> secretKey)
     {
-        return new HdfsExchangeStorageWriter(hdfsEnvironment, file, blockSize, secretKey, executor);
+        return new HdfsExchangeStorageWriter(hdfsEnvironment, file, secretKey, executor);
     }
 
     @Override
@@ -137,7 +138,7 @@ public class HdfsFileSystemExchangeStorage
     @Override
     public int getWriteBufferSize()
     {
-        return blockSize;
+        return bufferSize;
     }
 
     @PreDestroy
@@ -151,10 +152,11 @@ public class HdfsFileSystemExchangeStorage
     private static class HdfsExchangeStorageReader
             implements ExchangeStorageReader
     {
+        private static final Logger log = Logger.get(HdfsExchangeStorageReader.class);
         private static final int INSTANCE_SIZE = ClassLayout.parseClass(HdfsFileSystemExchangeStorage.HdfsExchangeStorageReader.class).instanceSize();
+
         private final ExchangeHdfsEnvironment hdfsEnvironment;
         private final Queue<ExchangeSourceFile> sourceFiles;
-        private final int blockSize;
         private final int bufferSize;
 
         @GuardedBy("this")
@@ -168,23 +170,22 @@ public class HdfsFileSystemExchangeStorage
         private volatile boolean closed;
         private volatile long bufferRetainedSize;
         private volatile ListenableFuture<Void> inProgressReadFuture = immediateVoidFuture();
-        private final BackgroundHdfsDownloader backgroundHdfsDownloader;
+        private final BackgroundHdfsReader backgroundHdfsReader;
 
         public HdfsExchangeStorageReader(
                 ExchangeHdfsEnvironment hdfsEnvironment,
                 Queue<ExchangeSourceFile> sourceFiles,
-                int blockSize,
+                int bufferSize,
                 int maxPageStorageSize,
                 Executor executor)
         {
             this.hdfsEnvironment = hdfsEnvironment;
             this.sourceFiles = requireNonNull(sourceFiles, "sourceFiles is null");
-            this.blockSize = blockSize;
             // Make sure buffer can accommodate at least one complete Slice, and keep reads aligned to part boundaries
-            this.bufferSize = maxPageStorageSize + blockSize;
-            this.backgroundHdfsDownloader = new BackgroundHdfsDownloader(hdfsEnvironment, blockSize, executor);
+            this.bufferSize = maxPageStorageSize + bufferSize;
+            this.backgroundHdfsReader = new BackgroundHdfsReader(hdfsEnvironment, executor);
 
-            this.backgroundHdfsDownloader.start();
+            this.backgroundHdfsReader.start();
             fillBuffer();
         }
 
@@ -254,7 +255,13 @@ public class HdfsFileSystemExchangeStorage
             bufferRetainedSize = 0;
             inProgressReadFuture.cancel(true);
             inProgressReadFuture = immediateVoidFuture(); // such that we don't retain reference to the buffer
-            backgroundHdfsDownloader.stop();
+            backgroundHdfsReader.stop();
+            try {
+                backgroundHdfsReader.close();
+            }
+            catch (IOException e) {
+                log.warn(e, "Failed to close backgroundHdfsReader");
+            }
         }
 
         @GuardedBy("this")
@@ -266,7 +273,7 @@ public class HdfsFileSystemExchangeStorage
                     close();
                     return;
                 }
-                fileOffset = 0;
+                fileOffset = CryptoUtils.cryptoPadding(currentFile.getSecretKey());
             }
 
             byte[] buffer = new byte[bufferSize];
@@ -278,39 +285,25 @@ public class HdfsFileSystemExchangeStorage
             }
 
             ImmutableList.Builder<ListenableFuture<Void>> readFutures = ImmutableList.builder();
-            while (true) {
+            while (buffer.length - bufferFill > 0) {
                 long fileSize = currentFile.getFileSize();
-                // Make sure hdfs read request byte ranges align with block sizes for best performance
-                int readableBlocks = (buffer.length - bufferFill) / blockSize;
-                if (readableBlocks == 0) {
-                    if (buffer.length - bufferFill >= fileSize - fileOffset) {
-                        readableBlocks = 1;
-                    }
-                    else {
-                        break;
-                    }
-                }
-
-                Path f = new Path(currentFile.getFileUri());
+                Path file = new Path(currentFile.getFileUri());
                 Optional<SecretKey> secretKey = currentFile.getSecretKey();
-                int cryptoHeaderSize = CryptoUtils.getCryptoHeaderSize(secretKey);
-                // Blocks start with iv data if crypto is enabled
-                for (int i = 0; i < readableBlocks && fileOffset < fileSize; ++i) {
-                    int length = (int) min(blockSize, fileSize - fileOffset);
-                    int dataLength = length - cryptoHeaderSize;
-                    DownloadTaskEnvironment taskEnvironment = new DownloadTaskEnvironment(hdfsEnvironment, secretKey, f, fileOffset, buffer, bufferFill, dataLength);
-                    ListenableFuture<Void> future = backgroundHdfsDownloader.submit(taskEnvironment);
-                    readFutures.add(future);
-                    bufferFill += dataLength;
-                    fileOffset += length;
-                }
+                int length = (int) min(buffer.length - bufferFill, fileSize - fileOffset);
+
+                ReadTaskEnvironment taskEnvironment = new ReadTaskEnvironment(hdfsEnvironment, secretKey, file, fileOffset, buffer, bufferFill, length);
+                ListenableFuture<Void> future = backgroundHdfsReader.submit(taskEnvironment);
+
+                readFutures.add(future);
+                bufferFill += length;
+                fileOffset += length;
 
                 if (fileOffset == fileSize) {
                     currentFile = sourceFiles.poll();
                     if (currentFile == null) {
                         break;
                     }
-                    fileOffset = 0;
+                    fileOffset = CryptoUtils.cryptoPadding(currentFile.getSecretKey());
                 }
             }
 
@@ -320,18 +313,17 @@ public class HdfsFileSystemExchangeStorage
         }
     }
 
-    static class DownloadTaskEnvironment
+    static class ReadTaskEnvironment
     {
         final ExchangeHdfsEnvironment hdfsEnvironment;
         final Optional<SecretKey> secretKey;
         final Path file;
         final long fileOffset;
-
         final byte[] buffer;
         final int offset;
         final int length;
 
-        public DownloadTaskEnvironment(
+        public ReadTaskEnvironment(
                 ExchangeHdfsEnvironment hdfsEnvironment,
                 Optional<SecretKey> secretKey,
                 Path file,
@@ -357,27 +349,19 @@ public class HdfsFileSystemExchangeStorage
         private static final Logger log = Logger.get(HdfsExchangeStorageWriter.class);
         private static final int INSTANCE_SIZE = ClassLayout.parseClass(HdfsFileSystemExchangeStorage.HdfsExchangeStorageWriter.class).instanceSize();
 
-        private final FSDataOutputStream outputStream;
-        private final BackgroundHdfsUploader backgroundHdfsUploader;
+        private final BackgroundHdfsWriter backgroundHdfsWriter;
         private final List<ListenableFuture<Void>> uploadFutures = new ArrayList<>();
         private volatile boolean closed;
 
         public HdfsExchangeStorageWriter(
                 ExchangeHdfsEnvironment hdfsEnvironment,
                 URI file,
-                int blockSize,
                 Optional<SecretKey> secretKey,
                 Executor executor)
         {
             Path f = new Path(requireNonNull(file, "file is null"));
-            try {
-                this.outputStream = hdfsEnvironment.getFileSystem(f).create(f, true);
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            this.backgroundHdfsUploader = new BackgroundHdfsUploader(hdfsEnvironment, outputStream, blockSize, secretKey, executor);
-            this.backgroundHdfsUploader.start();
+            this.backgroundHdfsWriter = new BackgroundHdfsWriter(hdfsEnvironment, f, secretKey, executor);
+            this.backgroundHdfsWriter.start();
         }
 
         @Override
@@ -387,7 +371,7 @@ public class HdfsFileSystemExchangeStorage
                 // Ignore writes after writer is closed
                 return immediateVoidFuture();
             }
-            ListenableFuture<Void> future = backgroundHdfsUploader.submit(slice);
+            ListenableFuture<Void> future = backgroundHdfsWriter.submit(slice);
             uploadFutures.add(future);
             return future;
         }
@@ -403,7 +387,7 @@ public class HdfsFileSystemExchangeStorage
                     Futures.allAsList(uploadFutures),
                     ignore -> Futures.submit(() -> {
                         try {
-                            outputStream.close();
+                            backgroundHdfsWriter.close();
                         }
                         catch (IOException e) {
                             throw new UncheckedIOException(e);
@@ -416,7 +400,7 @@ public class HdfsFileSystemExchangeStorage
                 public void onSuccess(Void result)
                 {
                     closed = true;
-                    backgroundHdfsUploader.stop();
+                    backgroundHdfsWriter.stop();
                 }
 
                 @Override
@@ -436,14 +420,14 @@ public class HdfsFileSystemExchangeStorage
                 return immediateVoidFuture();
             }
             closed = true;
-            backgroundHdfsUploader.stop();
+            backgroundHdfsWriter.stop();
             uploadFutures.forEach(future -> future.cancel(true));
 
             try {
-                outputStream.close();
+                backgroundHdfsWriter.close();
             }
             catch (IOException e) {
-                log.warn(e, "Failed to close outputStream %s", outputStream);
+                log.warn(e, "Failed to close backgroundHdfsWriter");
             }
 
             return immediateVoidFuture();
