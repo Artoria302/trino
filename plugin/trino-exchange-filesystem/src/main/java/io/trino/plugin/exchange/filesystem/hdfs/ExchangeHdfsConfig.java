@@ -49,7 +49,7 @@ public class ExchangeHdfsConfig
     private boolean newFileInheritOwnership;
     private boolean verifyChecksum = true;
 
-    private DataSize hdfsStorageBlockSize = DataSize.of(4, MEGABYTE);
+    private DataSize hdfsBufferSize = DataSize.of(4, MEGABYTE);
     private int maxBackgroundThreads = 1_000;
 
     public enum HdfsAuthenticationType
@@ -75,16 +75,16 @@ public class ExchangeHdfsConfig
     @NotNull
     @MinDataSize("4MB")
     @MaxDataSize("256MB")
-    public DataSize getHdfsStorageBlockSize()
+    public DataSize getHdfsBufferSize()
     {
-        return hdfsStorageBlockSize;
+        return hdfsBufferSize;
     }
 
-    @Config("exchange.hdfs.block-size")
+    @Config("exchange.hdfs.buffer-size")
     @ConfigDescription("Block size for Hdfs High-Throughput Block Size")
-    public ExchangeHdfsConfig setHdfsStorageBlockSize(DataSize hdfsStorageBlockSize)
+    public ExchangeHdfsConfig setHdfsBufferSize(DataSize hdfsBufferSize)
     {
-        this.hdfsStorageBlockSize = hdfsStorageBlockSize;
+        this.hdfsBufferSize = hdfsBufferSize;
         return this;
     }
 

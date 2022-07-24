@@ -70,10 +70,10 @@ public class TestHdfsFileSystemExchangeManager
         String dir2 = "hdfs://" + endpoint + "/user/root/trino-hdfs-file-system-exchange-manager-2";
         Map<String, String> config = ImmutableMap.<String, String>builder()
                 .put("exchange.base-directories", dir1 + "," + dir2)
-                .put("exchange.encryption-enabled", "false")
+                .put("exchange.encryption-enabled", "true")
                 // to trigger file split in some tests
                 .put("exchange.sink-max-file-size", "16MB")
-                .put("exchange.hdfs.block-size", "16MB")
+                .put("exchange.hdfs.buffer-size", "16MB")
                 .buildOrThrow();
         return new FileSystemExchangeManagerFactory().create(config);
     }

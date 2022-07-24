@@ -17,6 +17,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
+import io.trino.plugin.exchange.filesystem.hdfs.util.CryptoUtils;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockingQueue.DequeueStatus;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask;
@@ -24,50 +25,48 @@ import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTasks;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.Path;
 
 import javax.crypto.SecretKey;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.immediateVoidFuture;
-import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 
-public class BackgroundHdfsUploader
+public class BackgroundHdfsWriter
 {
-    private static final Logger log = Logger.get(BackgroundHdfsUploader.class);
+    private static final Logger log = Logger.get(BackgroundHdfsWriter.class);
 
     private final Configuration conf;
-    private final Optional<SecretKey> secretKey;
-    private final FSDataOutputStream outputStream;
-    private volatile FSDataOutputStream wrappedOutputStream;
-    private final int blockSize;
-    private final int cryptoHeaderSize;
-    private volatile int curBlockOffset;
+    private final FSDataOutputStream out;
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
     private final Executor executor;
     private boolean stopped;
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    public BackgroundHdfsUploader(
+    public BackgroundHdfsWriter(
             ExchangeHdfsEnvironment hdfsEnvironment,
-            FSDataOutputStream outputStream,
-            int blockSize,
+            Path file,
             Optional<SecretKey> secretKey,
             Executor executor)
     {
         requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
         this.conf = hdfsEnvironment.getHdfsConfiguration();
-        this.blockSize = blockSize;
-        this.secretKey = requireNonNull(secretKey, "secretKey is null");
-        this.cryptoHeaderSize = CryptoUtils.getCryptoHeaderSize(secretKey);
-        this.outputStream = requireNonNull(outputStream, "outputStream is null");
+        requireNonNull(secretKey, "secretKey is null");
+        requireNonNull(file, "file is null");
+        try {
+            this.out = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(file).create(file), true);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         this.executor = requireNonNull(executor, "executor is null");
         this.queue = new ListenableLinkedListBlockingQueue<>(executor);
     }
@@ -75,7 +74,7 @@ public class BackgroundHdfsUploader
     public void start()
     {
         if (started.compareAndSet(false, true)) {
-            ResumableTasks.submit(executor, new ResumableUploadTask());
+            ResumableTasks.submit(executor, new ResumableWriteTask());
         }
     }
 
@@ -84,7 +83,7 @@ public class BackgroundHdfsUploader
         if (stopped) {
             return immediateVoidFuture();
         }
-        ListenableTask task = new UploadTask(slice);
+        ListenableTask task = new WriteTask(slice);
         SettableFuture<Void> completionFuture = task.getCompletionFuture();
         boolean added = queue.offer(task);
         if (!added) {
@@ -103,7 +102,13 @@ public class BackgroundHdfsUploader
         queue.signalWaiting();
     }
 
-    private class ResumableUploadTask
+    public void close()
+            throws IOException
+    {
+        out.close();
+    }
+
+    private class ResumableWriteTask
             implements ResumableTask
     {
         @Override
@@ -133,12 +138,12 @@ public class BackgroundHdfsUploader
         }
     }
 
-    private class UploadTask
+    private class WriteTask
             extends ListenableTask
     {
         final Slice slice;
 
-        UploadTask(Slice slice)
+        WriteTask(Slice slice)
         {
             this.slice = slice;
         }
@@ -147,31 +152,7 @@ public class BackgroundHdfsUploader
         protected void internalProcess()
                 throws IOException
         {
-            int curBlockOffset = BackgroundHdfsUploader.this.curBlockOffset;
-            FSDataOutputStream wrappedOutputStream = BackgroundHdfsUploader.this.wrappedOutputStream;
-            try {
-                byte[] buffer = slice.getBytes();
-                int offset = 0;
-                int remain = slice.length();
-                int length;
-                while (remain > 0) {
-                    if (curBlockOffset == 0) {
-                        wrappedOutputStream = CryptoUtils.wrapIfNecessary(conf, secretKey, outputStream, false);
-                        curBlockOffset = cryptoHeaderSize;
-                    }
-                    length = min(blockSize - curBlockOffset, remain);
-                    checkState(length > 0, "Try to write non positive length buffer, length: %d", length);
-                    remain -= length;
-                    curBlockOffset = (curBlockOffset + length) % blockSize;
-                    wrappedOutputStream.write(buffer, offset, length);
-                    offset += length;
-                    checkState(remain == 0, "Remain non zero length buffer to write, length: %d", remain);
-                }
-            }
-            finally {
-                BackgroundHdfsUploader.this.curBlockOffset = curBlockOffset;
-                BackgroundHdfsUploader.this.wrappedOutputStream = wrappedOutputStream;
-            }
+            out.write(slice.getBytes());
         }
     }
 }

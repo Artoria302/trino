@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.exchange.filesystem.hdfs;
+package io.trino.plugin.exchange.filesystem.hdfs.util;
 
 import io.airlift.log.Logger;
 import org.apache.hadoop.conf.Configuration;
@@ -39,14 +39,6 @@ public class CryptoUtils
     {
     }
 
-    public static int getCryptoHeaderSize(Optional<SecretKey> secretKey)
-    {
-        if (secretKey.isEmpty()) {
-            return 0;
-        }
-        return 8 + CipherSuite.AES_CTR_NOPADDING.getAlgorithmBlockSize();
-    }
-
     public static byte[] createIV(Configuration conf)
             throws IOException
     {
@@ -57,16 +49,16 @@ public class CryptoUtils
         }
     }
 
-    public static int cryptoPadding(Configuration conf, Optional<SecretKey> secretKey)
-            throws IOException
+    public static int cryptoPadding(Optional<SecretKey> secretKey)
     {
         // Sizeof(IV) + long(start-offset)
         if (secretKey.isEmpty()) {
             return 0;
         }
-        try (CryptoCodec cryptoCodec = CryptoCodec.getInstance(conf, CipherSuite.AES_CTR_NOPADDING)) {
-            return cryptoCodec.getCipherSuite().getAlgorithmBlockSize() + 8;
-        }
+        // try (CryptoCodec cryptoCodec = CryptoCodec.getInstance(conf, CipherSuite.AES_CTR_NOPADDING)) {
+        //     return cryptoCodec.getCipherSuite().getAlgorithmBlockSize() + 8;
+        // }
+        return CipherSuite.AES_CTR_NOPADDING.getAlgorithmBlockSize() + 8;
     }
 
     public static FSDataOutputStream wrapIfNecessary(
@@ -92,13 +84,9 @@ public class CryptoUtils
     public static FSDataInputStream wrapIfNecessary(
             Configuration conf,
             Optional<SecretKey> secretKey,
-            FSDataInputStream in,
-            long position)
+            FSDataInputStream in)
             throws IOException
     {
-        if (position != 0) {
-            in.seek(position);
-        }
         if (secretKey.isEmpty()) {
             return in;
         }

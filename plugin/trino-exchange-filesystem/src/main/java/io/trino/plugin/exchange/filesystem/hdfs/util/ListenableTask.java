@@ -27,6 +27,9 @@ public abstract class ListenableTask
     public final void process()
     {
         try {
+            if (completionFuture.isCancelled()) {
+                return;
+            }
             internalProcess();
             completionFuture.set(null);
         }
