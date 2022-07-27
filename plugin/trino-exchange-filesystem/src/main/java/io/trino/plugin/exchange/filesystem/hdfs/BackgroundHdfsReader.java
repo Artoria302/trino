@@ -43,7 +43,7 @@ public class BackgroundHdfsReader
     private static final Logger log = Logger.get(BackgroundHdfsReader.class);
 
     private final Configuration conf;
-    private volatile FSDataInputStream in;
+    private FSDataInputStream in;
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
     private final Executor executor;

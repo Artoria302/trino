@@ -48,7 +48,7 @@ public class BackgroundHdfsWriter
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
     private final Executor executor;
-    private boolean stopped;
+    private volatile boolean stopped;
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     public BackgroundHdfsWriter(
