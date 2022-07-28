@@ -23,14 +23,12 @@ import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableLinkedListBlockin
 import io.trino.plugin.exchange.filesystem.hdfs.util.ListenableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTask;
 import io.trino.plugin.exchange.filesystem.hdfs.util.ResumableTasks;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 
 import javax.crypto.SecretKey;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -43,8 +41,10 @@ public class BackgroundHdfsWriter
 {
     private static final Logger log = Logger.get(BackgroundHdfsWriter.class);
 
-    private final Configuration conf;
-    private final FSDataOutputStream out;
+    private final ExchangeHdfsEnvironment hdfsEnvironment;
+    private final Optional<SecretKey> secretKey;
+    private final Path file;
+    private FSDataOutputStream out;
 
     private final ListenableLinkedListBlockingQueue<ListenableTask> queue;
     private final Executor executor;
@@ -58,15 +58,11 @@ public class BackgroundHdfsWriter
             Executor executor)
     {
         requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
-        this.conf = hdfsEnvironment.getHdfsConfiguration();
+        this.hdfsEnvironment = hdfsEnvironment;
         requireNonNull(secretKey, "secretKey is null");
+        this.secretKey = secretKey;
         requireNonNull(file, "file is null");
-        try {
-            this.out = CryptoUtils.wrapIfNecessary(conf, secretKey, hdfsEnvironment.getFileSystem(file).create(file), true);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        this.file = file;
         this.executor = requireNonNull(executor, "executor is null");
         this.queue = new ListenableLinkedListBlockingQueue<>(executor);
     }
@@ -105,7 +101,10 @@ public class BackgroundHdfsWriter
     public void close()
             throws IOException
     {
-        out.close();
+        if (out != null) {
+            out.close();
+            out = null;
+        }
     }
 
     private class ResumableWriteTask
@@ -152,6 +151,9 @@ public class BackgroundHdfsWriter
         protected void internalProcess()
                 throws IOException
         {
+            if (out == null) {
+                out = CryptoUtils.wrapIfNecessary(hdfsEnvironment.getHdfsConfiguration(), secretKey, hdfsEnvironment.getFileSystem(file).create(file), true);
+            }
             out.write(slice.getBytes());
         }
     }
