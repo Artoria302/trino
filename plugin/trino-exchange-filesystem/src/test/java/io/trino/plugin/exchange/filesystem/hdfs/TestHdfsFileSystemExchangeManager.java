@@ -93,7 +93,7 @@ public class TestHdfsFileSystemExchangeManager
     private Path createHadoopCoreSiteXmlTempFile()
             throws Exception
     {
-        String coreSiteXmlContent = Resources.toString(Resources.getResource("containers/hive_hadoop/hdp3.1-core-site.xml.template"), UTF_8);
+        String coreSiteXmlContent = Resources.toString(Resources.getResource("hadoop_container/hdp3.1-core-site.xml.template"), UTF_8);
 
         FileAttribute<Set<PosixFilePermission>> posixFilePermissions = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--"));
         Path coreSiteXml = Files.createTempFile("core-site", ".xml", posixFilePermissions);
