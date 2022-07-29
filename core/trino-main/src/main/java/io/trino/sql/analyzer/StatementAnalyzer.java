@@ -1396,8 +1396,10 @@ class StatementAnalyzer
 
                 if (queryBodyScope.getOuterQueryParent().isPresent() && node.getLimit().isEmpty() && node.getOffset().isEmpty()) {
                     // not the root scope and ORDER BY is ineffective
-                    analysis.markRedundantOrderBy(node.getOrderBy().get());
-                    warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "ORDER BY in subquery may have no effect"));
+                    if (!orderByBeforeWriteTable(node.getOrderBy().get(), queryBodyScope)) {
+                        analysis.markRedundantOrderBy(node.getOrderBy().get());
+                        warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "ORDER BY in subquery may have no effect"));
+                    }
                 }
             }
             analysis.setOrderByExpressions(node, orderByExpressions);
@@ -2454,8 +2456,10 @@ class StatementAnalyzer
 
                 if (sourceScope.getOuterQueryParent().isPresent() && node.getLimit().isEmpty() && node.getOffset().isEmpty()) {
                     // not the root scope and ORDER BY is ineffective
-                    analysis.markRedundantOrderBy(orderBy);
-                    warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "ORDER BY in subquery may have no effect"));
+                    if (!orderByBeforeWriteTable(orderBy, sourceScope)) {
+                        analysis.markRedundantOrderBy(orderBy);
+                        warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "ORDER BY in subquery may have no effect"));
+                    }
                 }
             }
             analysis.setOrderByExpressions(node, orderByExpressions);
@@ -4688,6 +4692,23 @@ class StatementAnalyzer
             }
         }
 
+        return false;
+    }
+
+    private boolean orderByBeforeWriteTable(OrderBy orderBy, Scope queryBodyScope)
+    {
+        if (queryBodyScope.getOuterQueryParent().isEmpty()) {
+            return false;
+        }
+        Scope parentScope = queryBodyScope.getOuterQueryParent().get();
+        if (parentScope.getRelationId().getSourceNode().isEmpty()) {
+            return false;
+        }
+        Node parentNode = parentScope.getRelationId().getSourceNode().get();
+        if (parentNode instanceof Insert || parentNode instanceof CreateTableAsSelect) {
+            analysis.markWriteTableOrderBy(orderBy);
+            return true;
+        }
         return false;
     }
 }

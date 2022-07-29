@@ -167,6 +167,7 @@ public class Analysis
     private final Map<NodeRef<QuerySpecification>, Expression> having = new LinkedHashMap<>();
     private final Map<NodeRef<Node>, List<Expression>> orderByExpressions = new LinkedHashMap<>();
     private final Set<NodeRef<OrderBy>> redundantOrderBy = new HashSet<>();
+    private final Set<NodeRef<OrderBy>> writeTableOrderBy = new HashSet<>();
     private final Map<NodeRef<Node>, List<SelectExpression>> selectExpressions = new LinkedHashMap<>();
 
     // Store resolved window specifications defined in WINDOW clause
@@ -1030,6 +1031,16 @@ public class Analysis
     public boolean isOrderByRedundant(OrderBy orderBy)
     {
         return redundantOrderBy.contains(NodeRef.of(orderBy));
+    }
+
+    public void markWriteTableOrderBy(OrderBy orderBy)
+    {
+        writeTableOrderBy.add(NodeRef.of(orderBy));
+    }
+
+    public boolean isWriteTableOrderBy(OrderBy orderBy)
+    {
+        return writeTableOrderBy.contains(NodeRef.of(orderBy));
     }
 
     public boolean hasRowFilter(QualifiedObjectName table, String identity)
