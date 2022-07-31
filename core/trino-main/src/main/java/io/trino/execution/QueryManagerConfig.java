@@ -94,6 +94,7 @@ public class QueryManagerConfig
     private DataSize faultTolerantExecutionTaskDescriptorStorageMaxMemory = DataSize.ofBytes(Math.round(AVAILABLE_HEAP_MEMORY * 0.15));
     private int faultTolerantExecutionPartitionCount = 50;
     private boolean faultTolerantPreserveInputPartitionsInWriteStage = true;
+    private boolean enableWriteTableOrderBy;
 
     @Min(1)
     public int getScheduleSplitBatchSize()
@@ -612,6 +613,19 @@ public class QueryManagerConfig
     public QueryManagerConfig setFaultTolerantPreserveInputPartitionsInWriteStage(boolean faultTolerantPreserveInputPartitionsInWriteStage)
     {
         this.faultTolerantPreserveInputPartitionsInWriteStage = faultTolerantPreserveInputPartitionsInWriteStage;
+        return this;
+    }
+
+    public boolean getEnableWriteTableOrderBy()
+    {
+        return enableWriteTableOrderBy;
+    }
+
+    @Config("enable-write-table-order-by")
+    @ConfigDescription("Don't ignore order by before write table and 'retry-policy' should be 'TASK' first")
+    public QueryManagerConfig setEnableWriteTableOrderBy(boolean enableWriteTableOrderBy)
+    {
+        this.enableWriteTableOrderBy = enableWriteTableOrderBy;
         return this;
     }
 }

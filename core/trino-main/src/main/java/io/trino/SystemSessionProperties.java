@@ -170,6 +170,7 @@ public final class SystemSessionProperties
     public static final String JOIN_PARTITIONED_BUILD_MIN_ROW_COUNT = "join_partitioned_build_min_row_count";
     public static final String USE_EXACT_PARTITIONING = "use_exact_partitioning";
     public static final String FORCE_SPILLING_JOIN = "force_spilling_join";
+    public static final String ENABLE_WRITE_TABLE_ORDER_BY = "enable_write_table_order_by";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -835,6 +836,11 @@ public final class SystemSessionProperties
                         FORCE_SPILLING_JOIN,
                         "Force the usage of spliing join operator in favor of the non-spilling one, even if spill is not enabled",
                         featuresConfig.isForceSpillingJoin(),
+                        false),
+                booleanProperty(
+                        ENABLE_WRITE_TABLE_ORDER_BY,
+                        "Don't ignore order by before write table and 'retry_policy' should be 'TASK' first",
+                        queryManagerConfig.getEnableWriteTableOrderBy(),
                         false));
     }
 
@@ -1496,5 +1502,10 @@ public final class SystemSessionProperties
     public static boolean isForceSpillingOperator(Session session)
     {
         return session.getSystemProperty(FORCE_SPILLING_JOIN, Boolean.class);
+    }
+
+    public static boolean isEnableWriteTableOrderBy(Session session)
+    {
+        return session.getSystemProperty(ENABLE_WRITE_TABLE_ORDER_BY, Boolean.class);
     }
 }

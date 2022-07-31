@@ -52,6 +52,7 @@ import io.trino.metadata.TableSchema;
 import io.trino.metadata.TableVersion;
 import io.trino.metadata.ViewColumn;
 import io.trino.metadata.ViewDefinition;
+import io.trino.operator.RetryPolicy;
 import io.trino.security.AccessControl;
 import io.trino.security.AllowAllAccessControl;
 import io.trino.security.SecurityContext;
@@ -179,6 +180,7 @@ import io.trino.sql.tree.Prepare;
 import io.trino.sql.tree.Property;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Query;
+import io.trino.sql.tree.QueryBody;
 import io.trino.sql.tree.QueryPeriod;
 import io.trino.sql.tree.QuerySpecification;
 import io.trino.sql.tree.RefreshMaterializedView;
@@ -263,6 +265,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.SystemSessionProperties.getMaxGroupingSets;
+import static io.trino.SystemSessionProperties.getRetryPolicy;
+import static io.trino.SystemSessionProperties.isEnableWriteTableOrderBy;
 import static io.trino.metadata.FunctionResolver.toPath;
 import static io.trino.metadata.MetadataUtil.createQualifiedObjectName;
 import static io.trino.metadata.MetadataUtil.getRequiredCatalogHandle;
@@ -490,6 +494,8 @@ class StatementAnalyzer
         protected Scope visitInsert(Insert insert, Optional<Scope> scope)
         {
             QualifiedObjectName targetTable = createQualifiedObjectName(session, insert, insert.getTarget());
+
+            markWriteTableOrderBy(insert.getQuery());
 
             if (metadata.isMaterializedView(session, targetTable)) {
                 throw semanticException(NOT_SUPPORTED, insert, "Inserting into materialized views is not supported");
@@ -831,6 +837,8 @@ class StatementAnalyzer
         {
             // turn this into a query that has a new table writer node on top.
             QualifiedObjectName targetTable = createQualifiedObjectName(session, node, node.getName());
+
+            markWriteTableOrderBy(node.getQuery());
 
             Optional<TableHandle> targetTableHandle = metadata.getTableHandle(session, targetTable);
             if (targetTableHandle.isPresent()) {
@@ -1396,7 +1404,7 @@ class StatementAnalyzer
 
                 if (queryBodyScope.getOuterQueryParent().isPresent() && node.getLimit().isEmpty() && node.getOffset().isEmpty()) {
                     // not the root scope and ORDER BY is ineffective
-                    if (!orderByBeforeWriteTable(node.getOrderBy().get(), queryBodyScope)) {
+                    if (!analysis.isWriteTableOrderBy(node.getOrderBy().get())) {
                         analysis.markRedundantOrderBy(node.getOrderBy().get());
                         warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "ORDER BY in subquery may have no effect"));
                     }
@@ -2456,7 +2464,7 @@ class StatementAnalyzer
 
                 if (sourceScope.getOuterQueryParent().isPresent() && node.getLimit().isEmpty() && node.getOffset().isEmpty()) {
                     // not the root scope and ORDER BY is ineffective
-                    if (!orderByBeforeWriteTable(orderBy, sourceScope)) {
+                    if (!analysis.isWriteTableOrderBy(node.getOrderBy().get())) {
                         analysis.markRedundantOrderBy(orderBy);
                         warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "ORDER BY in subquery may have no effect"));
                     }
@@ -4695,20 +4703,33 @@ class StatementAnalyzer
         return false;
     }
 
-    private boolean orderByBeforeWriteTable(OrderBy orderBy, Scope queryBodyScope)
+    private void markWriteTableOrderBy(Query query)
     {
-        if (queryBodyScope.getOuterQueryParent().isEmpty()) {
-            return false;
+        if (getRetryPolicy(session) != RetryPolicy.TASK || !isEnableWriteTableOrderBy(session)) {
+            return;
         }
-        Scope parentScope = queryBodyScope.getOuterQueryParent().get();
-        if (parentScope.getRelationId().getSourceNode().isEmpty()) {
-            return false;
+
+        Optional<OrderBy> orderBy = query.getOrderBy();
+        Optional<Node> limit = query.getLimit();
+        Optional<Offset> offset = query.getOffset();
+
+        if (orderBy.isPresent()) {
+            if (limit.isEmpty() && offset.isEmpty()) {
+                analysis.markWriteTableOrderBy(orderBy.get());
+            }
+            return;
         }
-        Node parentNode = parentScope.getRelationId().getSourceNode().get();
-        if (parentNode instanceof Insert || parentNode instanceof CreateTableAsSelect) {
-            analysis.markWriteTableOrderBy(orderBy);
-            return true;
+
+        QueryBody queryBody = query.getQueryBody();
+        if (queryBody instanceof QuerySpecification) {
+            QuerySpecification querySpecification = (QuerySpecification) queryBody;
+            orderBy = querySpecification.getOrderBy();
+            limit = querySpecification.getLimit();
+            offset = querySpecification.getOffset();
+
+            if (orderBy.isPresent() && limit.isEmpty() && offset.isEmpty()) {
+                analysis.markWriteTableOrderBy(orderBy.get());
+            }
         }
-        return false;
     }
 }

@@ -5904,6 +5904,13 @@ public class TestAnalyzer
                 .hasMessage("line 1:8: 'JSON_ARRAY(b ABSENT ON NULL)' must be an aggregate expression or appear in GROUP BY clause");
     }
 
+    @Test
+    public void testOrderByBeforeWriteTable()
+    {
+        analyze("CREATE TABLE test AS SELECT a, b FROM t1 ORDER BY b");
+        analyze("INSERT INTO t1(a, b) SELECT a, b FROM t1 ORDER BY b");
+    }
+
     @BeforeClass
     public void setup()
     {
