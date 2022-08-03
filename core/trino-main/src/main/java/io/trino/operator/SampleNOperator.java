@@ -28,7 +28,6 @@ import static java.util.Objects.requireNonNull;
 
 public class SampleNOperator
         implements WorkProcessorOperator
-
 {
     public static OperatorFactory createOperatorFactory(
             int operatorId,
