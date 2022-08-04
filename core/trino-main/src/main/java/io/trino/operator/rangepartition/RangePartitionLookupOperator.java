@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
 import io.trino.operator.PageBuffer;
 import io.trino.operator.WorkProcessor;
@@ -20,19 +20,19 @@ import io.trino.spi.Page;
 
 import static io.trino.operator.WorkProcessor.flatten;
 
-public class RangeIndexLookupOperator
+public class RangePartitionLookupOperator
         implements AdapterWorkProcessorOperator
 {
     private final boolean waitForBuild;
     private final PageBuffer pageBuffer;
-    private final RangeIndexLookupProcessor lookupProcessor;
+    private final RangePartitionLookupProcessor lookupProcessor;
     private final WorkProcessor<Page> pages;
 
-    RangeIndexLookupOperator(boolean waitForBuild)
+    RangePartitionLookupOperator(boolean waitForBuild)
     {
         this.waitForBuild = waitForBuild;
         pageBuffer = new PageBuffer();
-        lookupProcessor = new RangeIndexLookupProcessor();
+        lookupProcessor = new RangePartitionLookupProcessor();
         pages = flatten(WorkProcessor.create(lookupProcessor));
     }
 

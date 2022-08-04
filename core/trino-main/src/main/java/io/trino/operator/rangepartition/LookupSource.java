@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
 import io.trino.spi.Page;
 
@@ -22,7 +22,7 @@ public interface LookupSource
 {
     long getInMemorySizeInBytes();
 
-    int getRangeIndex(Page probePage, int position);
+    int getRangePartition(Page page, int position);
 
     @Override
     void close();

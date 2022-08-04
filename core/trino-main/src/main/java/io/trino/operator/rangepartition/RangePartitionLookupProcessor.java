@@ -11,13 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import io.trino.operator.WorkProcessor;
+import io.trino.spi.Page;
 
-public interface LookupBridge
+public class RangePartitionLookupProcessor
+        implements WorkProcessor.Process<WorkProcessor<Page>>
 {
-    void destroy();
+    RangePartitionLookupProcessor()
+    {
+    }
 
-    ListenableFuture<Void> whenBuildFinishes();
+    @Override
+    public WorkProcessor.ProcessState<WorkProcessor<Page>> process()
+    {
+        return null;
+    }
 }

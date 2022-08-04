@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.operator.PagesIndex;

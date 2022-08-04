@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -30,7 +30,7 @@ import static com.google.common.util.concurrent.Futures.transform;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.util.Objects.requireNonNull;
 
-public class RangeIndexLookupSourceFactory
+public class RangePartitionLookupSourceFactory
         implements LookupBridge
 {
     private final List<Type> types;
@@ -44,7 +44,7 @@ public class RangeIndexLookupSourceFactory
     @GuardedBy("this")
     private LookupSource lookupSource;
 
-    public RangeIndexLookupSourceFactory(List<Type> types, int sampleSize)
+    public RangePartitionLookupSourceFactory(List<Type> types, int sampleSize)
     {
         this.types = ImmutableList.copyOf(requireNonNull(types, "types is null"));
         this.sampleSize = sampleSize;

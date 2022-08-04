@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static java.util.Objects.requireNonNull;
 
-public class RangeIndexBuilderOperator
+public class RangePartitionBuilderOperator
         implements Operator
 {
     public static class RangeIndexBuilderOperatorFactory
@@ -46,7 +46,7 @@ public class RangeIndexBuilderOperator
     {
         private final int operatorId;
         private final PlanNodeId planNodeId;
-        private final LookupBridgeManager<RangeIndexLookupSourceFactory> lookupSourceFactoryManager;
+        private final LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager;
         private final List<Integer> sortChannels;
         private final List<SortOrder> sortOrders;
         private final PagesIndex.Factory pagesIndexFactory;
@@ -58,7 +58,7 @@ public class RangeIndexBuilderOperator
         public RangeIndexBuilderOperatorFactory(
                 int operatorId,
                 PlanNodeId planNodeId,
-                LookupBridgeManager<RangeIndexLookupSourceFactory> lookupSourceFactoryManager,
+                LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager,
                 List<Integer> sortChannels,
                 List<SortOrder> sortOrders,
                 PagesIndex.Factory pagesIndexFactory,
@@ -77,13 +77,13 @@ public class RangeIndexBuilderOperator
         }
 
         @Override
-        public RangeIndexBuilderOperator createOperator(DriverContext driverContext)
+        public RangePartitionBuilderOperator createOperator(DriverContext driverContext)
         {
             checkState(!closed, "Factory is already closed");
-            OperatorContext operatorContext = driverContext.addOperatorContext(operatorId, planNodeId, RangeIndexBuilderOperator.class.getSimpleName());
+            OperatorContext operatorContext = driverContext.addOperatorContext(operatorId, planNodeId, RangePartitionBuilderOperator.class.getSimpleName());
 
-            RangeIndexLookupSourceFactory lookupSourceFactory = this.lookupSourceFactoryManager.getLookupBridge();
-            return new RangeIndexBuilderOperator(
+            RangePartitionLookupSourceFactory lookupSourceFactory = this.lookupSourceFactoryManager.getLookupBridge();
+            return new RangePartitionBuilderOperator(
                     operatorContext,
                     lookupSourceFactory,
                     sortChannels,
@@ -135,7 +135,7 @@ public class RangeIndexBuilderOperator
 
     private final OperatorContext operatorContext;
     private final LocalMemoryContext localUserMemoryContext;
-    private final RangeIndexLookupSourceFactory lookupSourceFactory;
+    private final RangePartitionLookupSourceFactory lookupSourceFactory;
     private final ListenableFuture<Void> lookupSourceFactoryDestroyed;
     private final List<Integer> sortChannels;
     private final List<SortOrder> sortOrders;
@@ -146,9 +146,9 @@ public class RangeIndexBuilderOperator
     private Optional<ListenableFuture<Void>> lookupSourceNotNeeded = Optional.empty();
     private LookupSource lookupSource;
 
-    RangeIndexBuilderOperator(
+    RangePartitionBuilderOperator(
             OperatorContext operatorContext,
-            RangeIndexLookupSourceFactory lookupSourceFactory,
+            RangePartitionLookupSourceFactory lookupSourceFactory,
             List<Integer> sortChannels,
             List<SortOrder> sortOrders,
             PagesIndex.Factory pagesIndexFactory,
@@ -294,7 +294,7 @@ public class RangeIndexBuilderOperator
                 counts[i] = counts[i - 1] + 1;
             }
         }
-        this.lookupSource = new RangeIndexLookupSource(pagesIndex, counts, comparator);
+        this.lookupSource = new RangePartitionLookupSource(pagesIndex, counts, comparator);
         return this.lookupSource;
     }
 

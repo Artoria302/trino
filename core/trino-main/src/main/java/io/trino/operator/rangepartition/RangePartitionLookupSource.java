@@ -11,35 +11,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.operator.rangeindex;
+package io.trino.operator.rangepartition;
 
 import io.trino.operator.PagesIndex;
 import io.trino.spi.Page;
 import org.openjdk.jol.info.ClassLayout;
 
-import java.util.concurrent.ThreadLocalRandom;
-
-public class RangeIndexLookupSource
+public class RangePartitionLookupSource
         implements LookupSource
 {
-    private static final int INSTANCE_SIZE = ClassLayout.parseClass(RangeIndexLookupSource.class).instanceSize();
+    private static final int INSTANCE_SIZE = ClassLayout.parseClass(RangePartitionLookupSource.class).instanceSize();
     private final PagesIndex pagesIndex;
     private final SimplePagesIndexWithPageComparator comparator;
     private final int positionCount;
     private final int[] counts;
+    private final int[] roundRobin;
+    private final long arraySize;
 
-    RangeIndexLookupSource(PagesIndex pagesIndex, int[] counts, SimplePagesIndexWithPageComparator comparator)
+    RangePartitionLookupSource(PagesIndex pagesIndex, int[] counts, SimplePagesIndexWithPageComparator comparator)
     {
         this.pagesIndex = pagesIndex;
         this.comparator = comparator;
         this.positionCount = pagesIndex.getPositionCount();
         this.counts = counts;
+        this.roundRobin = new int[counts.length];
+        arraySize = (long) positionCount * Integer.BYTES * 2;
     }
 
     @Override
     public long getInMemorySizeInBytes()
     {
-        return INSTANCE_SIZE;
+        return INSTANCE_SIZE + arraySize;
     }
 
     private int upperBound(Page page, int position)
@@ -60,21 +62,23 @@ public class RangeIndexLookupSource
     }
 
     @Override
-    public int getRangeIndex(Page page, int position)
+    public int getRangePartition(Page page, int position)
     {
-        int index = 0;
+        int partition = 0;
         if (positionCount <= 64) {
-            while (index < positionCount && comparator.compareTo(page, position, pagesIndex, index) >= 0) {
-                index++;
+            while (partition < positionCount && comparator.compareTo(page, position, pagesIndex, partition) >= 0) {
+                partition++;
             }
         }
         else {
-            index = upperBound(page, position);
+            partition = upperBound(page, position);
         }
-        if (index - 1 > 0 && counts[index - 1] != 1 && comparator.compareTo(page, position, pagesIndex, index - 1) == 0) {
-            index -= ThreadLocalRandom.current().nextInt(0, counts[index - 1]);
+        int pos = partition - 1;
+        if (pos > 0 && counts[pos] != 1 && comparator.compareTo(page, position, pagesIndex, pos) == 0) {
+            partition -= roundRobin[pos];
+            roundRobin[pos] = (roundRobin[pos] + 1) % counts[pos];
         }
-        return index;
+        return partition;
     }
 
     @Override
