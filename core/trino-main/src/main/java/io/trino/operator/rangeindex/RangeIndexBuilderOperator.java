@@ -23,16 +23,16 @@ import io.trino.operator.Operator;
 import io.trino.operator.OperatorContext;
 import io.trino.operator.OperatorFactory;
 import io.trino.operator.PagesIndex;
-import io.trino.operator.join.LookupSource;
+import io.trino.operator.SimplePagesIndexComparator;
 import io.trino.spi.Page;
 import io.trino.spi.connector.SortOrder;
-import io.trino.spi.type.Type;
+import io.trino.spi.type.TypeOperators;
 import io.trino.sql.planner.plan.PlanNodeId;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
@@ -47,11 +47,11 @@ public class RangeIndexBuilderOperator
         private final int operatorId;
         private final PlanNodeId planNodeId;
         private final LookupBridgeManager<RangeIndexLookupSourceFactory> lookupSourceFactoryManager;
-        private final List<Type> sourceTypes;
         private final List<Integer> sortChannels;
-        private final List<SortOrder> sortOrder;
+        private final List<SortOrder> sortOrders;
         private final PagesIndex.Factory pagesIndexFactory;
         private final int expectedPositions;
+        private final TypeOperators typeOperators;
 
         private boolean closed;
 
@@ -59,21 +59,21 @@ public class RangeIndexBuilderOperator
                 int operatorId,
                 PlanNodeId planNodeId,
                 LookupBridgeManager<RangeIndexLookupSourceFactory> lookupSourceFactoryManager,
-                List<Type> sourceTypes,
                 List<Integer> sortChannels,
-                List<SortOrder> sortOrder,
+                List<SortOrder> sortOrders,
                 PagesIndex.Factory pagesIndexFactory,
-                int expectedPositions)
+                int expectedPositions,
+                TypeOperators typeOperators)
         {
             this.operatorId = operatorId;
             this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
             requireNonNull(sortChannels, "sortChannels cannot be null");
             this.lookupSourceFactoryManager = requireNonNull(lookupSourceFactoryManager, "lookupSourceFactoryManager is null");
-            this.sourceTypes = ImmutableList.copyOf(requireNonNull(sourceTypes, "sourceTypes is null"));
             this.sortChannels = ImmutableList.copyOf(requireNonNull(sortChannels, "sortChannels is null"));
-            this.sortOrder = ImmutableList.copyOf(requireNonNull(sortOrder, "sortOrder is null"));
+            this.sortOrders = ImmutableList.copyOf(requireNonNull(sortOrders, "sortOrders is null"));
             this.pagesIndexFactory = requireNonNull(pagesIndexFactory, "pagesIndexFactory is null");
             this.expectedPositions = expectedPositions;
+            this.typeOperators = requireNonNull(typeOperators, "typeOperators is null");
         }
 
         @Override
@@ -86,11 +86,11 @@ public class RangeIndexBuilderOperator
             return new RangeIndexBuilderOperator(
                     operatorContext,
                     lookupSourceFactory,
-                    sourceTypes,
                     sortChannels,
-                    sortOrder,
+                    sortOrders,
                     pagesIndexFactory,
-                    expectedPositions);
+                    expectedPositions,
+                    typeOperators);
         }
 
         @Override
@@ -106,11 +106,11 @@ public class RangeIndexBuilderOperator
                     operatorId,
                     planNodeId,
                     lookupSourceFactoryManager,
-                    sourceTypes,
                     sortChannels,
-                    sortOrder,
+                    sortOrders,
                     pagesIndexFactory,
-                    expectedPositions);
+                    expectedPositions,
+                    typeOperators);
         }
     }
 
@@ -137,32 +137,32 @@ public class RangeIndexBuilderOperator
     private final LocalMemoryContext localUserMemoryContext;
     private final RangeIndexLookupSourceFactory lookupSourceFactory;
     private final ListenableFuture<Void> lookupSourceFactoryDestroyed;
-    private final List<Type> sourceTypes;
     private final List<Integer> sortChannels;
-    private final List<SortOrder> sortOrder;
-    private final PagesIndex index;
+    private final List<SortOrder> sortOrders;
+    private final PagesIndex pagesIndex;
+    private final TypeOperators typeOperators;
 
     private State state = State.CONSUMING_INPUT;
     private Optional<ListenableFuture<Void>> lookupSourceNotNeeded = Optional.empty();
-    private Supplier<LookupSource> lookupSourceSupplier;
+    private LookupSource lookupSource;
 
     RangeIndexBuilderOperator(
             OperatorContext operatorContext,
             RangeIndexLookupSourceFactory lookupSourceFactory,
-            List<Type> sourceTypes,
             List<Integer> sortChannels,
-            List<SortOrder> sortOrder,
+            List<SortOrder> sortOrders,
             PagesIndex.Factory pagesIndexFactory,
-            int expectedPositions)
+            int expectedPositions,
+            TypeOperators typeOperators)
     {
         this.operatorContext = operatorContext;
         localUserMemoryContext = operatorContext.localUserMemoryContext();
         this.lookupSourceFactory = lookupSourceFactory;
         lookupSourceFactoryDestroyed = lookupSourceFactory.isDestroyed();
-        this.sourceTypes = sourceTypes;
         this.sortChannels = sortChannels;
-        this.sortOrder = sortOrder;
-        this.index = pagesIndexFactory.newPagesIndex(lookupSourceFactory.getTypes(), expectedPositions);
+        this.sortOrders = sortOrders;
+        this.pagesIndex = pagesIndexFactory.newPagesIndex(lookupSourceFactory.getTypes(), expectedPositions);
+        this.typeOperators = typeOperators;
     }
 
     @Override
@@ -210,11 +210,11 @@ public class RangeIndexBuilderOperator
 
     private void updateIndex(Page page)
     {
-        index.addPage(page);
+        pagesIndex.addPage(page);
 
-        if (!localUserMemoryContext.trySetBytes(index.getEstimatedSize().toBytes())) {
-            index.compact();
-            localUserMemoryContext.setBytes(index.getEstimatedSize().toBytes());
+        if (!localUserMemoryContext.trySetBytes(pagesIndex.getEstimatedSize().toBytes())) {
+            pagesIndex.compact();
+            localUserMemoryContext.setBytes(pagesIndex.getEstimatedSize().toBytes());
         }
         operatorContext.recordOutput(page.getSizeInBytes(), page.getPositionCount());
     }
@@ -258,9 +258,9 @@ public class RangeIndexBuilderOperator
             return;
         }
 
-        Supplier<LookupSource> lookupSourceSupplier = buildLookupSource();
-        localUserMemoryContext.setBytes(lookupSourceSupplier.get().getInMemorySizeInBytes());
-        lookupSourceNotNeeded = Optional.of(lookupSourceFactory.lendLookupSource(lookupSourceSupplier));
+        lookupSource = buildLookupSource();
+        localUserMemoryContext.setBytes(lookupSource.getInMemorySizeInBytes());
+        lookupSourceNotNeeded = Optional.of(lookupSourceFactory.lendLookupSource(lookupSource));
 
         state = State.LOOKUP_SOURCE_BUILT;
     }
@@ -273,16 +273,29 @@ public class RangeIndexBuilderOperator
             return;
         }
 
-        index.clear();
-        localUserMemoryContext.setBytes(index.getEstimatedSize().toBytes());
-        lookupSourceSupplier = null;
+        pagesIndex.clear();
+        localUserMemoryContext.setBytes(pagesIndex.getEstimatedSize().toBytes());
+        lookupSource = null;
         close();
     }
 
-    private Supplier<LookupSource> buildLookupSource()
+    private LookupSource buildLookupSource()
     {
-        // TODO build lookupSource
-        return this.lookupSourceSupplier;
+        pagesIndex.sort(sortChannels, sortOrders);
+        SimplePagesIndexWithPageComparator comparator = new SimplePagesIndexWithPageComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
+        SimplePagesIndexComparator pagesIndexComparator = new SimplePagesIndexComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
+        int positionCount = pagesIndex.getPositionCount();
+        // origin array [1, 1, 3, 5, 6, 6, 6, 6, 8]
+        int[] counts = new int[positionCount];
+        Arrays.fill(counts, 1);
+        // accumulation count same value [1, 2, 1, 1, 1, 2, 3, 4, 1]
+        for (int i = 1; i < positionCount; i++) {
+            if (pagesIndexComparator.compareTo(pagesIndex, i, i - 1) == 0) {
+                counts[i] = counts[i - 1] + 1;
+            }
+        }
+        this.lookupSource = new RangeIndexLookupSource(pagesIndex, counts, comparator);
+        return this.lookupSource;
     }
 
     @Override
@@ -305,11 +318,11 @@ public class RangeIndexBuilderOperator
         }
         // close() can be called in any state, due for example to query failure, and must clean resource up unconditionally
 
-        lookupSourceSupplier = null;
+        lookupSource = null;
         state = State.CLOSED;
 
         try (Closer closer = Closer.create()) {
-            closer.register(index::clear);
+            closer.register(pagesIndex::clear);
             closer.register(() -> localUserMemoryContext.setBytes(0));
         }
         catch (IOException e) {

@@ -22,7 +22,7 @@ public interface LookupSource
 {
     long getInMemorySizeInBytes();
 
-    int getRangeIndex(int position, Page probePage);
+    int getRangeIndex(Page probePage, int position);
 
     @Override
     void close();

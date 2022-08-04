@@ -16,14 +16,11 @@ package io.trino.operator.rangeindex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import io.trino.operator.join.LookupSource;
 import io.trino.spi.type.Type;
-import io.trino.type.BlockTypeOperators;
 
 import javax.annotation.concurrent.GuardedBy;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
@@ -37,7 +34,7 @@ public class RangeIndexLookupSourceFactory
         implements LookupBridge
 {
     private final List<Type> types;
-    private final BlockTypeOperators blockTypeOperators;
+    private final int sampleSize;
     @GuardedBy("this")
     private final SettableFuture<Void> lookupSourceNoLongerNeeded = SettableFuture.create();
     @GuardedBy("this")
@@ -45,19 +42,19 @@ public class RangeIndexLookupSourceFactory
     @GuardedBy("this")
     private final SettableFuture<LookupSource> lookupSourceFuture = SettableFuture.create();
     @GuardedBy("this")
-    private Supplier<LookupSource> lookupSourceSupplier;
+    private LookupSource lookupSource;
 
-    public RangeIndexLookupSourceFactory(List<Type> types, BlockTypeOperators blockTypeOperators)
+    public RangeIndexLookupSourceFactory(List<Type> types, int sampleSize)
     {
         this.types = ImmutableList.copyOf(requireNonNull(types, "types is null"));
-        this.blockTypeOperators = requireNonNull(blockTypeOperators, "blockTypeOperators is null");
+        this.sampleSize = sampleSize;
     }
 
     public synchronized ListenableFuture<LookupSource> createLookupSource()
     {
         checkState(!destroyed.isDone(), "already destroyed");
-        if (lookupSourceSupplier != null) {
-            return immediateFuture(lookupSourceSupplier.get());
+        if (lookupSource != null) {
+            return immediateFuture(lookupSource);
         }
 
         return lookupSourceFuture;
@@ -82,16 +79,26 @@ public class RangeIndexLookupSourceFactory
         return types;
     }
 
-    public ListenableFuture<Void> lendLookupSource(Supplier<LookupSource> lookupSourceSupplier)
+    public int getSampleSize()
     {
+        return sampleSize;
+    }
+
+    public ListenableFuture<Void> lendLookupSource(LookupSource lookupSource)
+    {
+        SettableFuture<LookupSource> lookupSourceFuture;
         synchronized (this) {
             if (destroyed.isDone()) {
                 return immediateVoidFuture();
             }
 
-            checkState(this.lookupSourceSupplier == null, "lookupSourceSupplier already set");
-            this.lookupSourceSupplier = lookupSourceSupplier;
+            checkState(this.lookupSource == null, "lookupSourceSupplier already set");
+            this.lookupSource = lookupSource;
+            lookupSourceFuture = this.lookupSourceFuture;
         }
+
+        lookupSourceFuture.set(lookupSource);
+
         return lookupSourceNoLongerNeeded;
     }
 
@@ -109,7 +116,7 @@ public class RangeIndexLookupSourceFactory
         // TODO: Let the RangeIndexBuilderOperator reduce their accounted memory
         lookupSourceNoLongerNeeded.set(null);
         synchronized (this) {
-            lookupSourceSupplier = null;
+            lookupSource = null;
         }
     }
 
