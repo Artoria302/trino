@@ -113,7 +113,7 @@ public class RangePartitionLookupSourceFactory
 
     private void free()
     {
-        // TODO: Let the RangeIndexBuilderOperator reduce their accounted memory
+        // Let the RangeIndexBuilderOperator reduce their accounted memory
         lookupSourceNoLongerNeeded.set(null);
         synchronized (this) {
             lookupSource = null;

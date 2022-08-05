@@ -13,48 +13,106 @@
  */
 package io.trino.operator.rangepartition;
 
+import com.google.common.io.Closer;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.trino.operator.PageBuffer;
+import io.trino.operator.ProcessorContext;
 import io.trino.operator.WorkProcessor;
 import io.trino.operator.WorkProcessorOperatorAdapter.AdapterWorkProcessorOperator;
 import io.trino.spi.Page;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
+import static io.airlift.concurrent.MoreFutures.asVoid;
 import static io.trino.operator.WorkProcessor.flatten;
+import static java.util.Objects.requireNonNull;
 
 public class RangePartitionLookupOperator
         implements AdapterWorkProcessorOperator
 {
-    private final boolean waitForBuild;
+    private final ListenableFuture<LookupSource> lookupSourceFuture;
     private final PageBuffer pageBuffer;
-    private final RangePartitionLookupProcessor lookupProcessor;
+    private final RangePartitionLookupTransformer lookupTransformer;
+    private final Runnable afterClose;
     private final WorkProcessor<Page> pages;
+    private final WorkProcessor<Page> partitionedPages;
 
-    RangePartitionLookupOperator(boolean waitForBuild)
+    private boolean closed;
+
+    RangePartitionLookupOperator(
+            ProcessorContext processorContext,
+            RangePartitionLookupSourceFactory lookupSourceFactory,
+            Runnable afterClose,
+            List<Integer> sortChannels,
+            Optional<WorkProcessor<Page>> sourcePages)
     {
-        this.waitForBuild = waitForBuild;
+        this.lookupSourceFuture = lookupSourceFactory.createLookupSource();
         pageBuffer = new PageBuffer();
-        lookupProcessor = new RangePartitionLookupProcessor();
-        pages = flatten(WorkProcessor.create(lookupProcessor));
+        this.afterClose = requireNonNull(afterClose, "afterClose is null");
+        lookupTransformer = new RangePartitionLookupTransformer(processorContext, lookupSourceFuture, sortChannels);
+        this.partitionedPages = sourcePages.orElse(pageBuffer.pages()).transform(lookupTransformer);
+
+        pages = flatten(WorkProcessor.create(this::process));
     }
 
     @Override
     public WorkProcessor<Page> getOutputPages()
     {
-        return null;
+        return pages;
     }
 
     @Override
     public boolean needsInput()
     {
-        return false;
+        return (lookupSourceFuture.isDone()) && pageBuffer.isEmpty() && !pageBuffer.isFinished();
     }
 
     @Override
     public void addInput(Page page)
     {
+        pageBuffer.add(page);
+    }
+
+    public WorkProcessor.ProcessState<WorkProcessor<Page>> process()
+    {
+        // wait for build side to be completed before fetching any data
+        if (!lookupSourceFuture.isDone()) {
+            return WorkProcessor.ProcessState.blocked(asVoid(lookupSourceFuture));
+        }
+
+        if (!partitionedPages.isFinished()) {
+            return WorkProcessor.ProcessState.ofResult(partitionedPages);
+        }
+
+        close();
+        return WorkProcessor.ProcessState.finished();
     }
 
     @Override
     public void finish()
     {
+        pageBuffer.finish();
+    }
+
+    @Override
+    public void close()
+    {
+        if (closed) {
+            return;
+        }
+        closed = true;
+
+        try (Closer closer = Closer.create()) {
+            // `afterClose` must be run last.
+            // Closer is documented to mimic try-with-resource, which implies close will happen in reverse order.
+            closer.register(afterClose::run);
+
+            closer.register(lookupTransformer);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -25,6 +25,7 @@ import io.trino.spi.type.TypeOperators;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static io.trino.operator.SyntheticAddress.decodePosition;
 import static io.trino.operator.SyntheticAddress.decodeSliceIndex;
@@ -59,15 +60,20 @@ public class SimplePagesIndexWithPageComparator
 
     public int compareTo(Page page, int position, PagesIndex pagesIndex, int address)
     {
+        checkState(
+                page.getChannelCount() == sortChannels.size(),
+                "Unequal channel count, page channel count is %s, but sort channel count is %s",
+                page.getChannelCount(), sortChannels.size());
+
         long pageAddress = pagesIndex.getValueAddresses().getLong(address);
         int blockIndex = decodeSliceIndex(pageAddress);
         int blockPosition = decodePosition(pageAddress);
 
         try {
             for (int i = 0; i < sortChannels.size(); i++) {
-                int sortChannel = sortChannels.get(i);
-                Block leftBlock = page.getBlock(sortChannel);
-                Block rightBlock = pagesIndex.getChannel(sortChannel).get(blockIndex);
+                int rightSortChannel = sortChannels.get(i);
+                Block leftBlock = page.getBlock(i);
+                Block rightBlock = pagesIndex.getChannel(rightSortChannel).get(blockIndex);
 
                 MethodHandle orderingOperator = orderingOperators.get(i);
                 int compare = (int) orderingOperator.invokeExact(leftBlock, position, rightBlock, blockPosition);

@@ -74,7 +74,7 @@ public class RangePartitionLookupSource
             partition = upperBound(page, position);
         }
         int pos = partition - 1;
-        if (pos > 0 && counts[pos] != 1 && comparator.compareTo(page, position, pagesIndex, pos) == 0) {
+        if (pos >= 0 && counts[pos] != 1 && comparator.compareTo(page, position, pagesIndex, pos) == 0) {
             partition -= roundRobin[pos];
             roundRobin[pos] = (roundRobin[pos] + 1) % counts[pos];
         }

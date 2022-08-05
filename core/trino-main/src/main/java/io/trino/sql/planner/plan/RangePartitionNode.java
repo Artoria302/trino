@@ -23,30 +23,32 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class SampledRangeIndexNode
+public class RangePartitionNode
         extends PlanNode
 {
     private final PlanNode source;
     private final PlanNode sampleSource;
-    private final Symbol indexSymbol;
+    private final Symbol partitionSymbol;
     private final OrderingScheme orderingScheme;
 
     @JsonCreator
-    public SampledRangeIndexNode(@JsonProperty("id") PlanNodeId id,
+    public RangePartitionNode(
+            @JsonProperty("id") PlanNodeId id,
             @JsonProperty("source") PlanNode source,
             @JsonProperty("sampleSource") PlanNode sampleSource,
-            @JsonProperty("indexSymbol") Symbol indexSymbol,
+            @JsonProperty("partitionSymbol") Symbol partitionSymbol,
             @JsonProperty("orderingScheme") OrderingScheme orderingScheme)
     {
         super(id);
 
         requireNonNull(source, "source is null");
         requireNonNull(sampleSource, "sampleSource is null");
+        requireNonNull(partitionSymbol, "partitionSymbol is null");
         requireNonNull(orderingScheme, "orderingScheme is null");
 
         this.source = source;
         this.sampleSource = sampleSource;
-        this.indexSymbol = indexSymbol;
+        this.partitionSymbol = partitionSymbol;
         this.orderingScheme = orderingScheme;
     }
 
@@ -73,7 +75,7 @@ public class SampledRangeIndexNode
     {
         return ImmutableList.<Symbol>builder()
                 .addAll(source.getOutputSymbols())
-                .add(indexSymbol)
+                .add(partitionSymbol)
                 .build();
     }
 
@@ -93,6 +95,6 @@ public class SampledRangeIndexNode
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new SampledRangeIndexNode(getId(), newChildren.get(0), newChildren.get(1), indexSymbol, orderingScheme);
+        return new RangePartitionNode(getId(), newChildren.get(0), newChildren.get(1), partitionSymbol, orderingScheme);
     }
 }
