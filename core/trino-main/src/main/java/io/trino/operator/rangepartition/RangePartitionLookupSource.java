@@ -22,13 +22,13 @@ public class RangePartitionLookupSource
 {
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(RangePartitionLookupSource.class).instanceSize();
     private final PagesIndex pagesIndex;
-    private final SimplePagesIndexWithPageComparator comparator;
+    private final SimplePagePagesIndexComparator comparator;
     private final int positionCount;
     private final int[] counts;
     private final int[] roundRobin;
     private final long arraySize;
 
-    RangePartitionLookupSource(PagesIndex pagesIndex, int[] counts, SimplePagesIndexWithPageComparator comparator)
+    RangePartitionLookupSource(PagesIndex pagesIndex, int[] counts, SimplePagePagesIndexComparator comparator)
     {
         this.pagesIndex = pagesIndex;
         this.comparator = comparator;

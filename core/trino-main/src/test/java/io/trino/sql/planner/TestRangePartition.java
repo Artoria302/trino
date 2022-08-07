@@ -24,4 +24,10 @@ public class TestRangePartition
     {
         plan("SELECT c FROM (VALUES(1, 0.01, 'red')) AS t(a, b, c) ORDER BY a, CAST(b AS INT)");
     }
+
+    @Test
+    public void testExchange()
+    {
+        plan("SELECT nationkey, row_number() OVER (PARTITION BY nationkey order by name) AS r1, row_number() OVER (PARTITION BY regionkey, nationkey) AS r2 FROM nation");
+    }
 }

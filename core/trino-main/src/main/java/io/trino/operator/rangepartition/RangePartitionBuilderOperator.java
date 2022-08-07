@@ -282,7 +282,7 @@ public class RangePartitionBuilderOperator
     private LookupSource buildLookupSource()
     {
         pagesIndex.sort(sortChannels, sortOrders);
-        SimplePagesIndexWithPageComparator comparator = new SimplePagesIndexWithPageComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
+        SimplePagePagesIndexComparator comparator = new SimplePagePagesIndexComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
         SimplePagesIndexComparator pagesIndexComparator = new SimplePagesIndexComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
         int positionCount = pagesIndex.getPositionCount();
         // origin array [1, 1, 3, 5, 6, 6, 6, 6, 8]

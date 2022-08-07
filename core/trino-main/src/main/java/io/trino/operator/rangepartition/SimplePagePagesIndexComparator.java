@@ -35,12 +35,12 @@ import static io.trino.spi.function.InvocationConvention.InvocationReturnConvent
 import static io.trino.spi.function.InvocationConvention.simpleConvention;
 import static java.util.Objects.requireNonNull;
 
-public class SimplePagesIndexWithPageComparator
+public class SimplePagePagesIndexComparator
 {
     private final List<Integer> sortChannels;
     private final List<MethodHandle> orderingOperators;
 
-    public SimplePagesIndexWithPageComparator(
+    public SimplePagePagesIndexComparator(
             List<Type> sortTypes,
             List<Integer> sortChannels,
             List<SortOrder> sortOrders,
