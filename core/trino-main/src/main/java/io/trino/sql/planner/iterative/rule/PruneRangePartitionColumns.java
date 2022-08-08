@@ -40,11 +40,11 @@ public class PruneRangePartitionColumns
             return Optional.empty();
         }
 
-        ImmutableSet.Builder<Symbol> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<Symbol> outputsBuilder = ImmutableSet.builder();
         Symbol partitionSymbol = rangePartitionNode.getPartitionSymbol();
-        builder.addAll(referencedOutputs.stream().filter(symbol -> !symbol.equals(partitionSymbol)).iterator());
+        outputsBuilder.addAll(rangePartitionNode.getOrderingScheme().getOrderBy()).addAll(referencedOutputs.stream().filter(symbol -> !symbol.equals(partitionSymbol)).iterator());
 
-        Optional<PlanNode> newSource = restrictOutputs(context.getIdAllocator(), rangePartitionNode.getSource(), builder.build());
+        Optional<PlanNode> newSource = restrictOutputs(context.getIdAllocator(), rangePartitionNode.getSource(), outputsBuilder.build());
 
         if (newSource.isEmpty()) {
             return Optional.empty();
