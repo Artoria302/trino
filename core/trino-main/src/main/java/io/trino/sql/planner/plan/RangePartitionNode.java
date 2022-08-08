@@ -30,6 +30,7 @@ public class RangePartitionNode
     private final PlanNode sampleSource;
     private final Symbol partitionSymbol;
     private final OrderingScheme orderingScheme;
+    private final boolean canPruneSymbol;
 
     @JsonCreator
     public RangePartitionNode(
@@ -37,7 +38,8 @@ public class RangePartitionNode
             @JsonProperty("source") PlanNode source,
             @JsonProperty("sampleSource") PlanNode sampleSource,
             @JsonProperty("partitionSymbol") Symbol partitionSymbol,
-            @JsonProperty("orderingScheme") OrderingScheme orderingScheme)
+            @JsonProperty("orderingScheme") OrderingScheme orderingScheme,
+            @JsonProperty("canPruneSymbol") boolean canPruneSymbol)
     {
         super(id);
 
@@ -50,6 +52,7 @@ public class RangePartitionNode
         this.sampleSource = sampleSource;
         this.partitionSymbol = partitionSymbol;
         this.orderingScheme = orderingScheme;
+        this.canPruneSymbol = canPruneSymbol;
     }
 
     @Override
@@ -85,16 +88,22 @@ public class RangePartitionNode
         return orderingScheme;
     }
 
+    @JsonProperty("canPruneSymbol")
+    public boolean canPruneSymbol()
+    {
+        return canPruneSymbol;
+    }
+
     @Override
     public <R, C> R accept(PlanVisitor<R, C> visitor, C context)
     {
-        // return visitor.visitSampledRangeIndexNode(this, context);
+        // return visitor.visitRangePartitionNode(this, context);
         return null;
     }
 
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new RangePartitionNode(getId(), newChildren.get(0), newChildren.get(1), partitionSymbol, orderingScheme);
+        return new RangePartitionNode(getId(), newChildren.get(0), newChildren.get(1), partitionSymbol, orderingScheme, canPruneSymbol);
     }
 }

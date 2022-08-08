@@ -38,11 +38,13 @@ public class SampleNNode
     private final PlanNode source;
     private final long count;
     private final Step step;
+    private final boolean canPruneSymbol;
 
     public SampleNNode(@JsonProperty("id") PlanNodeId id,
             @JsonProperty("source") PlanNode source,
             @JsonProperty("count") long count,
-            @JsonProperty("step") Step step)
+            @JsonProperty("step") Step step,
+            @JsonProperty("canPruneSymbol") boolean canPruneSymbol)
     {
         super(id);
 
@@ -53,6 +55,7 @@ public class SampleNNode
         this.source = source;
         this.count = count;
         this.step = requireNonNull(step, "step is null");
+        this.canPruneSymbol = canPruneSymbol;
     }
 
     @Override
@@ -85,6 +88,12 @@ public class SampleNNode
         return step;
     }
 
+    @JsonProperty("canPruneSymbol")
+    public boolean canPruneSymbol()
+    {
+        return canPruneSymbol;
+    }
+
     @Override
     public <R, C> R accept(PlanVisitor<R, C> visitor, C context)
     {
@@ -95,6 +104,6 @@ public class SampleNNode
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new SampleNNode(getId(), Iterables.getOnlyElement(newChildren), count, step);
+        return new SampleNNode(getId(), Iterables.getOnlyElement(newChildren), count, step, canPruneSymbol);
     }
 }
