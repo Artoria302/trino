@@ -88,6 +88,12 @@ public class RangePartitionNode
         return orderingScheme;
     }
 
+    @JsonProperty("partitionSymbol")
+    public Symbol getPartitionSymbol()
+    {
+        return partitionSymbol;
+    }
+
     @JsonProperty("canPruneSymbol")
     public boolean canPruneSymbol()
     {
@@ -97,8 +103,7 @@ public class RangePartitionNode
     @Override
     public <R, C> R accept(PlanVisitor<R, C> visitor, C context)
     {
-        // return visitor.visitRangePartitionNode(this, context);
-        return null;
+        return visitor.visitRangePartition(this, context);
     }
 
     @Override

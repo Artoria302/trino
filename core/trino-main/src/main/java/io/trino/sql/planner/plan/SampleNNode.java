@@ -97,8 +97,7 @@ public class SampleNNode
     @Override
     public <R, C> R accept(PlanVisitor<R, C> visitor, C context)
     {
-        // return visitor.visitSampleN(this, context);
-        return null;
+        return visitor.visitSampleN(this, context);
     }
 
     @Override

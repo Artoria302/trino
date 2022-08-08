@@ -243,4 +243,14 @@ public abstract class PlanVisitor<R, C>
     {
         return visitPlan(node, context);
     }
+
+    public R visitSampleN(SampleNNode node, C context)
+    {
+        return visitPlan(node, context);
+    }
+
+    public R visitRangePartition(RangePartitionNode node, C context)
+    {
+        return visitPlan(node, context);
+    }
 }

@@ -29,6 +29,8 @@ import io.trino.sql.planner.plan.OffsetNode;
 import io.trino.sql.planner.plan.PatternRecognitionNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SimplePlanRewriter;
 import io.trino.sql.planner.plan.SortNode;
@@ -251,6 +253,18 @@ public final class PlanCopier
         public PlanNode visitCorrelatedJoin(CorrelatedJoinNode node, RewriteContext<Void> context)
         {
             return new CorrelatedJoinNode(idAllocator.getNextId(), context.rewrite(node.getInput()), context.rewrite(node.getSubquery()), node.getCorrelation(), node.getType(), node.getFilter(), node.getOriginSubquery());
+        }
+
+        @Override
+        public PlanNode visitSampleN(SampleNNode node, RewriteContext<Void> context)
+        {
+            return new SampleNNode(idAllocator.getNextId(), context.rewrite(node.getSource()), node.getCount(), node.getStep(), node.canPruneSymbol());
+        }
+
+        @Override
+        public PlanNode visitRangePartition(RangePartitionNode node, RewriteContext<Void> context)
+        {
+            return new RangePartitionNode(idAllocator.getNextId(), context.rewrite(node.getSource()), context.rewrite(node.getSampleSource()), node.getPartitionSymbol(), node.getOrderingScheme(), node.canPruneSymbol());
         }
     }
 }

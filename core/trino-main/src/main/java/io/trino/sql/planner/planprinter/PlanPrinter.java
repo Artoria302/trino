@@ -82,9 +82,11 @@ import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RemoteSourceNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimpleTableExecuteNode;
@@ -1535,6 +1537,34 @@ public class PlanPrinter
                     .forEach(entry -> nodeOutput.appendDetails(entry.getKey() + " => " + formatArgument((ScalarArgument) entry.getValue())));
 
             return null;
+        }
+
+        @Override
+        public Void visitSampleN(SampleNNode node, Void context)
+        {
+            addNode(node,
+                    format("SampleN%s", node.getStep() == SampleNNode.Step.PARTIAL ? "Partial" : ""),
+                    ImmutableMap.of("count", String.valueOf(node.getCount())));
+
+            return processChildren(node, context);
+        }
+
+        @Override
+        public Void visitRangePartition(RangePartitionNode node, Void context)
+        {
+            String keys = node.getOrderingScheme()
+                    .getOrderBy().stream()
+                    .map(input -> input + " " + node.getOrderingScheme().getOrdering(input))
+                    .collect(joining(", ", "[", "]"));
+
+            addNode(
+                    node,
+                    "RangePartition",
+                    ImmutableMap.of(
+                            "outputPartitionSymbol", node.getPartitionSymbol().toString(),
+                            "rangePartitionOrderBy", keys));
+
+            return processChildren(node, context);
         }
 
         private String formatArgument(ScalarArgument argument)
