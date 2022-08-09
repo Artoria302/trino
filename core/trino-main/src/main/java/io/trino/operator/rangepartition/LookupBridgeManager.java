@@ -31,8 +31,7 @@ public class LookupBridgeManager<T extends LookupBridge>
 
     private LookupLifecycle lookupLifecycle;
 
-    public LookupBridgeManager(
-            T lookupBridge)
+    public LookupBridgeManager(T lookupBridge)
     {
         this.lookupBridge = requireNonNull(lookupBridge, "lookupBridge is null");
     }
