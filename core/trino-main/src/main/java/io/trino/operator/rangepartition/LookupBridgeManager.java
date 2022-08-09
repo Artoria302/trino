@@ -32,9 +32,9 @@ public class LookupBridgeManager<T extends LookupBridge>
     private LookupLifecycle lookupLifecycle;
 
     public LookupBridgeManager(
-            T joinBridge)
+            T lookupBridge)
     {
-        this.lookupBridge = requireNonNull(joinBridge, "joinBridge is null");
+        this.lookupBridge = requireNonNull(lookupBridge, "lookupBridge is null");
     }
 
     private void initializeIfNecessary()
