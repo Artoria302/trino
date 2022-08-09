@@ -108,7 +108,6 @@ public class RangePartitionLookupOperator
             // `afterClose` must be run last.
             // Closer is documented to mimic try-with-resource, which implies close will happen in reverse order.
             closer.register(afterClose::run);
-
             closer.register(lookupTransformer);
         }
         catch (IOException e) {

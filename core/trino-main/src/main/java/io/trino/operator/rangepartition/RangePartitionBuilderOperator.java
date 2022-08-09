@@ -76,16 +76,28 @@ public class RangePartitionBuilderOperator
             this.typeOperators = requireNonNull(typeOperators, "typeOperators is null");
         }
 
+        private RangeIndexBuilderOperatorFactory(RangeIndexBuilderOperatorFactory other)
+        {
+            operatorId = other.operatorId;
+            planNodeId = other.planNodeId;
+            lookupSourceFactoryManager = other.lookupSourceFactoryManager;
+            sortChannels = ImmutableList.copyOf(other.sortChannels);
+            sortOrders = ImmutableList.copyOf(other.sortOrders);
+            pagesIndexFactory = other.pagesIndexFactory;
+            expectedPositions = other.expectedPositions;
+            typeOperators = other.typeOperators;
+            closed = false;
+        }
+
         @Override
         public RangePartitionBuilderOperator createOperator(DriverContext driverContext)
         {
             checkState(!closed, "Factory is already closed");
             OperatorContext operatorContext = driverContext.addOperatorContext(operatorId, planNodeId, RangePartitionBuilderOperator.class.getSimpleName());
 
-            RangePartitionLookupSourceFactory lookupSourceFactory = this.lookupSourceFactoryManager.getLookupBridge();
             return new RangePartitionBuilderOperator(
                     operatorContext,
-                    lookupSourceFactory,
+                    lookupSourceFactoryManager.getLookupBridge(),
                     sortChannels,
                     sortOrders,
                     pagesIndexFactory,
@@ -102,15 +114,7 @@ public class RangePartitionBuilderOperator
         @Override
         public OperatorFactory duplicate()
         {
-            return new RangeIndexBuilderOperatorFactory(
-                    operatorId,
-                    planNodeId,
-                    lookupSourceFactoryManager,
-                    sortChannels,
-                    sortOrders,
-                    pagesIndexFactory,
-                    expectedPositions,
-                    typeOperators);
+            return new RangeIndexBuilderOperatorFactory(this);
         }
     }
 
