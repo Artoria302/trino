@@ -118,8 +118,10 @@ import io.trino.sql.planner.iterative.rule.PruneOutputSourceColumns;
 import io.trino.sql.planner.iterative.rule.PrunePattenRecognitionColumns;
 import io.trino.sql.planner.iterative.rule.PrunePatternRecognitionSourceColumns;
 import io.trino.sql.planner.iterative.rule.PruneProjectColumns;
+import io.trino.sql.planner.iterative.rule.PruneRangePartitionColumns;
 import io.trino.sql.planner.iterative.rule.PruneRowNumberColumns;
 import io.trino.sql.planner.iterative.rule.PruneSampleColumns;
+import io.trino.sql.planner.iterative.rule.PruneSampleNColumns;
 import io.trino.sql.planner.iterative.rule.PruneSemiJoinColumns;
 import io.trino.sql.planner.iterative.rule.PruneSemiJoinFilteringSourceColumns;
 import io.trino.sql.planner.iterative.rule.PruneSortColumns;
@@ -1032,7 +1034,9 @@ public class PlanOptimizers
                 new PruneUnnestColumns(),
                 new PruneUnnestSourceColumns(),
                 new PruneValuesColumns(),
-                new PruneWindowColumns());
+                new PruneWindowColumns(),
+                new PruneRangePartitionColumns(),
+                new PruneSampleNColumns());
     }
 
     @Override

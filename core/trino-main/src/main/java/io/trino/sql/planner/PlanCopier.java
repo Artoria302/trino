@@ -258,7 +258,7 @@ public final class PlanCopier
         @Override
         public PlanNode visitSampleN(SampleNNode node, RewriteContext<Void> context)
         {
-            return new SampleNNode(idAllocator.getNextId(), context.rewrite(node.getSource()), node.getCount(), node.getStep(), node.canPruneSymbol());
+            return new SampleNNode(idAllocator.getNextId(), context.rewrite(node.getSource()), node.getCount(), node.getStep(), node.canPruneSymbol(), node.canPredicatePushDown());
         }
 
         @Override

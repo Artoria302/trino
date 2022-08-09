@@ -49,6 +49,8 @@ import io.trino.sql.planner.plan.JoinNode;
 import io.trino.sql.planner.plan.MarkDistinctNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimplePlanRewriter;
@@ -1594,6 +1596,21 @@ public class PredicatePushDown
         {
             Set<Symbol> predicateSymbols = extractUnique(context.get());
             checkState(!predicateSymbols.contains(node.getIdColumn()), "UniqueId in predicate is not yet supported");
+            return context.defaultRewrite(node, context.get());
+        }
+
+        @Override
+        public PlanNode visitSampleN(SampleNNode node, RewriteContext<Expression> context)
+        {
+            if (node.canPredicatePushDown()) {
+                return context.defaultRewrite(node, context.get());
+            }
+            return visitPlan(node, context);
+        }
+
+        @Override
+        public PlanNode visitRangePartition(RangePartitionNode node, RewriteContext<Expression> context)
+        {
             return context.defaultRewrite(node, context.get());
         }
     }
