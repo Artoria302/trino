@@ -1348,6 +1348,7 @@ public class UnaliasSymbolReferences
                             symbolMapper.map(node.getPartitionSymbol()),
                             symbolMapper.map(node.getOrderingScheme()),
                             builder.addAll(node.getSampleOrderingSymbols().stream().map(sampleSymbolMapper::map).iterator()).build(),
+                            node.getSampleSize(),
                             node.canPruneSymbol()),
                     outputMapping);
         }

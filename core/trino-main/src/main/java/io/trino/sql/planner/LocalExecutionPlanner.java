@@ -77,6 +77,7 @@ import io.trino.operator.PartitionFunction;
 import io.trino.operator.RefreshMaterializedViewOperator.RefreshMaterializedViewOperatorFactory;
 import io.trino.operator.RetryPolicy;
 import io.trino.operator.RowNumberOperator;
+import io.trino.operator.SampleNOperator;
 import io.trino.operator.ScanFilterAndProjectOperator.ScanFilterAndProjectOperatorFactory;
 import io.trino.operator.SetBuilderOperator.SetBuilderOperatorFactory;
 import io.trino.operator.SetBuilderOperator.SetSupplier;
@@ -129,6 +130,10 @@ import io.trino.operator.output.TaskOutputOperator.TaskOutputFactory;
 import io.trino.operator.project.CursorProcessor;
 import io.trino.operator.project.PageProcessor;
 import io.trino.operator.project.PageProjection;
+import io.trino.operator.rangepartition.LookupBridgeManager;
+import io.trino.operator.rangepartition.RangePartitionBuilderOperator;
+import io.trino.operator.rangepartition.RangePartitionLookupOperatorFactory;
+import io.trino.operator.rangepartition.RangePartitionLookupSourceFactory;
 import io.trino.operator.unnest.UnnestOperator;
 import io.trino.operator.window.AggregationWindowFunctionSupplier;
 import io.trino.operator.window.FrameInfo;
@@ -203,9 +208,11 @@ import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RemoteSourceNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimpleTableExecuteNode;
@@ -3545,6 +3552,81 @@ public class LocalExecutionPlanner
                     "driver instance count must match the number of exchange partitions");
 
             return new PhysicalOperation(new LocalExchangeSourceOperatorFactory(context.getNextOperatorId(), node.getId(), localExchange), makeLayout(node), context);
+        }
+
+        @Override
+        public PhysicalOperation visitSampleN(SampleNNode node, LocalExecutionPlanContext context)
+        {
+            PhysicalOperation source = node.getSource().accept(this, context);
+
+            OperatorFactory operatorFactory = SampleNOperator.createOperatorFactory(
+                    context.getNextOperatorId(),
+                    node.getId(),
+                    source.getTypes(),
+                    node.getCount());
+            return new PhysicalOperation(operatorFactory, source.getLayout(), context, source);
+        }
+
+        @Override
+        public PhysicalOperation visitRangePartition(RangePartitionNode node, LocalExecutionPlanContext context)
+        {
+            PhysicalOperation probeSource = node.getSource().accept(this, context);
+
+            // Plan build
+            LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactory =
+                    createRangePartitionLookupSourceFactoryManager(node, node.getSampleSource(), context);
+
+            List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(probeSource.getLayout()::get).iterator());
+
+            RangePartitionLookupOperatorFactory operator = new RangePartitionLookupOperatorFactory(
+                    context.getNextOperatorId(),
+                    node.getId(),
+                    lookupSourceFactory,
+                    sortChannels);
+
+            ImmutableMap.Builder<Symbol, Integer> outputMappings = ImmutableMap.builder();
+            List<Symbol> outputSymbols = node.getOutputSymbols();
+            for (int i = 0; i < outputSymbols.size(); i++) {
+                Symbol symbol = outputSymbols.get(i);
+                outputMappings.put(symbol, i);
+            }
+
+            return new PhysicalOperation(operator, outputMappings.buildOrThrow(), context, probeSource);
+        }
+
+        private LookupBridgeManager<RangePartitionLookupSourceFactory> createRangePartitionLookupSourceFactoryManager(
+                RangePartitionNode node,
+                PlanNode buildNode,
+                LocalExecutionPlanContext context)
+        {
+            LocalExecutionPlanContext buildContext = context.createSubContext();
+            PhysicalOperation buildSource = buildNode.accept(this, buildContext);
+
+            List<Type> buildTypes = buildSource.getTypes();
+
+            LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager = new LookupBridgeManager<>(
+                    new RangePartitionLookupSourceFactory(buildTypes, node.getSampleSize()));
+
+            List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(buildSource.getLayout()::get).iterator());
+            List<SortOrder> sortOrders = ImmutableList.copyOf(node.getOrderingScheme().getOrderingList());
+
+            OperatorFactory lookupBuilderOperatorFactory = new RangePartitionBuilderOperator.RangeIndexBuilderOperatorFactory(
+                    buildContext.getNextOperatorId(),
+                    node.getId(),
+                    lookupSourceFactoryManager,
+                    sortChannels,
+                    sortOrders,
+                    pagesIndexFactory,
+                    node.getSampleSize(),
+                    plannerContext.getTypeOperators());
+
+            context.addDriverFactory(
+                    buildContext.isInputDriver(),
+                    false,
+                    new PhysicalOperation(lookupBuilderOperatorFactory, buildSource),
+                    buildContext.getDriverInstanceCount());
+
+            return lookupSourceFactoryManager;
         }
 
         @Override

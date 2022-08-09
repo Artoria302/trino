@@ -36,14 +36,14 @@ public class SampleNNode
     }
 
     private final PlanNode source;
-    private final long count;
+    private final int count;
     private final Step step;
     private final boolean canPruneSymbol;
     private final boolean canPredicatePushDown;
 
     public SampleNNode(@JsonProperty("id") PlanNodeId id,
             @JsonProperty("source") PlanNode source,
-            @JsonProperty("count") long count,
+            @JsonProperty("count") int count,
             @JsonProperty("step") Step step,
             @JsonProperty("canPruneSymbol") boolean canPruneSymbol,
             @JsonProperty("canPredicatePushDown") boolean canPredicatePushDown)
@@ -80,7 +80,7 @@ public class SampleNNode
     }
 
     @JsonProperty("count")
-    public long getCount()
+    public int getCount()
     {
         return count;
     }
