@@ -13,6 +13,7 @@
  */
 package io.trino.operator.rangepartition;
 
+import com.google.common.collect.ImmutableList;
 import io.trino.operator.DriverContext;
 import io.trino.operator.Operator;
 import io.trino.operator.OperatorContext;
@@ -50,7 +51,18 @@ public class RangePartitionLookupOperatorFactory
         this.operatorId = operatorId;
         this.planNodeId = requireNonNull(planNodeId, "planNodeId is null");
         this.lookupSourceFactoryManager = requireNonNull(lookupSourceFactoryManager, "lookupSourceFactoryManager is null");
+        lookupSourceFactoryManager.incrementLookupFactoryCount();
         this.sortChannels = requireNonNull(sortChannels, "sortChannels is null");
+    }
+
+    private RangePartitionLookupOperatorFactory(RangePartitionLookupOperatorFactory other)
+    {
+        this.operatorId = other.operatorId;
+        this.planNodeId = other.planNodeId;
+        this.lookupSourceFactoryManager = other.lookupSourceFactoryManager;
+        lookupSourceFactoryManager.incrementLookupFactoryCount();
+        this.sortChannels = ImmutableList.copyOf(other.sortChannels);
+        this.closed = false;
     }
 
     @Override
@@ -73,21 +85,23 @@ public class RangePartitionLookupOperatorFactory
     {
         checkState(!closed);
         closed = true;
+        lookupSourceFactoryManager.lookupOperatorFactoryClosed();
     }
 
     @Override
     public RangePartitionLookupOperatorFactory duplicate()
     {
-        return new RangePartitionLookupOperatorFactory(operatorId, planNodeId, lookupSourceFactoryManager, sortChannels);
+        return new RangePartitionLookupOperatorFactory(this);
     }
 
     @Override
     public WorkProcessorOperator create(ProcessorContext processorContext, WorkProcessor<Page> sourcePages)
     {
+        lookupSourceFactoryManager.lookupOperatorCreated();
         return new RangePartitionLookupOperator(
                 processorContext,
                 lookupSourceFactoryManager.getLookupBridge(),
-                () -> {},
+                lookupSourceFactoryManager::lookupOperatorClosed,
                 sortChannels,
                 Optional.of(sourcePages));
     }
@@ -95,10 +109,11 @@ public class RangePartitionLookupOperatorFactory
     @Override
     public WorkProcessorOperatorAdapter.AdapterWorkProcessorOperator createAdapterOperator(ProcessorContext processorContext)
     {
+        lookupSourceFactoryManager.lookupOperatorCreated();
         return new RangePartitionLookupOperator(
                 processorContext,
                 lookupSourceFactoryManager.getLookupBridge(),
-                () -> {},
+                lookupSourceFactoryManager::lookupOperatorClosed,
                 sortChannels,
                 Optional.empty());
     }

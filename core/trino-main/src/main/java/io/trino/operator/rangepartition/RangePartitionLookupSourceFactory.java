@@ -34,7 +34,6 @@ public class RangePartitionLookupSourceFactory
         implements LookupBridge
 {
     private final List<Type> types;
-    private final int sampleSize;
     @GuardedBy("this")
     private final SettableFuture<Void> lookupSourceNoLongerNeeded = SettableFuture.create();
     @GuardedBy("this")
@@ -44,10 +43,9 @@ public class RangePartitionLookupSourceFactory
     @GuardedBy("this")
     private LookupSource lookupSource;
 
-    public RangePartitionLookupSourceFactory(List<Type> types, int sampleSize)
+    public RangePartitionLookupSourceFactory(List<Type> types)
     {
         this.types = ImmutableList.copyOf(requireNonNull(types, "types is null"));
-        this.sampleSize = sampleSize;
     }
 
     public synchronized ListenableFuture<LookupSource> createLookupSource()
@@ -77,11 +75,6 @@ public class RangePartitionLookupSourceFactory
     public List<Type> getTypes()
     {
         return types;
-    }
-
-    public int getSampleSize()
-    {
-        return sampleSize;
     }
 
     public ListenableFuture<Void> lendLookupSource(LookupSource lookupSource)

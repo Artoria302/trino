@@ -3573,8 +3573,7 @@ public class LocalExecutionPlanner
             PhysicalOperation probeSource = node.getSource().accept(this, context);
 
             // Plan build
-            LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactory =
-                    createRangePartitionLookupSourceFactoryManager(node, node.getSampleSource(), context);
+            LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactory = createRangePartitionLookupSourceFactoryManager(node, context);
 
             List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(probeSource.getLayout()::get).iterator());
 
@@ -3596,16 +3595,16 @@ public class LocalExecutionPlanner
 
         private LookupBridgeManager<RangePartitionLookupSourceFactory> createRangePartitionLookupSourceFactoryManager(
                 RangePartitionNode node,
-                PlanNode buildNode,
                 LocalExecutionPlanContext context)
         {
+            PlanNode buildNode = node.getSampleSource();
             LocalExecutionPlanContext buildContext = context.createSubContext();
             PhysicalOperation buildSource = buildNode.accept(this, buildContext);
 
             List<Type> buildTypes = buildSource.getTypes();
 
             LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager = new LookupBridgeManager<>(
-                    new RangePartitionLookupSourceFactory(buildTypes, node.getSampleSize()));
+                    new RangePartitionLookupSourceFactory(buildTypes));
 
             List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(buildSource.getLayout()::get).iterator());
             List<SortOrder> sortOrders = ImmutableList.copyOf(node.getOrderingScheme().getOrderingList());
