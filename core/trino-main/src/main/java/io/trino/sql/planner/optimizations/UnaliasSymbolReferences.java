@@ -60,9 +60,11 @@ import io.trino.sql.planner.plan.PatternRecognitionNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RemoteSourceNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimplePlanRewriter;
@@ -1308,6 +1310,46 @@ public class UnaliasSymbolReferences
                             newOutputs,
                             node.isDistinct()),
                     mapping);
+        }
+
+        @Override
+        public PlanAndMappings visitSampleN(SampleNNode node, UnaliasContext context)
+        {
+            PlanAndMappings rewrittenSource = node.getSource().accept(this, context);
+
+            return new PlanAndMappings(
+                    new SampleNNode(
+                            node.getId(),
+                            rewrittenSource.getRoot(),
+                            node.getCount(),
+                            node.getStep(),
+                            node.canPruneSymbol(),
+                            node.canPredicatePushDown()),
+                    rewrittenSource.getMappings());
+        }
+
+        @Override
+        public PlanAndMappings visitRangePartition(RangePartitionNode node, UnaliasContext context)
+        {
+            PlanAndMappings rewrittenSource = node.getSource().accept(this, context);
+            PlanAndMappings rewrittenSampleSource = node.getSampleSource().accept(this, context);
+
+            Map<Symbol, Symbol> outputMapping = new HashMap<>(rewrittenSource.getMappings());
+            SymbolMapper symbolMapper = symbolMapper(outputMapping);
+            SymbolMapper sampleSymbolMapper = symbolMapper(new HashMap<>(rewrittenSampleSource.getMappings()));
+
+            ImmutableList.Builder<Symbol> builder = ImmutableList.builder();
+
+            return new PlanAndMappings(
+                    new RangePartitionNode(
+                            node.getId(),
+                            rewrittenSource.getRoot(),
+                            rewrittenSampleSource.getRoot(),
+                            symbolMapper.map(node.getPartitionSymbol()),
+                            symbolMapper.map(node.getOrderingScheme()),
+                            builder.addAll(node.getSampleOrderingSymbols().stream().map(sampleSymbolMapper::map).iterator()).build(),
+                            node.canPruneSymbol()),
+                    outputMapping);
         }
 
         private ListMultimap<Symbol, Symbol> rewriteOutputToInputsMap(ListMultimap<Symbol, Symbol> oldMapping, SymbolMapper outputMapper, List<SymbolMapper> inputMappers)

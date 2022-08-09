@@ -264,7 +264,7 @@ public final class PlanCopier
         @Override
         public PlanNode visitRangePartition(RangePartitionNode node, RewriteContext<Void> context)
         {
-            return new RangePartitionNode(idAllocator.getNextId(), context.rewrite(node.getSource()), context.rewrite(node.getSampleSource()), node.getPartitionSymbol(), node.getOrderingScheme(), node.canPruneSymbol());
+            return new RangePartitionNode(idAllocator.getNextId(), context.rewrite(node.getSource()), context.rewrite(node.getSampleSource()), node.getPartitionSymbol(), node.getOrderingScheme(), node.getSampleOrderingSymbols(), node.canPruneSymbol());
         }
     }
 }

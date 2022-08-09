@@ -30,4 +30,10 @@ public class TestRangePartition
     {
         plan("SELECT nationkey, row_number() OVER (PARTITION BY nationkey order by name) AS r1, row_number() OVER (PARTITION BY regionkey, nationkey) AS r2 FROM nation");
     }
+
+    @Test
+    public void testWith()
+    {
+        plan("WITH t as (SELECT nationkey, count(*) AS cnt FROM nation GROUP BY nationkey) SELECT cnt FROM t UNION ALL SELECT cnt FROM t");
+    }
 }

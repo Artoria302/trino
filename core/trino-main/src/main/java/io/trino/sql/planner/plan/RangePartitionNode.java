@@ -30,6 +30,7 @@ public class RangePartitionNode
     private final PlanNode sampleSource;
     private final Symbol partitionSymbol;
     private final OrderingScheme orderingScheme;
+    private final List<Symbol> sampleOrderingSymbols;
     private final boolean canPruneSymbol;
 
     @JsonCreator
@@ -39,6 +40,7 @@ public class RangePartitionNode
             @JsonProperty("sampleSource") PlanNode sampleSource,
             @JsonProperty("partitionSymbol") Symbol partitionSymbol,
             @JsonProperty("orderingScheme") OrderingScheme orderingScheme,
+            @JsonProperty("sampleOrderingSymbols") List<Symbol> sampleOrderingSymbols,
             @JsonProperty("canPruneSymbol") boolean canPruneSymbol)
     {
         super(id);
@@ -52,6 +54,7 @@ public class RangePartitionNode
         this.sampleSource = sampleSource;
         this.partitionSymbol = partitionSymbol;
         this.orderingScheme = orderingScheme;
+        this.sampleOrderingSymbols = sampleOrderingSymbols;
         this.canPruneSymbol = canPruneSymbol;
     }
 
@@ -88,6 +91,12 @@ public class RangePartitionNode
         return orderingScheme;
     }
 
+    @JsonProperty("sampleOrderingSymbols")
+    public List<Symbol> getSampleOrderingSymbols()
+    {
+        return sampleOrderingSymbols;
+    }
+
     @JsonProperty("partitionSymbol")
     public Symbol getPartitionSymbol()
     {
@@ -109,6 +118,6 @@ public class RangePartitionNode
     @Override
     public PlanNode replaceChildren(List<PlanNode> newChildren)
     {
-        return new RangePartitionNode(getId(), newChildren.get(0), newChildren.get(1), partitionSymbol, orderingScheme, canPruneSymbol);
+        return new RangePartitionNode(getId(), newChildren.get(0), newChildren.get(1), partitionSymbol, orderingScheme, sampleOrderingSymbols, canPruneSymbol);
     }
 }
