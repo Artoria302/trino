@@ -153,6 +153,7 @@ import static io.trino.spi.StandardErrorCode.NO_NODES_AVAILABLE;
 import static io.trino.spi.StandardErrorCode.REMOTE_TASK_FAILED;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_BROADCAST_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_HASH_DISTRIBUTION;
+import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_RANGE_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SCALED_WRITER_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SOURCE_DISTRIBUTION;
 import static io.trino.sql.planner.optimizations.PlanNodeSearcher.searchFrom;
@@ -1886,7 +1887,7 @@ public class SqlQueryScheduler
                 PartitioningHandle partitioningHandle,
                 NodePartitioningManager nodePartitioningManager)
         {
-            if (partitioningHandle.equals(FIXED_HASH_DISTRIBUTION)) {
+            if (partitioningHandle.equals(FIXED_HASH_DISTRIBUTION) || partitioningHandle.equals(FIXED_RANGE_DISTRIBUTION)) {
                 return new BucketToPartition(Optional.of(IntStream.range(0, partitionCount).toArray()), Optional.empty());
             }
             if (partitioningHandle.getConnectorId().isPresent()) {

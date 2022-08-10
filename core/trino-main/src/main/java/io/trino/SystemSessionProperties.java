@@ -172,6 +172,8 @@ public final class SystemSessionProperties
     public static final String FORCE_SPILLING_JOIN = "force_spilling_join";
     public static final String ENABLE_WRITE_TABLE_ORDER_BY = "enable_write_table_order_by";
 
+    public static final int RANGE_PARTITION_SAMPLE_SIZE = 1999;
+
     private final List<PropertyMetadata<?>> sessionProperties;
 
     public SystemSessionProperties()

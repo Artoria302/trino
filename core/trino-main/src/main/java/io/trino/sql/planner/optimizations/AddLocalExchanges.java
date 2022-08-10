@@ -48,7 +48,9 @@ import io.trino.sql.planner.plan.PatternRecognitionNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimpleTableExecuteNode;
 import io.trino.sql.planner.plan.SortNode;
@@ -298,6 +300,38 @@ public class AddLocalExchanges
                     node,
                     singleStream(),
                     defaultParallelism(session));
+        }
+
+        @Override
+        public PlanWithProperties visitSampleN(SampleNNode node, StreamPreferredProperties parentPreferences)
+        {
+            if (node.getStep() == SampleNNode.Step.PARTIAL) {
+                return planAndEnforceChildren(
+                        node,
+                        parentPreferences.withoutPreference().withDefaultParallelism(session),
+                        parentPreferences.withDefaultParallelism(session));
+            }
+
+            // final sampleN requires that all data be in one stream
+            // also, a final changes the input organization completely, so we do not pass through parent preferences
+            return planAndEnforceChildren(
+                    node,
+                    singleStream(),
+                    defaultParallelism(session));
+        }
+
+        @Override
+        public PlanWithProperties visitRangePartition(RangePartitionNode node, StreamPreferredProperties parentPreferences)
+        {
+            PlanWithProperties lookupSource = planAndEnforce(
+                    node.getSource(),
+                    parentPreferences.withoutPreference().withDefaultParallelism(session),
+                    parentPreferences.withDefaultParallelism(session));
+            PlanWithProperties sampleSource = planAndEnforce(
+                    node.getSampleSource(),
+                    singleStream(),
+                    defaultParallelism(session));
+            return rebaseAndDeriveProperties(node, ImmutableList.of(lookupSource, sampleSource));
         }
 
         @Override

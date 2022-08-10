@@ -3570,12 +3570,12 @@ public class LocalExecutionPlanner
         @Override
         public PhysicalOperation visitRangePartition(RangePartitionNode node, LocalExecutionPlanContext context)
         {
-            PhysicalOperation probeSource = node.getSource().accept(this, context);
+            PhysicalOperation lookupSource = node.getSource().accept(this, context);
 
             // Plan build
             LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactory = createRangePartitionLookupSourceFactoryManager(node, context);
 
-            List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(probeSource.getLayout()::get).iterator());
+            List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(lookupSource.getLayout()::get).iterator());
 
             RangePartitionLookupOperatorFactory operator = new RangePartitionLookupOperatorFactory(
                     context.getNextOperatorId(),
@@ -3590,7 +3590,7 @@ public class LocalExecutionPlanner
                 outputMappings.put(symbol, i);
             }
 
-            return new PhysicalOperation(operator, outputMappings.buildOrThrow(), context, probeSource);
+            return new PhysicalOperation(operator, outputMappings.buildOrThrow(), context, lookupSource);
         }
 
         private LookupBridgeManager<RangePartitionLookupSourceFactory> createRangePartitionLookupSourceFactoryManager(

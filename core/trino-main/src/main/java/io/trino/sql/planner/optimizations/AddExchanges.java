@@ -59,8 +59,10 @@ import io.trino.sql.planner.plan.PatternRecognitionNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimpleTableExecuteNode;
 import io.trino.sql.planner.plan.SortNode;
@@ -104,6 +106,7 @@ import static io.trino.sql.planner.FragmentTableScanCounter.countSources;
 import static io.trino.sql.planner.FragmentTableScanCounter.hasMultipleSources;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_ARBITRARY_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_HASH_DISTRIBUTION;
+import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_RANGE_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SCALED_WRITER_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
 import static io.trino.sql.planner.optimizations.ActualProperties.Global.partitionedOn;
@@ -1270,6 +1273,63 @@ public class AddExchanges
                                 partitionedOutputLayouts,
                                 Optional.empty()));
             }
+        }
+
+        @Override
+        public PlanWithProperties visitSampleN(SampleNNode node, PreferredProperties preferredProperties)
+        {
+            PlanWithProperties child;
+            switch (node.getStep()) {
+                case SINGLE:
+                case FINAL:
+                    child = planChild(node, PreferredProperties.undistributed());
+                    if (!child.getProperties().isSingleNode()) {
+                        child = withDerivedProperties(
+                                gatheringExchange(idAllocator.getNextId(), REMOTE, child.getNode()),
+                                child.getProperties());
+                    }
+                    return rebaseAndDeriveProperties(node, child);
+                case PARTIAL:
+                    child = planChild(node, PreferredProperties.any());
+                    return rebaseAndDeriveProperties(node, child);
+            }
+            throw new UnsupportedOperationException(format("Unsupported step for SampleN [%s]", node.getStep()));
+        }
+
+        @Override
+        public PlanWithProperties visitRangePartition(RangePartitionNode node, PreferredProperties preferredProperties)
+        {
+            PlanWithProperties lookupSource = node.getSource().accept(this, PreferredProperties.any());
+            PlanWithProperties sampleSource = node.getSampleSource().accept(this, PreferredProperties.any());
+
+            if (lookupSource.getProperties().isSingleNode()) {
+                if (!sampleSource.getProperties().isSingleNode()) {
+                    sampleSource = withDerivedProperties(
+                            gatheringExchange(idAllocator.getNextId(), REMOTE, sampleSource.getNode()),
+                            sampleSource.getProperties());
+                }
+            }
+            else {
+                sampleSource = withDerivedProperties(
+                        replicatedExchange(idAllocator.getNextId(), REMOTE, sampleSource.getNode()),
+                        sampleSource.getProperties());
+            }
+
+            PartitioningScheme partitioningScheme = new PartitioningScheme(
+                    Partitioning.create(
+                            FIXED_RANGE_DISTRIBUTION,
+                            ImmutableList.of(node.getPartitionSymbol())),
+                    ImmutableList.copyOf(node.getOutputSymbols()));
+
+            PlanWithProperties newNode = rebaseAndDeriveProperties(node, ImmutableList.of(lookupSource, sampleSource));
+
+            return withDerivedProperties(
+                    partitionedExchange(
+                            idAllocator.getNextId(),
+                            REMOTE,
+                            newNode.getNode(),
+                            partitioningScheme),
+                    newNode.getProperties());
         }
 
         @Override

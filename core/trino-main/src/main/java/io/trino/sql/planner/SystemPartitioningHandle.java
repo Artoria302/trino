@@ -16,7 +16,9 @@ package io.trino.sql.planner;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import com.google.common.math.DoubleMath;
 import io.trino.Session;
+import io.trino.SystemSessionProperties;
 import io.trino.execution.scheduler.NodeScheduler;
 import io.trino.execution.scheduler.NodeSelector;
 import io.trino.metadata.InternalNode;
@@ -25,11 +27,13 @@ import io.trino.operator.InterpretedHashGenerator;
 import io.trino.operator.PartitionFunction;
 import io.trino.operator.PrecomputedHashGenerator;
 import io.trino.spi.Page;
+import io.trino.spi.block.Block;
 import io.trino.spi.connector.BucketFunction;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
 import io.trino.spi.type.Type;
 import io.trino.type.BlockTypeOperators;
 
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +43,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.SystemSessionProperties.getHashPartitionCount;
 import static io.trino.spi.StandardErrorCode.NO_NODES_AVAILABLE;
 import static io.trino.util.Failures.checkCondition;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public final class SystemPartitioningHandle
@@ -63,6 +68,7 @@ public final class SystemPartitioningHandle
     public static final PartitioningHandle SOURCE_DISTRIBUTION = createSystemPartitioning(SystemPartitioning.SOURCE, SystemPartitionFunction.UNKNOWN);
     public static final PartitioningHandle ARBITRARY_DISTRIBUTION = createSystemPartitioning(SystemPartitioning.ARBITRARY, SystemPartitionFunction.UNKNOWN);
     public static final PartitioningHandle FIXED_PASSTHROUGH_DISTRIBUTION = createSystemPartitioning(SystemPartitioning.FIXED, SystemPartitionFunction.UNKNOWN);
+    public static final PartitioningHandle FIXED_RANGE_DISTRIBUTION = createSystemPartitioning(SystemPartitioning.FIXED, SystemPartitionFunction.RANGE);
 
     private static PartitioningHandle createSystemPartitioning(SystemPartitioning partitioning, SystemPartitionFunction function)
     {
@@ -204,6 +210,13 @@ public final class SystemPartitioningHandle
                 throw new UnsupportedOperationException();
             }
         },
+        RANGE {
+            @Override
+            public BucketFunction createBucketFunction(List<Type> partitionChannelTypes, boolean isHashPrecomputed, int bucketCount, BlockTypeOperators blockTypeOperators)
+            {
+                return new RangePartitionBucketFunction(bucketCount);
+            }
+        },
         UNKNOWN {
             @Override
             public BucketFunction createBucketFunction(List<Type> partitionChannelTypes, boolean isHashPrecomputed, int bucketCount, BlockTypeOperators blockTypeOperators)
@@ -252,6 +265,41 @@ public final class SystemPartitioningHandle
             {
                 return toStringHelper(this)
                         .add("bucketCount", bucketCount)
+                        .toString();
+            }
+        }
+
+        private static class RangePartitionBucketFunction
+                implements BucketFunction
+        {
+            private final int bucketCount;
+            private final int rangeBoundary;
+            private final double ratio;
+
+            public RangePartitionBucketFunction(int bucketCount)
+            {
+                checkArgument(bucketCount > 0, "bucketCount must be at least 1");
+                this.bucketCount = bucketCount;
+                rangeBoundary = SystemSessionProperties.RANGE_PARTITION_SAMPLE_SIZE + 1;
+                ratio = (double) bucketCount / rangeBoundary;
+            }
+
+            @Override
+            public int getBucket(Page page, int position)
+            {
+                Block partitionBlock = page.getBlock(0);
+                int partition = partitionBlock.getInt(position, 0);
+                int bucket = DoubleMath.roundToInt(partition * ratio, RoundingMode.FLOOR);
+                return Math.min(Math.max(0, bucket), bucketCount - 1);
+            }
+
+            @Override
+            public String toString()
+            {
+                return toStringHelper(this)
+                        .add("rangeBoundary", rangeBoundary)
+                        .add("bucketCount", bucketCount)
+                        .add("ratio", format("%.5f", ratio))
                         .toString();
             }
         }
