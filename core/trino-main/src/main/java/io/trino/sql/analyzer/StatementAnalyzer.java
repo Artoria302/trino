@@ -52,7 +52,6 @@ import io.trino.metadata.TableSchema;
 import io.trino.metadata.TableVersion;
 import io.trino.metadata.ViewColumn;
 import io.trino.metadata.ViewDefinition;
-import io.trino.operator.RetryPolicy;
 import io.trino.security.AccessControl;
 import io.trino.security.AllowAllAccessControl;
 import io.trino.security.SecurityContext;
@@ -264,12 +263,8 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static io.trino.SystemSessionProperties.canWriteTableOrderBy;
 import static io.trino.SystemSessionProperties.getMaxGroupingSets;
-import static io.trino.SystemSessionProperties.getRetryPolicy;
-import static io.trino.SystemSessionProperties.getTaskWriterCount;
-import static io.trino.SystemSessionProperties.isEnableWriteTableOrderBy;
-import static io.trino.SystemSessionProperties.isRedistributeWrites;
-import static io.trino.SystemSessionProperties.isScaleWriters;
 import static io.trino.metadata.FunctionResolver.toPath;
 import static io.trino.metadata.MetadataUtil.createQualifiedObjectName;
 import static io.trino.metadata.MetadataUtil.getRequiredCatalogHandle;
@@ -4708,10 +4703,7 @@ class StatementAnalyzer
 
     private void markWriteTableOrderBy(Query query)
     {
-        if (getRetryPolicy(session) != RetryPolicy.TASK || !isEnableWriteTableOrderBy(session)) {
-            return;
-        }
-        if (isRedistributeWrites(session) || isScaleWriters(session) || getTaskWriterCount(session) != 1) {
+        if (!canWriteTableOrderBy(session)) {
             return;
         }
 

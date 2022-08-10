@@ -31,14 +31,17 @@ public class SubPlan
 {
     private final PlanFragment fragment;
     private final List<SubPlan> children;
+    private final List<PlanFragmentId> childrenPlanFragmentIds;
 
-    public SubPlan(PlanFragment fragment, List<SubPlan> children)
+    public SubPlan(PlanFragment fragment, List<SubPlan> children, List<PlanFragmentId> childrenPlanFragmentIds)
     {
         requireNonNull(fragment, "fragment is null");
         requireNonNull(children, "children is null");
+        requireNonNull(childrenPlanFragmentIds, "childrenPlanFragmentId is null");
 
         this.fragment = fragment;
         this.children = ImmutableList.copyOf(children);
+        this.childrenPlanFragmentIds = ImmutableList.copyOf(childrenPlanFragmentIds);
     }
 
     public PlanFragment getFragment()
@@ -49,6 +52,11 @@ public class SubPlan
     public List<SubPlan> getChildren()
     {
         return children;
+    }
+
+    public List<PlanFragmentId> getChildrenPlanFragmentIds()
+    {
+        return childrenPlanFragmentIds;
     }
 
     /**

@@ -179,7 +179,7 @@ public class PlanFragmenter
         for (SubPlan child : subPlan.getChildren()) {
             childrenBuilder.add(reassignPartitioningHandleIfNecessaryHelper(session, child, fragment.getPartitioning()));
         }
-        return new SubPlan(newFragment, childrenBuilder.build());
+        return new SubPlan(newFragment, childrenBuilder.build(), subPlan.getChildrenPlanFragmentIds());
     }
 
     private static class Fragmenter
@@ -234,7 +234,7 @@ public class PlanFragmenter
                     statsAndCosts.getForSubplan(root),
                     Optional.of(jsonFragmentPlan(root, symbols, metadata, functionManager, session)));
 
-            return new SubPlan(fragment, properties.getChildren());
+            return new SubPlan(fragment, properties.getChildren(), properties.getChildrenPlanFragmentIds());
         }
 
         @Override
@@ -326,7 +326,19 @@ public class PlanFragmenter
             }
 
             if (exchange.getReuseExchangeNodeId().isPresent() && reusedExchange.containsKey(exchange.getReuseExchangeNodeId().get())) {
-                return reusedExchange.get(exchange.getReuseExchangeNodeId().get());
+                RemoteSourceNode reusedRemoteSourceNode = reusedExchange.get(exchange.getReuseExchangeNodeId().get());
+                checkState(exchange.getOutputSymbols().size() == reusedRemoteSourceNode.getOutputSymbols().size(),
+                        "Current exchange node output symbols size %s not equal to reused exchange node output symbols size %s",
+                        exchange.getOutputSymbols().size(),
+                        reusedRemoteSourceNode.getOutputSymbols().size());
+                context.get().addChildrenPlanFragmentId(reusedRemoteSourceNode.getSourceFragmentIds());
+                return new RemoteSourceNode(
+                        exchange.getId(),
+                        reusedRemoteSourceNode.getSourceFragmentIds(),
+                        exchange.getOutputSymbols(),
+                        exchange.getOrderingScheme(),
+                        exchange.getType(),
+                        reusedRemoteSourceNode.getRetryPolicy());
             }
 
             PartitioningScheme partitioningScheme = exchange.getPartitioningScheme();
@@ -353,6 +365,8 @@ public class PlanFragmenter
                     .map(SubPlan::getFragment)
                     .map(PlanFragment::getId)
                     .collect(toImmutableList());
+
+            context.get().addChildrenPlanFragmentId(childrenIds);
 
             RemoteSourceNode remoteSourceNode = new RemoteSourceNode(
                     exchange.getId(),
@@ -392,6 +406,7 @@ public class PlanFragmenter
     private static class FragmentProperties
     {
         private final List<SubPlan> children = new ArrayList<>();
+        private final List<PlanFragmentId> childrenPlanFragmentId = new ArrayList<>();
 
         private final PartitioningScheme partitioningScheme;
 
@@ -406,6 +421,11 @@ public class PlanFragmenter
         public List<SubPlan> getChildren()
         {
             return children;
+        }
+
+        public List<PlanFragmentId> getChildrenPlanFragmentIds()
+        {
+            return childrenPlanFragmentId;
         }
 
         public FragmentProperties setSingleNodeDistribution()
@@ -529,6 +549,13 @@ public class PlanFragmenter
         public FragmentProperties addChildren(List<SubPlan> children)
         {
             this.children.addAll(children);
+
+            return this;
+        }
+
+        public FragmentProperties addChildrenPlanFragmentId(List<PlanFragmentId> children)
+        {
+            this.childrenPlanFragmentId.addAll(children);
 
             return this;
         }

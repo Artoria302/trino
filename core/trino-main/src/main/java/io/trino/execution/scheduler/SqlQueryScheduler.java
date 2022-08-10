@@ -585,8 +585,8 @@ public class SqlQueryScheduler
                 if (rootStageId == null) {
                     rootStageId = stageId;
                 }
-                Set<StageId> childStageIds = planNode.getChildren().stream()
-                        .map(childStage -> getStageId(session.getQueryId(), childStage.getFragment().getId()))
+                Set<StageId> childStageIds = planNode.getChildrenPlanFragmentIds().stream()
+                        .map(childPlanFragmentId -> getStageId(session.getQueryId(), childPlanFragmentId))
                         .collect(toImmutableSet());
                 children.put(stageId, childStageIds);
                 childStageIds.forEach(child -> parents.put(child, stageId));

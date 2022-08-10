@@ -1510,4 +1510,9 @@ public final class SystemSessionProperties
     {
         return session.getSystemProperty(ENABLE_WRITE_TABLE_ORDER_BY, Boolean.class);
     }
+
+    public static boolean canWriteTableOrderBy(Session session)
+    {
+        return getRetryPolicy(session) == RetryPolicy.TASK && isEnableWriteTableOrderBy(session) && !isRedistributeWrites(session) && !isScaleWriters(session) && getTaskWriterCount(session) == 1;
+    }
 }

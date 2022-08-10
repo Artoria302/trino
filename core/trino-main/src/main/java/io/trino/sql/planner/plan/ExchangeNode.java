@@ -165,7 +165,7 @@ public class ExchangeNode
                 ImmutableList.of(child),
                 ImmutableList.of(partitioningScheme.getOutputLayout()).asList(),
                 Optional.empty(),
-                Optional.of(reuseExchangeNodeId));
+                Optional.ofNullable(reuseExchangeNodeId));
     }
 
     public static ExchangeNode replicatedExchange(PlanNodeId id, Scope scope, PlanNode child)
@@ -204,7 +204,7 @@ public class ExchangeNode
                 ImmutableList.of(child),
                 ImmutableList.of(child.getOutputSymbols()),
                 Optional.empty(),
-                Optional.of(reusedExchangeNodeId));
+                Optional.ofNullable(reusedExchangeNodeId));
     }
 
     public static ExchangeNode roundRobinExchange(PlanNodeId id, Scope scope, PlanNode child)

@@ -95,6 +95,7 @@ import static io.trino.SystemSessionProperties.getFaultTolerantPreserveInputPart
 import static io.trino.connector.CatalogName.isInternalSystemConnector;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_ARBITRARY_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_HASH_DISTRIBUTION;
+import static io.trino.sql.planner.SystemPartitioningHandle.FIXED_RANGE_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SCALED_WRITER_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SINGLE_DISTRIBUTION;
 import static io.trino.sql.planner.SystemPartitioningHandle.SOURCE_DISTRIBUTION;
@@ -161,7 +162,7 @@ public class StageTaskSourceFactory
                     exchangeSourceHandles,
                     getFaultTolerantExecutionTargetTaskInputSize(session));
         }
-        if (partitioning.equals(FIXED_HASH_DISTRIBUTION) || partitioning.getConnectorId().isPresent()) {
+        if (partitioning.equals(FIXED_HASH_DISTRIBUTION) || partitioning.equals(FIXED_RANGE_DISTRIBUTION) || partitioning.getConnectorId().isPresent()) {
             return HashDistributionTaskSource.create(
                     session,
                     fragment,

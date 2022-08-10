@@ -26,6 +26,7 @@ import io.trino.cost.StatsCalculator;
 import io.trino.cost.StatsProvider;
 import io.trino.cost.TableStatsProvider;
 import io.trino.execution.warnings.WarningCollector;
+import io.trino.operator.RetryPolicy;
 import io.trino.spi.connector.GroupingProperty;
 import io.trino.spi.connector.LocalProperty;
 import io.trino.spi.type.IntegerType;
@@ -99,10 +100,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static io.trino.SystemSessionProperties.canWriteTableOrderBy;
+import static io.trino.SystemSessionProperties.getRetryPolicy;
 import static io.trino.SystemSessionProperties.ignoreDownStreamPreferences;
 import static io.trino.SystemSessionProperties.isColocatedJoinEnabled;
 import static io.trino.SystemSessionProperties.isDistributedSortEnabled;
-import static io.trino.SystemSessionProperties.isEnableWriteTableOrderBy;
 import static io.trino.SystemSessionProperties.isForceSingleNodeOutput;
 import static io.trino.SystemSessionProperties.isUseExactPartitioning;
 import static io.trino.SystemSessionProperties.isUsePartialDistinctLimit;
@@ -524,7 +526,7 @@ public class AddExchanges
                         child.getProperties());
             }
 
-            if (isEnableWriteTableOrderBy(session)) {
+            if (canWriteTableOrderBy(session)) {
                 return rangePartitionSort(node, preferredProperties);
             }
 
@@ -542,56 +544,78 @@ public class AddExchanges
             int sampleSize = SystemSessionProperties.RANGE_PARTITION_SAMPLE_SIZE;
 
             PlanNode source = node.getSource();
-            // TODO check method planExpand
             NodeAndMappings copiedPlan = PlanCopier.copyPlan(source, source.getOutputSymbols(), plannerContext.getMetadata(), symbolAllocator, idAllocator);
 
-            PlanWithProperties sourceChild = planChild(source, PreferredProperties.any());
-            PlanWithProperties sampleChild = planChild(copiedPlan.getNode(), PreferredProperties.any());
+            PlanNode copiedSource = copiedPlan.getNode();
+            List<Symbol> fields = copiedPlan.getFields();
 
-            ExchangeNode exchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
-            ExchangeNode sampleExchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode(), exchangeSource.getId());
+            Assignments.Builder builder = Assignments.builder();
+            for (int i = 0; i < copiedSource.getOutputSymbols().size(); i++) {
+                builder.put(copiedSource.getOutputSymbols().get(i), fields.get(i).toSymbolReference());
+            }
+            ProjectNode projectNode = new ProjectNode(idAllocator.getNextId(), copiedPlan.getNode(), builder.build());
+
+            PlanWithProperties sourceChild = planChild(source, PreferredProperties.any());
+            PlanWithProperties sampleChild = planChild(projectNode, PreferredProperties.any());
+
+            if (getRetryPolicy(session) == RetryPolicy.TASK) {
+                ExchangeNode exchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
+                sourceChild = withDerivedProperties(
+                        exchangeSource,
+                        sourceChild.getProperties());
+
+                ExchangeNode sampleExchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode(), exchangeSource.getId());
+                sampleChild = withDerivedProperties(
+                        sampleExchangeSource,
+                        sampleChild.getProperties());
+            }
 
             // sample
-            sampleChild = withDerivedProperties(
-                    sampleExchangeSource,
-                    sampleChild.getProperties());
-            sampleChild = withDerivedProperties(
-                    new SampleNNode(
-                            idAllocator.getNextId(),
-                            sampleChild.getNode(),
-                            sampleSize,
-                            SampleNNode.Step.PARTIAL,
-                            false,
-                            true),
-                    sampleChild.getProperties());
-            sampleChild = withDerivedProperties(
-                    gatheringExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode()),
-                    sampleChild.getProperties());
-            sampleChild = withDerivedProperties(
-                    new SampleNNode(
-                            idAllocator.getNextId(),
-                            sampleChild.getNode(),
-                            sampleSize,
-                            SampleNNode.Step.FINAL,
-                            false,
-                            true),
-                    sampleChild.getProperties());
+            if (!sampleChild.getProperties().isSingleNode()) {
+                sampleChild = withDerivedProperties(
+                        new SampleNNode(
+                                idAllocator.getNextId(),
+                                sampleChild.getNode(),
+                                sampleSize,
+                                SampleNNode.Step.PARTIAL,
+                                false,
+                                true),
+                        sampleChild.getProperties());
+                sampleChild = withDerivedProperties(
+                        gatheringExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode()),
+                        sampleChild.getProperties());
+                sampleChild = withDerivedProperties(
+                        new SampleNNode(
+                                idAllocator.getNextId(),
+                                sampleChild.getNode(),
+                                sampleSize,
+                                SampleNNode.Step.FINAL,
+                                false,
+                                true),
+                        sampleChild.getProperties());
+            }
+            else {
+                sampleChild = withDerivedProperties(
+                        new SampleNNode(
+                                idAllocator.getNextId(),
+                                sampleChild.getNode(),
+                                sampleSize,
+                                SampleNNode.Step.SINGLE,
+                                false,
+                                true),
+                        sampleChild.getProperties());
+            }
 
             sampleChild = withDerivedProperties(
                     replicatedExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode()),
                     sampleChild.getProperties());
-
-            // source
-            sourceChild = withDerivedProperties(
-                    exchangeSource,
-                    sourceChild.getProperties());
 
             // range partition
             RangePartitionNode rangePartitionNode = new RangePartitionNode(
                     idAllocator.getNextId(),
                     sourceChild.getNode(),
                     sampleChild.getNode(),
-                    symbolAllocator.newSymbol("rangepartition", IntegerType.INTEGER),
+                    symbolAllocator.newSymbol("range_partition", IntegerType.INTEGER),
                     node.getOrderingScheme(),
                     node.getOrderingScheme().getOrderBy(),
                     sampleSize,
