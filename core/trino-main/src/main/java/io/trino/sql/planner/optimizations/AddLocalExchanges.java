@@ -714,6 +714,7 @@ public class AddLocalExchanges
                         new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), node.getOutputSymbols()),
                         sources,
                         inputLayouts,
+                        Optional.empty(),
                         Optional.empty());
                 return deriveProperties(exchangeNode, inputProperties);
             }
@@ -730,6 +731,7 @@ public class AddLocalExchanges
                                 Optional.empty()),
                         sources,
                         inputLayouts,
+                        Optional.empty(),
                         Optional.empty());
                 return deriveProperties(exchangeNode, inputProperties);
             }
@@ -742,6 +744,7 @@ public class AddLocalExchanges
                     new PartitioningScheme(Partitioning.create(FIXED_ARBITRARY_DISTRIBUTION, ImmutableList.of()), node.getOutputSymbols()),
                     sources,
                     inputLayouts,
+                    Optional.empty(),
                     Optional.empty());
 
             return deriveProperties(exchangeNode, inputProperties);

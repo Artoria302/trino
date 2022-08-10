@@ -472,7 +472,8 @@ public class UnaliasSymbolReferences
                             newPartitioningScheme,
                             rewrittenChildren.build(),
                             newInputs,
-                            newOrderingScheme),
+                            newOrderingScheme,
+                            node.getReuseExchangeNodeId()),
                     outputMapping);
         }
 

@@ -28,10 +28,13 @@ import io.trino.cost.TableStatsProvider;
 import io.trino.execution.warnings.WarningCollector;
 import io.trino.spi.connector.GroupingProperty;
 import io.trino.spi.connector.LocalProperty;
+import io.trino.spi.type.IntegerType;
 import io.trino.sql.PlannerContext;
 import io.trino.sql.planner.DomainTranslator;
+import io.trino.sql.planner.NodeAndMappings;
 import io.trino.sql.planner.Partitioning;
 import io.trino.sql.planner.PartitioningScheme;
+import io.trino.sql.planner.PlanCopier;
 import io.trino.sql.planner.PlanNodeIdAllocator;
 import io.trino.sql.planner.Symbol;
 import io.trino.sql.planner.SymbolAllocator;
@@ -99,6 +102,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.SystemSessionProperties.ignoreDownStreamPreferences;
 import static io.trino.SystemSessionProperties.isColocatedJoinEnabled;
 import static io.trino.SystemSessionProperties.isDistributedSortEnabled;
+import static io.trino.SystemSessionProperties.isEnableWriteTableOrderBy;
 import static io.trino.SystemSessionProperties.isForceSingleNodeOutput;
 import static io.trino.SystemSessionProperties.isUseExactPartitioning;
 import static io.trino.SystemSessionProperties.isUsePartialDistinctLimit;
@@ -520,6 +524,10 @@ public class AddExchanges
                         child.getProperties());
             }
 
+            if (isEnableWriteTableOrderBy(session)) {
+                return rangePartitionSort(node, preferredProperties);
+            }
+
             if (!child.getProperties().isSingleNode()) {
                 child = withDerivedProperties(
                         gatheringExchange(idAllocator.getNextId(), REMOTE, child.getNode()),
@@ -527,6 +535,92 @@ public class AddExchanges
             }
 
             return rebaseAndDeriveProperties(node, child);
+        }
+
+        private PlanWithProperties rangePartitionSort(SortNode node, PreferredProperties preferredProperties)
+        {
+            int sampleSize = SystemSessionProperties.RANGE_PARTITION_SAMPLE_SIZE;
+
+            PlanNode source = node.getSource();
+            // TODO check method planExpand
+            NodeAndMappings copiedPlan = PlanCopier.copyPlan(source, source.getOutputSymbols(), plannerContext.getMetadata(), symbolAllocator, idAllocator);
+
+            PlanWithProperties sourceChild = planChild(source, PreferredProperties.any());
+            PlanWithProperties sampleChild = planChild(copiedPlan.getNode(), PreferredProperties.any());
+
+            ExchangeNode exchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
+            ExchangeNode sampleExchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode(), exchangeSource.getId());
+
+            // sample
+            sampleChild = withDerivedProperties(
+                    sampleExchangeSource,
+                    sampleChild.getProperties());
+            sampleChild = withDerivedProperties(
+                    new SampleNNode(
+                            idAllocator.getNextId(),
+                            sampleChild.getNode(),
+                            sampleSize,
+                            SampleNNode.Step.PARTIAL,
+                            false,
+                            true),
+                    sampleChild.getProperties());
+            sampleChild = withDerivedProperties(
+                    gatheringExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode()),
+                    sampleChild.getProperties());
+            sampleChild = withDerivedProperties(
+                    new SampleNNode(
+                            idAllocator.getNextId(),
+                            sampleChild.getNode(),
+                            sampleSize,
+                            SampleNNode.Step.FINAL,
+                            false,
+                            true),
+                    sampleChild.getProperties());
+
+            sampleChild = withDerivedProperties(
+                    replicatedExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode()),
+                    sampleChild.getProperties());
+
+            // source
+            sourceChild = withDerivedProperties(
+                    exchangeSource,
+                    sourceChild.getProperties());
+
+            // range partition
+            RangePartitionNode rangePartitionNode = new RangePartitionNode(
+                    idAllocator.getNextId(),
+                    sourceChild.getNode(),
+                    sampleChild.getNode(),
+                    symbolAllocator.newSymbol("rangepartition", IntegerType.INTEGER),
+                    node.getOrderingScheme(),
+                    node.getOrderingScheme().getOrderBy(),
+                    sampleSize,
+                    false);
+
+            PartitioningScheme partitioningScheme = new PartitioningScheme(
+                    Partitioning.create(
+                            FIXED_RANGE_DISTRIBUTION,
+                            ImmutableList.of(rangePartitionNode.getPartitionSymbol())),
+                    ImmutableList.copyOf(rangePartitionNode.getOutputSymbols()));
+
+            PlanWithProperties result = withDerivedProperties(
+                    partitionedExchange(
+                            idAllocator.getNextId(),
+                            REMOTE,
+                            rangePartitionNode,
+                            partitioningScheme),
+                    deriveProperties(
+                            rangePartitionNode,
+                            ImmutableList.of(sourceChild.getProperties(), sampleChild.getProperties())));
+
+            // final sort
+            return withDerivedProperties(
+                    new SortNode(
+                            idAllocator.getNextId(),
+                            result.getNode(),
+                            node.getOrderingScheme(),
+                            true),
+                    result.getProperties());
         }
 
         @Override
@@ -1203,6 +1297,7 @@ public class AddExchanges
                         new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), node.getOutputSymbols()),
                         partitionedChildren,
                         partitionedOutputLayouts,
+                        Optional.empty(),
                         Optional.empty());
             }
             else if (!unpartitionedChildren.isEmpty()) {
@@ -1221,6 +1316,7 @@ public class AddExchanges
                             new PartitioningScheme(Partitioning.create(SINGLE_DISTRIBUTION, ImmutableList.of()), exchangeOutputLayout),
                             partitionedChildren,
                             partitionedOutputLayouts,
+                            Optional.empty(),
                             Optional.empty());
 
                     unpartitionedChildren.add(result);
@@ -1271,6 +1367,7 @@ public class AddExchanges
                                 new PartitioningScheme(Partitioning.create(FIXED_ARBITRARY_DISTRIBUTION, ImmutableList.of()), node.getOutputSymbols()),
                                 partitionedChildren,
                                 partitionedOutputLayouts,
+                                Optional.empty(),
                                 Optional.empty()));
             }
         }
@@ -1302,18 +1399,9 @@ public class AddExchanges
             PlanWithProperties lookupSource = node.getSource().accept(this, PreferredProperties.any());
             PlanWithProperties sampleSource = node.getSampleSource().accept(this, PreferredProperties.any());
 
-            if (lookupSource.getProperties().isSingleNode()) {
-                if (!sampleSource.getProperties().isSingleNode()) {
-                    sampleSource = withDerivedProperties(
-                            gatheringExchange(idAllocator.getNextId(), REMOTE, sampleSource.getNode()),
-                            sampleSource.getProperties());
-                }
-            }
-            else {
-                sampleSource = withDerivedProperties(
-                        replicatedExchange(idAllocator.getNextId(), REMOTE, sampleSource.getNode()),
-                        sampleSource.getProperties());
-            }
+            sampleSource = withDerivedProperties(
+                    replicatedExchange(idAllocator.getNextId(), REMOTE, sampleSource.getNode()),
+                    sampleSource.getProperties());
 
             PartitioningScheme partitioningScheme = new PartitioningScheme(
                     Partitioning.create(

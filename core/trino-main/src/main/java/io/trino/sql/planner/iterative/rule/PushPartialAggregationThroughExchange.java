@@ -192,6 +192,7 @@ public class PushPartialAggregationThroughExchange
                 partitioning,
                 partials,
                 ImmutableList.copyOf(Collections.nCopies(partials.size(), aggregation.getOutputSymbols())),
+                Optional.empty(),
                 Optional.empty());
     }
 

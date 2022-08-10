@@ -49,6 +49,7 @@ import io.trino.sql.planner.plan.ValuesNode;
 import javax.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -191,6 +192,7 @@ public class PlanFragmenter
         private final FunctionManager functionManager;
         private final TypeProvider types;
         private final StatsAndCosts statsAndCosts;
+        private final Map<PlanNodeId, RemoteSourceNode> reusedExchange = new HashMap<>();
         private int nextFragmentId = ROOT_FRAGMENT_ID + 1;
 
         public Fragmenter(Session session, Metadata metadata, FunctionManager functionManager, TypeProvider types, StatsAndCosts statsAndCosts)
@@ -323,6 +325,10 @@ public class PlanFragmenter
                 return context.defaultRewrite(exchange, context.get());
             }
 
+            if (exchange.getReuseExchangeNodeId().isPresent() && reusedExchange.containsKey(exchange.getReuseExchangeNodeId().get())) {
+                return reusedExchange.get(exchange.getReuseExchangeNodeId().get());
+            }
+
             PartitioningScheme partitioningScheme = exchange.getPartitioningScheme();
 
             if (exchange.getType() == ExchangeNode.Type.GATHER) {
@@ -348,13 +354,15 @@ public class PlanFragmenter
                     .map(PlanFragment::getId)
                     .collect(toImmutableList());
 
-            return new RemoteSourceNode(
+            RemoteSourceNode remoteSourceNode = new RemoteSourceNode(
                     exchange.getId(),
                     childrenIds,
                     exchange.getOutputSymbols(),
                     exchange.getOrderingScheme(),
                     exchange.getType(),
                     isWorkerCoordinatorBoundary(context.get(), childrenProperties.build()) ? getRetryPolicy(session) : RetryPolicy.NONE);
+            reusedExchange.put(exchange.getId(), remoteSourceNode);
+            return remoteSourceNode;
         }
 
         private SubPlan buildSubPlan(PlanNode node, FragmentProperties properties, RewriteContext<FragmentProperties> context)

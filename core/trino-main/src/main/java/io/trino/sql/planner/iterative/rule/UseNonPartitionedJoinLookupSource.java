@@ -112,6 +112,7 @@ public class UseNonPartitionedJoinLookupSource
                         exchangeNode.getPartitioningScheme().getOutputLayout()),
                 exchangeNode.getSources(),
                 exchangeNode.getInputs(),
+                Optional.empty(),
                 Optional.empty());
     }
 

@@ -572,7 +572,8 @@ public class HashGenerationOptimizer
                             partitioningScheme,
                             newSources.build(),
                             newInputs.build(),
-                            node.getOrderingScheme()),
+                            node.getOrderingScheme(),
+                            node.getReuseExchangeNodeId()),
                     newHashSymbols);
         }
 
