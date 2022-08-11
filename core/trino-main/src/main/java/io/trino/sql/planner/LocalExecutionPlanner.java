@@ -3564,6 +3564,7 @@ public class LocalExecutionPlanner
                     node.getId(),
                     source.getTypes(),
                     node.getCount());
+
             return new PhysicalOperation(operatorFactory, source.getLayout(), context, source);
         }
 
@@ -3575,7 +3576,7 @@ public class LocalExecutionPlanner
             // Plan build
             LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactory = createRangePartitionLookupSourceFactoryManager(node, context);
 
-            List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(lookupSource.getLayout()::get).iterator());
+            List<Integer> sortChannels = ImmutableList.copyOf(node.getOrderingScheme().getOrderBy().stream().map(lookupSource.getLayout()::get).iterator());
 
             RangePartitionLookupOperatorFactory operator = new RangePartitionLookupOperatorFactory(
                     context.getNextOperatorId(),
@@ -3606,7 +3607,8 @@ public class LocalExecutionPlanner
             LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager = new LookupBridgeManager<>(
                     new RangePartitionLookupSourceFactory(buildTypes));
 
-            List<Integer> sortChannels = ImmutableList.copyOf(node.getSampleOrderingSymbols().stream().map(buildSource.getLayout()::get).iterator());
+            List<Integer> sortChannels = node.getSampleOrderingSymbols().stream().map(buildSource.getLayout()::get).collect(toImmutableList());
+            List<Type> sortTypes = sortChannels.stream().map(buildTypes::get).collect(toImmutableList());
             List<SortOrder> sortOrders = ImmutableList.copyOf(node.getOrderingScheme().getOrderingList());
 
             OperatorFactory lookupBuilderOperatorFactory = new RangePartitionBuilderOperator.RangeIndexBuilderOperatorFactory(
@@ -3614,6 +3616,7 @@ public class LocalExecutionPlanner
                     node.getId(),
                     lookupSourceFactoryManager,
                     sortChannels,
+                    sortTypes,
                     sortOrders,
                     pagesIndexFactory,
                     node.getSampleSize(),

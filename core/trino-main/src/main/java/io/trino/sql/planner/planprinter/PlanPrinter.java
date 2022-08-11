@@ -1556,13 +1556,17 @@ public class PlanPrinter
                     .getOrderBy().stream()
                     .map(input -> input + " " + node.getOrderingScheme().getOrdering(input))
                     .collect(joining(", ", "[", "]"));
+            String sampleKeys = node.getSampleOrderingSymbols().stream()
+                    .map(Symbol::toString)
+                    .collect(joining(", ", "[", "]"));
 
             addNode(
                     node,
                     "RangePartition",
                     ImmutableMap.of(
                             "partitionSymbol", node.getPartitionSymbol().toString(),
-                            "rangePartitionOrderBy", keys));
+                            "rangePartitionOrderBy", keys,
+                            "sampleOrderingSymbols", sampleKeys));
 
             return processChildren(node, context);
         }

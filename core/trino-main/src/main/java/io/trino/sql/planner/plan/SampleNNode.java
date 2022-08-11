@@ -13,6 +13,7 @@
  */
 package io.trino.sql.planner.plan;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -41,7 +42,9 @@ public class SampleNNode
     private final boolean canPruneSymbol;
     private final boolean canPredicatePushDown;
 
-    public SampleNNode(@JsonProperty("id") PlanNodeId id,
+    @JsonCreator
+    public SampleNNode(
+            @JsonProperty("id") PlanNodeId id,
             @JsonProperty("source") PlanNode source,
             @JsonProperty("count") int count,
             @JsonProperty("step") Step step,

@@ -16,6 +16,7 @@ package io.trino.sql.planner.optimizations;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.SetMultimap;
@@ -548,16 +549,16 @@ public class AddExchanges
             List<Symbol> sourceOutputSymbols = source.getOutputSymbols();
             NodeAndMappings copiedPlan = PlanCopier.copyPlan(source, sourceOutputSymbols, plannerContext.getMetadata(), symbolAllocator, idAllocator);
 
-            // rename relocated name to origin name
+            // for rename
+            ImmutableMap.Builder<Symbol, Symbol> symbolMapperBuilder = ImmutableMap.builder();
             List<Symbol> fields = copiedPlan.getFields();
-            Assignments.Builder builder = Assignments.builder();
-            for (int i = 0; i < sourceOutputSymbols.size(); i++) {
-                builder.put(sourceOutputSymbols.get(i), fields.get(i).toSymbolReference());
+            for (int i = 0; i < fields.size(); i++) {
+                symbolMapperBuilder.put(sourceOutputSymbols.get(i), fields.get(i));
             }
-            ProjectNode projectNode = new ProjectNode(idAllocator.getNextId(), copiedPlan.getNode(), builder.build());
+            ImmutableMap<Symbol, Symbol> symbolMapper = symbolMapperBuilder.buildOrThrow();
 
             PlanWithProperties sourceChild = source.accept(this, PreferredProperties.any());
-            PlanWithProperties sampleChild = projectNode.accept(this, PreferredProperties.any());
+            PlanWithProperties sampleChild = copiedPlan.getNode().accept(this, PreferredProperties.any());
 
             if (getRetryPolicy(session) == RetryPolicy.TASK) {
                 ExchangeNode sourceExchange = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
@@ -615,7 +616,7 @@ public class AddExchanges
                     sampleChild.getNode(),
                     symbolAllocator.newSymbol("range_partition", IntegerType.INTEGER),
                     node.getOrderingScheme(),
-                    node.getOrderingScheme().getOrderBy(),
+                    node.getOrderingScheme().getOrderBy().stream().map(symbolMapper::get).collect(toImmutableList()),
                     sampleSize,
                     false);
             PlanWithProperties result = new PlanWithProperties(

@@ -81,7 +81,7 @@ public class RangePartitionLookupTransformer
             blockBuilder.writeInt(partition);
         }
 
-        page.appendColumn(blockBuilder.build());
+        page = page.appendColumn(blockBuilder.build());
 
         return ofResult(page, true);
     }

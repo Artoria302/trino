@@ -26,6 +26,7 @@ import io.trino.operator.PagesIndex;
 import io.trino.operator.SimplePagesIndexComparator;
 import io.trino.spi.Page;
 import io.trino.spi.connector.SortOrder;
+import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeOperators;
 import io.trino.sql.planner.plan.PlanNodeId;
 
@@ -48,6 +49,7 @@ public class RangePartitionBuilderOperator
         private final PlanNodeId planNodeId;
         private final LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager;
         private final List<Integer> sortChannels;
+        private final List<Type> sortTypes;
         private final List<SortOrder> sortOrders;
         private final PagesIndex.Factory pagesIndexFactory;
         private final int expectedPositions;
@@ -60,6 +62,7 @@ public class RangePartitionBuilderOperator
                 PlanNodeId planNodeId,
                 LookupBridgeManager<RangePartitionLookupSourceFactory> lookupSourceFactoryManager,
                 List<Integer> sortChannels,
+                List<Type> sortTypes,
                 List<SortOrder> sortOrders,
                 PagesIndex.Factory pagesIndexFactory,
                 int expectedPositions,
@@ -70,6 +73,7 @@ public class RangePartitionBuilderOperator
             requireNonNull(sortChannels, "sortChannels cannot be null");
             this.lookupSourceFactoryManager = requireNonNull(lookupSourceFactoryManager, "lookupSourceFactoryManager is null");
             this.sortChannels = ImmutableList.copyOf(requireNonNull(sortChannels, "sortChannels is null"));
+            this.sortTypes = ImmutableList.copyOf(requireNonNull(sortTypes, "sortTypes is null"));
             this.sortOrders = ImmutableList.copyOf(requireNonNull(sortOrders, "sortOrders is null"));
             this.pagesIndexFactory = requireNonNull(pagesIndexFactory, "pagesIndexFactory is null");
             this.expectedPositions = expectedPositions;
@@ -82,6 +86,7 @@ public class RangePartitionBuilderOperator
             planNodeId = other.planNodeId;
             lookupSourceFactoryManager = other.lookupSourceFactoryManager;
             sortChannels = ImmutableList.copyOf(other.sortChannels);
+            sortTypes = ImmutableList.copyOf(other.sortTypes);
             sortOrders = ImmutableList.copyOf(other.sortOrders);
             pagesIndexFactory = other.pagesIndexFactory;
             expectedPositions = other.expectedPositions;
@@ -99,6 +104,7 @@ public class RangePartitionBuilderOperator
                     operatorContext,
                     lookupSourceFactoryManager.getLookupBridge(),
                     sortChannels,
+                    sortTypes,
                     sortOrders,
                     pagesIndexFactory,
                     expectedPositions,
@@ -142,6 +148,7 @@ public class RangePartitionBuilderOperator
     private final RangePartitionLookupSourceFactory lookupSourceFactory;
     private final ListenableFuture<Void> lookupSourceFactoryDestroyed;
     private final List<Integer> sortChannels;
+    private final List<Type> sortTypes;
     private final List<SortOrder> sortOrders;
     private final PagesIndex pagesIndex;
     private final TypeOperators typeOperators;
@@ -154,6 +161,7 @@ public class RangePartitionBuilderOperator
             OperatorContext operatorContext,
             RangePartitionLookupSourceFactory lookupSourceFactory,
             List<Integer> sortChannels,
+            List<Type> sortTypes,
             List<SortOrder> sortOrders,
             PagesIndex.Factory pagesIndexFactory,
             int expectedPositions,
@@ -164,6 +172,7 @@ public class RangePartitionBuilderOperator
         this.lookupSourceFactory = lookupSourceFactory;
         lookupSourceFactoryDestroyed = lookupSourceFactory.isDestroyed();
         this.sortChannels = sortChannels;
+        this.sortTypes = sortTypes;
         this.sortOrders = sortOrders;
         this.pagesIndex = pagesIndexFactory.newPagesIndex(lookupSourceFactory.getTypes(), expectedPositions);
         this.typeOperators = typeOperators;
@@ -286,8 +295,8 @@ public class RangePartitionBuilderOperator
     private LookupSource buildLookupSource()
     {
         pagesIndex.sort(sortChannels, sortOrders);
-        SimplePagePagesIndexComparator comparator = new SimplePagePagesIndexComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
-        SimplePagesIndexComparator pagesIndexComparator = new SimplePagesIndexComparator(lookupSourceFactory.getTypes(), sortChannels, sortOrders, typeOperators);
+        SimplePagePagesIndexComparator comparator = new SimplePagePagesIndexComparator(sortTypes, sortChannels, sortOrders, typeOperators);
+        SimplePagesIndexComparator pagesIndexComparator = new SimplePagesIndexComparator(sortTypes, sortChannels, sortOrders, typeOperators);
         int positionCount = pagesIndex.getPositionCount();
         // origin array [1, 1, 3, 5, 6, 6, 6, 6, 8]
         int[] counts = new int[positionCount];

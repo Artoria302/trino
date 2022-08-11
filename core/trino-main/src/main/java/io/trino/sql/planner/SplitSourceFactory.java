@@ -45,9 +45,11 @@ import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanNodeId;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RemoteSourceNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SortNode;
@@ -327,6 +329,23 @@ public class SplitSourceFactory
         public Map<PlanNodeId, SplitSource> visitTopN(TopNNode node, Void context)
         {
             return node.getSource().accept(this, context);
+        }
+
+        @Override
+        public Map<PlanNodeId, SplitSource> visitSampleN(SampleNNode node, Void context)
+        {
+            return node.getSource().accept(this, context);
+        }
+
+        @Override
+        public Map<PlanNodeId, SplitSource> visitRangePartition(RangePartitionNode node, Void context)
+        {
+            Map<PlanNodeId, SplitSource> sourceSplits = node.getSource().accept(this, context);
+            Map<PlanNodeId, SplitSource> sampleSourceSplits = node.getSampleSource().accept(this, context);
+            return ImmutableMap.<PlanNodeId, SplitSource>builder()
+                    .putAll(sourceSplits)
+                    .putAll(sampleSourceSplits)
+                    .buildOrThrow();
         }
 
         @Override
