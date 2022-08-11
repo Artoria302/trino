@@ -81,10 +81,11 @@ public class SubPlan
                 .flatMap(List::stream)
                 .collect(toImmutableMultiset());
 
-        Multiset<PlanFragmentId> childrenIds = children.stream()
-                .map(SubPlan::getFragment)
-                .map(PlanFragment::getId)
-                .collect(toImmutableMultiset());
+        // Multiset<PlanFragmentId> childrenIds = children.stream()
+        //         .map(SubPlan::getFragment)
+        //         .map(PlanFragment::getId)
+        //         .collect(toImmutableMultiset());
+        Multiset<PlanFragmentId> childrenIds = childrenPlanFragmentIds.stream().collect(toImmutableMultiset());
 
         checkState(exchangeIds.equals(childrenIds), "Subplan exchange ids don't match child fragment ids (%s vs %s)", exchangeIds, childrenIds);
 

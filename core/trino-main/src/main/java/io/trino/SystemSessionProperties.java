@@ -1513,6 +1513,6 @@ public final class SystemSessionProperties
 
     public static boolean canWriteTableOrderBy(Session session)
     {
-        return getRetryPolicy(session) == RetryPolicy.TASK && isEnableWriteTableOrderBy(session) && !isRedistributeWrites(session) && !isScaleWriters(session) && getTaskWriterCount(session) == 1;
+        return isEnableWriteTableOrderBy(session) && !isRedistributeWrites(session) && !isScaleWriters(session) && getTaskWriterCount(session) == 1;
     }
 }

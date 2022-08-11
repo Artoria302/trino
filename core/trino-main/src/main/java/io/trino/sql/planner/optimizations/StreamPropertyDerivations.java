@@ -50,8 +50,10 @@ import io.trino.sql.planner.plan.PatternRecognitionNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimpleTableExecuteNode;
@@ -602,6 +604,21 @@ public final class StreamPropertyDerivations
                 return Iterables.getOnlyElement(inputProperties);
             }
             return StreamProperties.ordered();
+        }
+
+        @Override
+        public StreamProperties visitSampleN(SampleNNode node, List<StreamProperties> inputProperties)
+        {
+            if (node.getStep() == SampleNNode.Step.PARTIAL) {
+                return Iterables.getOnlyElement(inputProperties);
+            }
+            return StreamProperties.singleStream();
+        }
+
+        @Override
+        public StreamProperties visitRangePartition(RangePartitionNode node, List<StreamProperties> inputProperties)
+        {
+            return inputProperties.get(0);
         }
 
         @Override

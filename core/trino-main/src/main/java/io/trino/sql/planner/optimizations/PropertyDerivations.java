@@ -59,8 +59,10 @@ import io.trino.sql.planner.plan.PatternRecognitionNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SimpleTableExecuteNode;
@@ -402,6 +404,18 @@ public final class PropertyDerivations
             return ActualProperties.builderFrom(properties)
                     .local(node.getOrderingScheme().toLocalProperties())
                     .build();
+        }
+
+        @Override
+        public ActualProperties visitSampleN(SampleNNode node, List<ActualProperties> inputProperties)
+        {
+            return Iterables.getOnlyElement(inputProperties);
+        }
+
+        @Override
+        public ActualProperties visitRangePartition(RangePartitionNode node, List<ActualProperties> inputProperties)
+        {
+            return inputProperties.get(0);
         }
 
         @Override

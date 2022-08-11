@@ -19,6 +19,7 @@ import io.trino.sql.planner.plan.IndexJoinNode;
 import io.trino.sql.planner.plan.JoinNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanNodeId;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SpatialJoinNode;
 import io.trino.sql.planner.plan.TableScanNode;
@@ -78,6 +79,14 @@ public final class SchedulingOrderVisitor
         {
             node.getIndexSource().accept(this, context);
             node.getProbeSource().accept(this, context);
+            return null;
+        }
+
+        @Override
+        public Void visitRangePartition(RangePartitionNode node, Void context)
+        {
+            node.getSource().accept(this, context);
+            node.getSampleSource().accept(this, context);
             return null;
         }
 

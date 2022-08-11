@@ -48,9 +48,11 @@ import io.trino.sql.planner.plan.PatternRecognitionNode.Measure;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RefreshMaterializedViewNode;
 import io.trino.sql.planner.plan.RemoteSourceNode;
 import io.trino.sql.planner.plan.RowNumberNode;
+import io.trino.sql.planner.plan.SampleNNode;
 import io.trino.sql.planner.plan.SampleNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SetOperationNode;
@@ -366,6 +368,48 @@ public final class ValidateDependenciesChecker
                     node.getOrderingScheme().getOrderBy(),
                     "Invalid node. Order by dependencies (%s) not in source plan output (%s)",
                     node.getOrderingScheme().getOrderBy(), node.getSource().getOutputSymbols());
+
+            return null;
+        }
+
+        @Override
+        public Void visitSampleN(SampleNNode node, Set<Symbol> boundSymbols)
+        {
+            PlanNode source = node.getSource();
+            source.accept(this, boundSymbols); // visit child
+
+            checkDependencies(source.getOutputSymbols(), node.getOutputSymbols(),
+                    "Invalid node. Output column dependencies (%s) not in source plan output (%s)",
+                    node.getOutputSymbols(),
+                    source.getOutputSymbols());
+
+            return null;
+        }
+
+        @Override
+        public Void visitRangePartition(RangePartitionNode node, Set<Symbol> boundSymbols)
+        {
+            PlanNode source = node.getSource();
+            source.accept(this, boundSymbols); // visit child
+
+            List<Symbol> outputSymbols = ImmutableList.copyOf(node.getOutputSymbols().stream().filter(symbol -> !symbol.equals(node.getPartitionSymbol())).iterator());
+            checkDependencies(source.getOutputSymbols(), outputSymbols,
+                    "Invalid node. Output column dependencies (%s) not in source plan output (%s)",
+                    node.getOutputSymbols(),
+                    outputSymbols);
+
+            checkDependencies(source.getOutputSymbols(), node.getOrderingScheme().getOrderBy(),
+                    "Invalid node. Order by symbols (%s) not in source plan output (%s)",
+                    node.getOrderingScheme().getOrderBy(),
+                    source.getOutputSymbols());
+
+            PlanNode sampleSource = node.getSampleSource();
+            sampleSource.accept(this, boundSymbols); // visit child
+
+            checkDependencies(sampleSource.getOutputSymbols(), node.getSampleOrderingSymbols(),
+                    "Invalid node. Order by symbols (%s) not in source plan output (%s)",
+                    node.getSampleOrderingSymbols(),
+                    sampleSource.getOutputSymbols());
 
             return null;
         }

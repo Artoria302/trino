@@ -1561,7 +1561,7 @@ public class PlanPrinter
                     node,
                     "RangePartition",
                     ImmutableMap.of(
-                            "outputPartitionSymbol", node.getPartitionSymbol().toString(),
+                            "partitionSymbol", node.getPartitionSymbol().toString(),
                             "rangePartitionOrderBy", keys));
 
             return processChildren(node, context);

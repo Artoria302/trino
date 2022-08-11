@@ -543,30 +543,31 @@ public class AddExchanges
         {
             int sampleSize = SystemSessionProperties.RANGE_PARTITION_SAMPLE_SIZE;
 
+            // copy source for sample node
             PlanNode source = node.getSource();
-            NodeAndMappings copiedPlan = PlanCopier.copyPlan(source, source.getOutputSymbols(), plannerContext.getMetadata(), symbolAllocator, idAllocator);
+            List<Symbol> sourceOutputSymbols = source.getOutputSymbols();
+            NodeAndMappings copiedPlan = PlanCopier.copyPlan(source, sourceOutputSymbols, plannerContext.getMetadata(), symbolAllocator, idAllocator);
 
-            PlanNode copiedSource = copiedPlan.getNode();
+            // rename relocated name to origin name
             List<Symbol> fields = copiedPlan.getFields();
-
             Assignments.Builder builder = Assignments.builder();
-            for (int i = 0; i < copiedSource.getOutputSymbols().size(); i++) {
-                builder.put(copiedSource.getOutputSymbols().get(i), fields.get(i).toSymbolReference());
+            for (int i = 0; i < sourceOutputSymbols.size(); i++) {
+                builder.put(sourceOutputSymbols.get(i), fields.get(i).toSymbolReference());
             }
             ProjectNode projectNode = new ProjectNode(idAllocator.getNextId(), copiedPlan.getNode(), builder.build());
 
-            PlanWithProperties sourceChild = planChild(source, PreferredProperties.any());
-            PlanWithProperties sampleChild = planChild(projectNode, PreferredProperties.any());
+            PlanWithProperties sourceChild = source.accept(this, PreferredProperties.any());
+            PlanWithProperties sampleChild = projectNode.accept(this, PreferredProperties.any());
 
             if (getRetryPolicy(session) == RetryPolicy.TASK) {
-                ExchangeNode exchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
+                ExchangeNode sourceExchange = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
                 sourceChild = withDerivedProperties(
-                        exchangeSource,
+                        sourceExchange,
                         sourceChild.getProperties());
 
-                ExchangeNode sampleExchangeSource = roundRobinExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode(), exchangeSource.getId());
+                ExchangeNode sampleSourceExchange = roundRobinExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode(), sourceExchange.getId());
                 sampleChild = withDerivedProperties(
-                        sampleExchangeSource,
+                        sampleSourceExchange,
                         sampleChild.getProperties());
             }
 
@@ -575,19 +576,16 @@ public class AddExchanges
                 sampleChild = withDerivedProperties(
                         new SampleNNode(
                                 idAllocator.getNextId(),
-                                sampleChild.getNode(),
-                                sampleSize,
-                                SampleNNode.Step.PARTIAL,
-                                false,
-                                true),
-                        sampleChild.getProperties());
-                sampleChild = withDerivedProperties(
-                        gatheringExchange(idAllocator.getNextId(), REMOTE, sampleChild.getNode()),
-                        sampleChild.getProperties());
-                sampleChild = withDerivedProperties(
-                        new SampleNNode(
-                                idAllocator.getNextId(),
-                                sampleChild.getNode(),
+                                gatheringExchange(
+                                        idAllocator.getNextId(),
+                                        REMOTE,
+                                        new SampleNNode(
+                                                idAllocator.getNextId(),
+                                                sampleChild.getNode(),
+                                                sampleSize,
+                                                SampleNNode.Step.PARTIAL,
+                                                false,
+                                                true)),
                                 sampleSize,
                                 SampleNNode.Step.FINAL,
                                 false,
@@ -620,28 +618,25 @@ public class AddExchanges
                     node.getOrderingScheme().getOrderBy(),
                     sampleSize,
                     false);
+            PlanWithProperties result = new PlanWithProperties(
+                    rangePartitionNode,
+                    deriveProperties(rangePartitionNode, ImmutableList.of(sourceChild.getProperties(), sampleChild.getProperties())));
 
-            PartitioningScheme partitioningScheme = new PartitioningScheme(
+            PartitioningScheme rangePartitioningScheme = new PartitioningScheme(
                     Partitioning.create(
                             FIXED_RANGE_DISTRIBUTION,
                             ImmutableList.of(rangePartitionNode.getPartitionSymbol())),
                     ImmutableList.copyOf(rangePartitionNode.getOutputSymbols()));
 
-            PlanWithProperties result = withDerivedProperties(
-                    partitionedExchange(
-                            idAllocator.getNextId(),
-                            REMOTE,
-                            rangePartitionNode,
-                            partitioningScheme),
-                    deriveProperties(
-                            rangePartitionNode,
-                            ImmutableList.of(sourceChild.getProperties(), sampleChild.getProperties())));
-
             // final sort
             return withDerivedProperties(
                     new SortNode(
                             idAllocator.getNextId(),
-                            result.getNode(),
+                            partitionedExchange(
+                                    idAllocator.getNextId(),
+                                    REMOTE,
+                                    result.getNode(),
+                                    rangePartitioningScheme),
                             node.getOrderingScheme(),
                             true),
                     result.getProperties());

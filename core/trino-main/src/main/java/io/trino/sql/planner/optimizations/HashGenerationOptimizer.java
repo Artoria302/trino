@@ -52,6 +52,7 @@ import io.trino.sql.planner.plan.MarkDistinctNode;
 import io.trino.sql.planner.plan.PlanNode;
 import io.trino.sql.planner.plan.PlanVisitor;
 import io.trino.sql.planner.plan.ProjectNode;
+import io.trino.sql.planner.plan.RangePartitionNode;
 import io.trino.sql.planner.plan.RowNumberNode;
 import io.trino.sql.planner.plan.SemiJoinNode;
 import io.trino.sql.planner.plan.SpatialJoinNode;
@@ -651,6 +652,22 @@ public class HashGenerationOptimizer
             }
 
             return new PlanWithProperties(new ProjectNode(node.getId(), child.getNode(), newAssignments.build()), allHashSymbols);
+        }
+
+        @Override
+        public PlanWithProperties visitRangePartition(RangePartitionNode node, HashComputationSet parentPreference)
+        {
+            PlanWithProperties source = planAndEnforce(node.getSource(), new HashComputationSet(), true, parentPreference);
+            PlanWithProperties sampleSource = planAndEnforce(node.getSampleSource(), new HashComputationSet(), true, parentPreference);
+
+            PlanNode result = replaceChildren(node, ImmutableList.of(source.getNode(), sampleSource.getNode()));
+
+            // return only hash symbols that are passed through the new node
+            Map<HashComputation, Symbol> hashSymbols = new HashMap<>(source.getHashSymbols());
+            hashSymbols.putAll(sampleSource.getHashSymbols());
+            hashSymbols.values().retainAll(result.getOutputSymbols());
+
+            return new PlanWithProperties(result, hashSymbols);
         }
 
         @Override

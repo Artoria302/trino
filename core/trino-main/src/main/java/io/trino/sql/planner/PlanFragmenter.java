@@ -325,21 +325,7 @@ public class PlanFragmenter
                 return context.defaultRewrite(exchange, context.get());
             }
 
-            if (exchange.getReuseExchangeNodeId().isPresent() && reusedExchange.containsKey(exchange.getReuseExchangeNodeId().get())) {
-                RemoteSourceNode reusedRemoteSourceNode = reusedExchange.get(exchange.getReuseExchangeNodeId().get());
-                checkState(exchange.getOutputSymbols().size() == reusedRemoteSourceNode.getOutputSymbols().size(),
-                        "Current exchange node output symbols size %s not equal to reused exchange node output symbols size %s",
-                        exchange.getOutputSymbols().size(),
-                        reusedRemoteSourceNode.getOutputSymbols().size());
-                context.get().addChildrenPlanFragmentId(reusedRemoteSourceNode.getSourceFragmentIds());
-                return new RemoteSourceNode(
-                        exchange.getId(),
-                        reusedRemoteSourceNode.getSourceFragmentIds(),
-                        exchange.getOutputSymbols(),
-                        exchange.getOrderingScheme(),
-                        exchange.getType(),
-                        reusedRemoteSourceNode.getRetryPolicy());
-            }
+            boolean reuse = exchange.getReuseExchangeNodeId().isPresent() && reusedExchange.containsKey(exchange.getReuseExchangeNodeId().get());
 
             PartitioningScheme partitioningScheme = exchange.getPartitioningScheme();
 
@@ -359,14 +345,34 @@ public class PlanFragmenter
             }
 
             List<SubPlan> children = childrenBuilder.build();
-            context.get().addChildren(children);
+            if (!reuse) {
+                context.get().addChildren(children);
+            }
 
             List<PlanFragmentId> childrenIds = children.stream()
                     .map(SubPlan::getFragment)
                     .map(PlanFragment::getId)
                     .collect(toImmutableList());
 
-            context.get().addChildrenPlanFragmentId(childrenIds);
+            if (!reuse) {
+                context.get().addChildrenPlanFragmentId(childrenIds);
+            }
+
+            if (reuse) {
+                RemoteSourceNode reusedRemoteSourceNode = reusedExchange.get(exchange.getReuseExchangeNodeId().get());
+                checkState(exchange.getOutputSymbols().size() == reusedRemoteSourceNode.getOutputSymbols().size(),
+                        "Current exchange node output symbols size %s not equal to reused exchange node output symbols size %s",
+                        exchange.getOutputSymbols().size(),
+                        reusedRemoteSourceNode.getOutputSymbols().size());
+                context.get().addChildrenPlanFragmentId(reusedRemoteSourceNode.getSourceFragmentIds());
+                return new RemoteSourceNode(
+                        exchange.getId(),
+                        reusedRemoteSourceNode.getSourceFragmentIds(),
+                        exchange.getOutputSymbols(),
+                        exchange.getOrderingScheme(),
+                        exchange.getType(),
+                        reusedRemoteSourceNode.getRetryPolicy());
+            }
 
             RemoteSourceNode remoteSourceNode = new RemoteSourceNode(
                     exchange.getId(),
@@ -375,6 +381,7 @@ public class PlanFragmenter
                     exchange.getOrderingScheme(),
                     exchange.getType(),
                     isWorkerCoordinatorBoundary(context.get(), childrenProperties.build()) ? getRetryPolicy(session) : RetryPolicy.NONE);
+
             reusedExchange.put(exchange.getId(), remoteSourceNode);
             return remoteSourceNode;
         }

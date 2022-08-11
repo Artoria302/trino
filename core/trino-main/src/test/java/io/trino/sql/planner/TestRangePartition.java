@@ -13,12 +13,27 @@
  */
 package io.trino.sql.planner;
 
+import com.google.common.collect.ImmutableMap;
 import io.trino.sql.planner.assertions.BasePlanTest;
 import org.testng.annotations.Test;
+
+import static io.trino.SystemSessionProperties.DISTRIBUTED_SORT;
+import static io.trino.SystemSessionProperties.ENABLE_WRITE_TABLE_ORDER_BY;
+import static io.trino.SystemSessionProperties.REDISTRIBUTE_WRITES;
+import static io.trino.SystemSessionProperties.SCALE_WRITERS;
 
 public class TestRangePartition
         extends BasePlanTest
 {
+    TestRangePartition()
+    {
+        super(ImmutableMap.of(
+                ENABLE_WRITE_TABLE_ORDER_BY, "true",
+                DISTRIBUTED_SORT, "false",
+                SCALE_WRITERS, "false",
+                REDISTRIBUTE_WRITES, "false"));
+    }
+
     @Test
     public void testPlan()
     {
@@ -35,5 +50,11 @@ public class TestRangePartition
     public void testWith()
     {
         plan("WITH t as (SELECT nationkey, count(*) AS cnt FROM nation GROUP BY nationkey) SELECT cnt FROM t UNION ALL SELECT cnt FROM t");
+    }
+
+    @Test
+    public void testCreate()
+    {
+        plan("create table aaa as select nationkey from nation ORDER BY nationkey");
     }
 }
