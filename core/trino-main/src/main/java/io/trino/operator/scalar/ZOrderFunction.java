@@ -122,13 +122,13 @@ public class ZOrderFunction
             maxLength = Math.max(maxLength, arr.length * 8);
         }
         byte[] result = new byte[totalLength];
+
+        // fill result from back to front bit by bit and deal with the same bit position each element in array each round
         int resultBit = 0;
-        // fill result from back to front bit by bit
         for (int bit = 0; bit < maxLength; bit++) {
             int bytePos = bit / 8;
             int bitPos = bit % 8;
 
-            // deal with the same bit position each element in array
             for (byte[] arr : arrays) {
                 int len = arr.length;
                 if (bytePos < len) {
