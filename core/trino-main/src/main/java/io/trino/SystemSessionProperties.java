@@ -171,7 +171,7 @@ public final class SystemSessionProperties
     public static final String USE_EXACT_PARTITIONING = "use_exact_partitioning";
     public static final String FORCE_SPILLING_JOIN = "force_spilling_join";
     public static final String ENABLE_WRITE_TABLE_ORDER_BY = "enable_write_table_order_by";
-
+    public static final String ENABLE_REUSE_EXCHANGE = "enable_reuse_exchange";
     public static final int RANGE_PARTITION_SAMPLE_SIZE = 1999;
 
     private final List<PropertyMetadata<?>> sessionProperties;
@@ -843,6 +843,11 @@ public final class SystemSessionProperties
                         ENABLE_WRITE_TABLE_ORDER_BY,
                         "Don't ignore order by before write table and 'retry_policy' should be 'TASK' first",
                         queryManagerConfig.getEnableWriteTableOrderBy(),
+                        false),
+                booleanProperty(
+                        ENABLE_REUSE_EXCHANGE,
+                        "Try to reuse exchange if 'retry-policy' is 'TASK'",
+                        queryManagerConfig.getEnableReuseExchange(),
                         false));
     }
 
@@ -1514,5 +1519,10 @@ public final class SystemSessionProperties
     public static boolean canWriteTableOrderBy(Session session)
     {
         return isEnableWriteTableOrderBy(session) && !isRedistributeWrites(session) && !isScaleWriters(session) && getTaskWriterCount(session) == 1;
+    }
+
+    public static boolean isEnableReuseExchange(Session session)
+    {
+        return session.getSystemProperty(ENABLE_REUSE_EXCHANGE, Boolean.class);
     }
 }

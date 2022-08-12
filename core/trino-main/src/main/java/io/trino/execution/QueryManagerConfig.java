@@ -95,6 +95,7 @@ public class QueryManagerConfig
     private int faultTolerantExecutionPartitionCount = 50;
     private boolean faultTolerantPreserveInputPartitionsInWriteStage = true;
     private boolean enableWriteTableOrderBy;
+    private boolean enableReuseExchange;
 
     @Min(1)
     public int getScheduleSplitBatchSize()
@@ -626,6 +627,19 @@ public class QueryManagerConfig
     public QueryManagerConfig setEnableWriteTableOrderBy(boolean enableWriteTableOrderBy)
     {
         this.enableWriteTableOrderBy = enableWriteTableOrderBy;
+        return this;
+    }
+
+    public boolean getEnableReuseExchange()
+    {
+        return enableReuseExchange;
+    }
+
+    @Config("enable-reuse-exchange")
+    @ConfigDescription("Try to reuse exchange if 'retry-policy' is 'TASK'")
+    public QueryManagerConfig setEnableReuseExchange(boolean enableReuseExchange)
+    {
+        this.enableReuseExchange = enableReuseExchange;
         return this;
     }
 }

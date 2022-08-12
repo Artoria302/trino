@@ -106,6 +106,7 @@ import static io.trino.SystemSessionProperties.getRetryPolicy;
 import static io.trino.SystemSessionProperties.ignoreDownStreamPreferences;
 import static io.trino.SystemSessionProperties.isColocatedJoinEnabled;
 import static io.trino.SystemSessionProperties.isDistributedSortEnabled;
+import static io.trino.SystemSessionProperties.isEnableReuseExchange;
 import static io.trino.SystemSessionProperties.isForceSingleNodeOutput;
 import static io.trino.SystemSessionProperties.isUseExactPartitioning;
 import static io.trino.SystemSessionProperties.isUsePartialDistinctLimit;
@@ -560,7 +561,7 @@ public class AddExchanges
             PlanWithProperties sourceChild = source.accept(this, PreferredProperties.any());
             PlanWithProperties sampleChild = copiedPlan.getNode().accept(this, PreferredProperties.any());
 
-            if (getRetryPolicy(session) == RetryPolicy.TASK) {
+            if (getRetryPolicy(session) == RetryPolicy.TASK && isEnableReuseExchange(session)) {
                 ExchangeNode sourceExchange = roundRobinExchange(idAllocator.getNextId(), REMOTE, sourceChild.getNode());
                 sourceChild = withDerivedProperties(
                         sourceExchange,
