@@ -312,6 +312,7 @@ import static io.trino.operator.scalar.RowToJsonCast.LEGACY_ROW_TO_JSON;
 import static io.trino.operator.scalar.RowToJsonCast.ROW_TO_JSON;
 import static io.trino.operator.scalar.RowToRowCast.ROW_TO_ROW_CAST;
 import static io.trino.operator.scalar.TryCastFunction.TRY_CAST;
+import static io.trino.operator.scalar.ZOrderFunction.Z_ORDER_FUNCTION;
 import static io.trino.operator.scalar.ZipFunction.ZIP_FUNCTIONS;
 import static io.trino.operator.scalar.ZipWithFunction.ZIP_WITH_FUNCTION;
 import static io.trino.operator.scalar.json.JsonArrayFunction.JSON_ARRAY_FUNCTION;
@@ -587,6 +588,9 @@ public final class SystemFunctionBundle
                 .scalars(WilsonInterval.class)
                 .aggregates(BigintApproximateMostFrequent.class)
                 .aggregates(VarcharApproximateMostFrequent.class);
+
+        // z order
+        builder.function(Z_ORDER_FUNCTION);
 
         // timestamp operators and functions
         builder
