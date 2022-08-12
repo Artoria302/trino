@@ -123,16 +123,18 @@ public class ZOrderFunction
         }
         byte[] result = new byte[totalLength];
         int resultBit = 0;
+        // fill result from back to front bit by bit
         for (int bit = 0; bit < maxLength; bit++) {
             int bytePos = bit / 8;
             int bitPos = bit % 8;
 
+            // deal with the same bit position each element in array
             for (byte[] arr : arrays) {
                 int len = arr.length;
                 if (bytePos < len) {
                     int resultBytePos = totalLength - 1 - resultBit / 8;
                     int resultBitPos = resultBit % 8;
-                    result[resultBitPos] = updatePos(result[resultBytePos], resultBitPos, arr[len - 1 - bytePos], bitPos);
+                    result[resultBytePos] = updatePos(result[resultBytePos], resultBitPos, arr[len - 1 - bytePos], bitPos);
                     resultBit += 1;
                 }
             }
