@@ -99,8 +99,8 @@ public class SampleNBuilder
         protected Page computeNext()
         {
             pageBuilder.reset();
-            while (!pageBuilder.isFull() && size != 0) {
-                long rowId = sampleRowIds[size--];
+            while (!pageBuilder.isFull() && size > 0) {
+                long rowId = sampleRowIds[--size];
                 Page page = pageManager.getPage(rowId);
                 int position = pageManager.getPosition(rowId);
                 for (int i = 0; i < sourceTypes.size(); i++) {
