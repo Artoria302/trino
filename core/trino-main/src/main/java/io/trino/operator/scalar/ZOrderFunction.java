@@ -60,8 +60,7 @@ import static java.lang.Math.toIntExact;
 public class ZOrderFunction
         extends SqlScalarFunction
 {
-    public static final String FUNCTION_NAME = "$zorder";
-
+    public static final String FUNCTION_NAME = "zorder";
     public static final ZOrderFunction Z_ORDER_FUNCTION = new ZOrderFunction();
     private static final MethodHandle METHOD_HANDLE = methodHandle(ZOrderFunction.class, "zorder", List.class, Block.class);
 
@@ -79,7 +78,6 @@ public class ZOrderFunction
                         .argumentType(new TypeSignature("T"))
                         .returnType(VARBINARY.getTypeSignature())
                         .build())
-                .hidden()
                 .description("convert columns to a zorder value column")
                 .build());
     }
@@ -170,38 +168,38 @@ public class ZOrderFunction
     private static Function<Block, byte[]> valueConverter(Type type, int position)
     {
         if (type.equals(BOOLEAN)) {
-            return block -> type.getBoolean(block, position) ? (new byte[] {(byte) 1}) : (new byte[] {(byte) 0});
+            return block -> (block.isNull(position) || type.getBoolean(block, position)) ? (new byte[] {(byte) 1}) : (new byte[] {(byte) 0});
         }
         if (type.equals(TINYINT)) {
-            return block -> new byte[(byte) (type.getLong(block, position) ^ BIT_8_MASK)];
+            return block -> new byte[block.isNull(position) ? Byte.MAX_VALUE : (byte) (type.getLong(block, position) ^ BIT_8_MASK)];
         }
         if (type.equals(SMALLINT)) {
-            return block -> Shorts.toByteArray((short) (type.getLong(block, position) ^ BIT_16_MASK));
+            return block -> Shorts.toByteArray(block.isNull(position) ? Short.MAX_VALUE : (short) (type.getLong(block, position) ^ BIT_16_MASK));
         }
         if (type.equals(INTEGER)) {
-            return block -> Ints.toByteArray((int) (type.getLong(block, position) ^ BIT_32_MASK));
+            return block -> Ints.toByteArray(block.isNull(position) ? Integer.MAX_VALUE : (int) (type.getLong(block, position) ^ BIT_32_MASK));
         }
         if (type.equals(BIGINT)) {
-            return block -> Longs.toByteArray(type.getLong(block, position) ^ BIT_64_MASK);
+            return block -> Longs.toByteArray(block.isNull(position) ? Long.MAX_VALUE : type.getLong(block, position) ^ BIT_64_MASK);
         }
         if (type.equals(REAL)) {
-            return block -> Longs.toByteArray(type.getLong(block, position) ^ BIT_64_MASK);
+            return block -> Longs.toByteArray(block.isNull(position) ? Long.MAX_VALUE : type.getLong(block, position) ^ BIT_64_MASK);
         }
         if (type.equals(DOUBLE)) {
-            return block -> Longs.toByteArray(Double.doubleToRawLongBits(type.getDouble(block, position)) ^ BIT_64_MASK);
+            return block -> Longs.toByteArray(block.isNull(position) ? Long.MAX_VALUE : Double.doubleToRawLongBits(type.getDouble(block, position)) ^ BIT_64_MASK);
         }
         if (isShortDecimal(type)) {
-            return block -> Longs.toByteArray(type.getLong(block, position) ^ BIT_64_MASK);
+            return block -> Longs.toByteArray(block.isNull(position) ? Long.MAX_VALUE : type.getLong(block, position) ^ BIT_64_MASK);
         }
         if (isLongDecimal(type)) {
-            return block -> Longs.toByteArray(((Int128) type.getObject(block, position)).toLong() ^ BIT_64_MASK);
+            return block -> Longs.toByteArray(block.isNull(position) ? Long.MAX_VALUE : ((Int128) type.getObject(block, position)).toLong() ^ BIT_64_MASK);
         }
         if (type instanceof VarcharType) {
-            return block -> paddingTo8Byte(type.getSlice(block, position).toStringUtf8().getBytes(StandardCharsets.UTF_8));
+            return block -> block.isNull(position) ? Longs.toByteArray(Long.MAX_VALUE) : paddingTo8Byte(type.getSlice(block, position).toStringUtf8().getBytes(StandardCharsets.UTF_8));
         }
         if (type instanceof CharType) {
             CharType charType = (CharType) type;
-            return block -> paddingTo8Byte(padSpaces(type.getSlice(block, position), charType).toStringUtf8().getBytes(StandardCharsets.UTF_8));
+            return block -> block.isNull(position) ? Longs.toByteArray(Long.MAX_VALUE) : paddingTo8Byte(padSpaces(type.getSlice(block, position), charType).toStringUtf8().getBytes(StandardCharsets.UTF_8));
         }
 
         throw new TrinoException(INVALID_FUNCTION_ARGUMENT, "Invalid argument type '" + type + "' to " + FUNCTION_NAME);
