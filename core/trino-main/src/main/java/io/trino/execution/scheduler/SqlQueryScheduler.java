@@ -543,7 +543,7 @@ public class SqlQueryScheduler
         private final List<SqlStage> distributedStagesInTopologicalOrder;
         private final StageId rootStageId;
         private final Map<StageId, Set<StageId>> children;
-        private final Map<StageId, StageId> parents;
+        private final Map<StageId, Set<StageId>> parents;
 
         private static StageManager create(
                 QueryStateMachine queryStateMachine,
@@ -561,7 +561,8 @@ public class SqlQueryScheduler
             ImmutableList.Builder<SqlStage> distributedStagesInTopologicalOrder = ImmutableList.builder();
             StageId rootStageId = null;
             ImmutableMap.Builder<StageId, Set<StageId>> children = ImmutableMap.builder();
-            ImmutableMap.Builder<StageId, StageId> parents = ImmutableMap.builder();
+            // ImmutableMap.Builder<StageId, StageId> parents = ImmutableMap.builder();
+            Map<StageId, Set<StageId>> parents = new HashMap<>();
             for (SubPlan planNode : Traverser.forTree(SubPlan::getChildren).breadthFirst(planTree)) {
                 PlanFragment fragment = planNode.getFragment();
                 SqlStage stage = createSqlStage(
@@ -589,8 +590,10 @@ public class SqlQueryScheduler
                         .map(childPlanFragmentId -> getStageId(session.getQueryId(), childPlanFragmentId))
                         .collect(toImmutableSet());
                 children.put(stageId, childStageIds);
-                childStageIds.forEach(child -> parents.put(child, stageId));
+                childStageIds.forEach(child -> parents.computeIfAbsent(child, x -> new HashSet<>()).add(stageId));
             }
+            ImmutableMap.Builder<StageId, Set<StageId>> builder = ImmutableMap.builder();
+            parents.entrySet().forEach(entry -> builder.put(entry.getKey(), ImmutableSet.copyOf(entry.getValue())));
             StageManager stageManager = new StageManager(
                     queryStateMachine,
                     stages.buildOrThrow(),
@@ -598,7 +601,7 @@ public class SqlQueryScheduler
                     distributedStagesInTopologicalOrder.build(),
                     rootStageId,
                     children.buildOrThrow(),
-                    parents.buildOrThrow());
+                    builder.buildOrThrow());
             stageManager.initialize();
             return stageManager;
         }
@@ -633,7 +636,7 @@ public class SqlQueryScheduler
                 List<SqlStage> distributedStagesInTopologicalOrder,
                 StageId rootStageId,
                 Map<StageId, Set<StageId>> children,
-                Map<StageId, StageId> parents)
+                Map<StageId, Set<StageId>> parents)
         {
             this.queryStateMachine = requireNonNull(queryStateMachine, "queryStateMachine is null");
             this.stages = ImmutableMap.copyOf(requireNonNull(stages, "stages is null"));
@@ -706,7 +709,9 @@ public class SqlQueryScheduler
 
         public Optional<SqlStage> getParent(StageId stageId)
         {
-            return Optional.ofNullable(parents.get(stageId)).map(stages::get);
+            // return Optional.ofNullable(parents.get(stageId)).map(stages::get);
+            // TODO may not satisfy coordinator consumed fragments, check FaultTolerantDistributedStagesScheduler.create
+            return Optional.ofNullable(parents.get(stageId)).flatMap(x -> x.stream().findAny()).map(stages::get);
         }
 
         public BasicStageStats getBasicStageStats()
@@ -1771,6 +1776,19 @@ public class SqlQueryScheduler
 
                 checkArgument(taskRetryAttemptsOverall >= 0, "taskRetryAttemptsOverall must be greater than or equal to 0: %s", taskRetryAttemptsOverall);
                 AtomicInteger remainingTaskRetryAttemptsOverall = new AtomicInteger(taskRetryAttemptsOverall);
+
+                for (SqlStage stage : distributedStagesInReverseTopologicalOrder) {
+                    PlanFragment fragment = stage.getFragment();
+                    Optional<SqlStage> parentStage = stageManager.getParent(stage.getStageId());
+                    Optional<Exchange> exchange;
+                    if (!(parentStage.isEmpty() || parentStage.get().getFragment().getPartitioning().isCoordinatorOnly())) {
+                        // create external exchange
+                        ExchangeContext context = new ExchangeContext(session.getQueryId(), new ExchangeId("external-exchange-" + stage.getStageId().getId()));
+                        exchange = Optional.of(exchangeManager.createExchange(context, partitionCount));
+                        exchanges.put(fragment.getId(), exchange.get());
+                    }
+                }
+
                 for (SqlStage stage : distributedStagesInReverseTopologicalOrder) {
                     PlanFragment fragment = stage.getFragment();
                     Optional<SqlStage> parentStage = stageManager.getParent(stage.getStageId());
@@ -1783,10 +1801,8 @@ public class SqlQueryScheduler
                         coordinatorConsumedFragmentsBuilder.add(fragment.getId());
                     }
                     else {
-                        // create external exchange
-                        ExchangeContext context = new ExchangeContext(session.getQueryId(), new ExchangeId("external-exchange-" + stage.getStageId().getId()));
-                        exchange = Optional.of(exchangeManager.createExchange(context, partitionCount));
-                        exchanges.put(fragment.getId(), exchange.get());
+                        // get external exchange
+                        exchange = Optional.of(requireNonNull(exchanges.get(fragment.getId()), format("exchange not found for fragment: %s", fragment.getId())));
                         taskLifecycleListener = TaskLifecycleListener.NO_OP;
                     }
 
