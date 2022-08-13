@@ -243,7 +243,10 @@ export function getChildren(nodeInfo: any)
         case 'groupid':
         case 'unnest':
         case 'scalar':
+        case 'sampleN':
             return [nodeInfo.source];
+        case 'rangePartition':
+            return [nodeInfo.source, nodeInfo.sampleSource];
         case 'join':
             return [nodeInfo.left, nodeInfo.right];
         case 'semijoin':
