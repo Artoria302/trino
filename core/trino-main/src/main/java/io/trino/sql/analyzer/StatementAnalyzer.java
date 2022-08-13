@@ -265,6 +265,7 @@ import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static io.trino.SystemSessionProperties.canWriteTableOrderBy;
 import static io.trino.SystemSessionProperties.getMaxGroupingSets;
+import static io.trino.SystemSessionProperties.isEnableWriteTableOrderBy;
 import static io.trino.metadata.FunctionResolver.toPath;
 import static io.trino.metadata.MetadataUtil.createQualifiedObjectName;
 import static io.trino.metadata.MetadataUtil.getRequiredCatalogHandle;
@@ -4703,9 +4704,11 @@ class StatementAnalyzer
 
     private void markWriteTableOrderBy(Query query)
     {
-        if (!canWriteTableOrderBy(session)) {
+        if (!isEnableWriteTableOrderBy(session)) {
             return;
         }
+
+        OrderBy rawOrderBy = null;
 
         Optional<OrderBy> orderBy = query.getOrderBy();
         Optional<Node> limit = query.getLimit();
@@ -4713,21 +4716,28 @@ class StatementAnalyzer
 
         if (orderBy.isPresent()) {
             if (limit.isEmpty() && offset.isEmpty()) {
-                analysis.markWriteTableOrderBy(orderBy.get());
+                rawOrderBy = orderBy.get();
             }
-            return;
+        } else {
+            QueryBody queryBody = query.getQueryBody();
+            if (queryBody instanceof QuerySpecification) {
+                QuerySpecification querySpecification = (QuerySpecification) queryBody;
+                orderBy = querySpecification.getOrderBy();
+                limit = querySpecification.getLimit();
+                offset = querySpecification.getOffset();
+
+                if (orderBy.isPresent() && limit.isEmpty() && offset.isEmpty()) {
+                    rawOrderBy = orderBy.get();
+                }
+            }
         }
 
-        QueryBody queryBody = query.getQueryBody();
-        if (queryBody instanceof QuerySpecification) {
-            QuerySpecification querySpecification = (QuerySpecification) queryBody;
-            orderBy = querySpecification.getOrderBy();
-            limit = querySpecification.getLimit();
-            offset = querySpecification.getOffset();
-
-            if (orderBy.isPresent() && limit.isEmpty() && offset.isEmpty()) {
-                analysis.markWriteTableOrderBy(orderBy.get());
+        if (rawOrderBy != null) {
+            if (!canWriteTableOrderBy(session)) {
+                warningCollector.add(new TrinoWarning(REDUNDANT_ORDER_BY, "To enable ORDER BY before write table, redistribute_writes and scale_writers must be false and task_writer_count must be 1"));
+                return;
             }
+            analysis.markWriteTableOrderBy(rawOrderBy);
         }
     }
 }
