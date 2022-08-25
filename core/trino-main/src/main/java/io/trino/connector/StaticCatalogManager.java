@@ -24,6 +24,7 @@ import io.trino.Session;
 import io.trino.connector.system.GlobalSystemConnector;
 import io.trino.metadata.Catalog;
 import io.trino.metadata.CatalogManager;
+import io.trino.metadata.YunZhouDynamicCatalogStoreConfig;
 import io.trino.server.ForStartup;
 import io.trino.spi.TrinoException;
 import io.trino.spi.catalog.CatalogName;
@@ -76,10 +77,13 @@ public class StaticCatalogManager
 
     private final AtomicReference<State> state = new AtomicReference<>(State.CREATED);
 
+    private final YunZhouDynamicCatalogStoreConfig yzConfig;
+
     @Inject
-    public StaticCatalogManager(CatalogFactory catalogFactory, StaticCatalogManagerConfig config, @ForStartup Executor executor)
+    public StaticCatalogManager(CatalogFactory catalogFactory, StaticCatalogManagerConfig config, @ForStartup Executor executor, YunZhouDynamicCatalogStoreConfig yzConfig)
     {
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
+        this.yzConfig = requireNonNull(yzConfig, "yzConfig is null");
         List<String> disabledCatalogs = firstNonNull(config.getDisabledCatalogs(), ImmutableList.of());
 
         ImmutableList.Builder<CatalogProperties> catalogProperties = ImmutableList.builder();
@@ -175,8 +179,49 @@ public class StaticCatalogManager
     @Override
     public Optional<Catalog> getCatalog(CatalogName catalogName)
     {
-        return Optional.ofNullable(catalogs.get(catalogName))
+        CatalogConnector catalogConnector = catalogs.get(catalogName);
+        if (catalogConnector == null) {
+            catalogConnector = getYzCatalog(catalogName);
+        }
+        return Optional.ofNullable(catalogConnector)
                 .map(CatalogConnector::getCatalog);
+    }
+
+    public CatalogConnector getYzCatalog(CatalogName catalogName)
+    {
+        CatalogConnector catalogConnector = catalogs.get(catalogName);
+        if (catalogConnector != null) {
+            return catalogConnector;
+        }
+
+        log.info("-- Loading yz catalog %s --", catalogName);
+
+        final Map<String, String> properties = yzConfig.getCatalogConfigOne(catalogName.toString());
+        if (properties == null || properties.isEmpty()) {
+            log.warn("-- No yz catalog [%s] config. --", catalogName);
+            return null;
+        }
+
+        catalogName = new CatalogName(properties.remove("catalog.name"));
+        checkState(state.get() != State.STOPPED, "ConnectorManager is stopped");
+
+        String connectorName = properties.remove("connector.name");
+        checkState(connectorName != null, "Catalog configuration %s does not contain connector.name", catalogName);
+        if (connectorName.indexOf('-') >= 0) {
+            String deprecatedConnectorName = connectorName;
+            connectorName = connectorName.replace('-', '_');
+            log.warn("Catalog '%s' is using the deprecated connector name '%s'. The correct connector name is '%s'", catalogName, deprecatedConnectorName, connectorName);
+        }
+
+        CatalogProperties catalog = new CatalogProperties(
+                createRootCatalogHandle(catalogName, new CatalogVersion("default")),
+                new ConnectorName(connectorName),
+                ImmutableMap.copyOf(properties));
+        CatalogConnector newCatalog = catalogFactory.createCatalog(catalog);
+        catalogs.put(catalogName, newCatalog);
+
+        log.info("-- Added yz catalog %s using connector %s --", catalogName, connectorName);
+        return newCatalog;
     }
 
     @Override
@@ -215,6 +260,11 @@ public class StaticCatalogManager
     public ConnectorServices getConnectorServices(CatalogHandle catalogHandle)
     {
         CatalogConnector catalogConnector = catalogs.get(catalogHandle.getCatalogName());
+        if (catalogConnector == null) {
+            synchronized (this) {
+                catalogConnector = catalogs.get(catalogHandle.getCatalogName());
+            }
+        }
         if (catalogConnector == null) {
             throw new TrinoException(CATALOG_NOT_FOUND, "No catalog '%s'".formatted(catalogHandle.getCatalogName()));
         }

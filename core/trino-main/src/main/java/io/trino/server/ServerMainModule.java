@@ -83,6 +83,7 @@ import io.trino.metadata.SystemSecurityMetadata;
 import io.trino.metadata.TableFunctionRegistry;
 import io.trino.metadata.TableProceduresRegistry;
 import io.trino.metadata.TypeRegistry;
+import io.trino.metadata.YunZhouDynamicCatalogStoreConfig;
 import io.trino.operator.DirectExchangeClientConfig;
 import io.trino.operator.DirectExchangeClientFactory;
 import io.trino.operator.DirectExchangeClientSupplier;
@@ -383,7 +384,9 @@ public class ServerMainModule
         binder.bind(PageSinkManager.class).in(Scopes.SINGLETON);
         binder.bind(PageSinkProvider.class).to(PageSinkManager.class).in(Scopes.SINGLETON);
 
-        // metadata
+        //yz catalog store
+        configBinder(binder).bindConfig(YunZhouDynamicCatalogStoreConfig.class);
+
         binder.bind(MetadataManager.class).in(Scopes.SINGLETON);
         binder.bind(Metadata.class).annotatedWith(ForTracing.class).to(MetadataManager.class).in(Scopes.SINGLETON);
         binder.bind(Metadata.class).to(TracingMetadata.class).in(Scopes.SINGLETON);

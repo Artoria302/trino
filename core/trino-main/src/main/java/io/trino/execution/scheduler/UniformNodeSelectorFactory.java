@@ -133,9 +133,12 @@ public class UniformNodeSelectorFactory
 
     private NodeMap createNodeMap(Optional<CatalogHandle> catalogHandle)
     {
-        Set<InternalNode> nodes = catalogHandle
-                .map(nodeManager::getActiveCatalogNodes)
-                .orElseGet(() -> nodeManager.getNodes(ACTIVE));
+        // Set<InternalNode> nodes = catalogHandle
+        //         .map(nodeManager::getActiveCatalogNodes)
+        //         .orElseGet(() -> nodeManager.getNodes(ACTIVE));
+
+        // yunzhou dynamic load catalog
+        Set<InternalNode> nodes = nodeManager.getNodes(ACTIVE);
 
         Set<String> coordinatorNodeIds = nodeManager.getCoordinators().stream()
                 .map(InternalNode::getNodeIdentifier)
