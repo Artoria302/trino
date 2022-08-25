@@ -21,6 +21,7 @@ import io.trino.hdfs.authentication.HdfsAuthenticationConfig.HdfsAuthenticationT
 import java.util.function.Predicate;
 
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
+import static io.trino.hdfs.authentication.AuthenticationModules.assignHdfsAuthenticationModule;
 import static io.trino.hdfs.authentication.AuthenticationModules.kerberosHdfsAuthenticationModule;
 import static io.trino.hdfs.authentication.AuthenticationModules.kerberosImpersonatingHdfsAuthenticationModule;
 import static io.trino.hdfs.authentication.AuthenticationModules.noHdfsAuthenticationModule;
@@ -32,6 +33,10 @@ public class HdfsAuthenticationModule
     @Override
     protected void setup(Binder binder)
     {
+        bindAuthenticationModule(
+                HdfsAuthenticationModule::assignHdfsAuth,
+                assignHdfsAuthenticationModule());
+
         bindAuthenticationModule(
                 config -> noHdfsAuth(config) && !config.isHdfsImpersonationEnabled(),
                 noHdfsAuthenticationModule());
@@ -57,6 +62,11 @@ public class HdfsAuthenticationModule
     private static boolean noHdfsAuth(HdfsAuthenticationConfig config)
     {
         return config.getHdfsAuthenticationType() == HdfsAuthenticationType.NONE;
+    }
+
+    private static boolean assignHdfsAuth(HdfsAuthenticationConfig config)
+    {
+        return config.getHdfsAuthenticationType() == HdfsAuthenticationType.ASSIGN;
     }
 
     private static boolean kerberosHdfsAuth(HdfsAuthenticationConfig config)

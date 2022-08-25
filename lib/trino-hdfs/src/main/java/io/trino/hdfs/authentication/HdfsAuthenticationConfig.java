@@ -19,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class HdfsAuthenticationConfig
 {
+    private String hdfsUsername;
     private HdfsAuthenticationType hdfsAuthenticationType = HdfsAuthenticationType.NONE;
     private boolean hdfsImpersonationEnabled;
 
@@ -26,6 +27,7 @@ public class HdfsAuthenticationConfig
     {
         NONE,
         KERBEROS,
+        ASSIGN,
     }
 
     @NotNull
@@ -52,6 +54,18 @@ public class HdfsAuthenticationConfig
     public HdfsAuthenticationConfig setHdfsImpersonationEnabled(boolean hdfsImpersonationEnabled)
     {
         this.hdfsImpersonationEnabled = hdfsImpersonationEnabled;
+        return this;
+    }
+
+    public String getHdfsUsername()
+    {
+        return hdfsUsername;
+    }
+
+    @Config("hive.hdfs.authentication.username")
+    public HdfsAuthenticationConfig setHdfsUsername(String hdfsUsername)
+    {
+        this.hdfsUsername = hdfsUsername;
         return this;
     }
 }

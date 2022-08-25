@@ -42,6 +42,30 @@ public final class AuthenticationModules
                 .in(SINGLETON);
     }
 
+    public static Module assignHdfsAuthenticationModule()
+    {
+        return new Module()
+        {
+            @Override
+            public void configure(Binder binder)
+            {
+                binder.bind(HdfsAuthentication.class)
+                        .to(AssignHdfsAuthentication.class)
+                        .in(SINGLETON);
+                // configBinder(binder).bindConfig(HdfsAuthenticationConfig.class);
+            }
+
+            @Inject
+            @Provides
+            @Singleton
+            @ForHdfs
+            HadoopAuthentication createHadoopAuthentication(HdfsAuthenticationConfig config)
+            {
+                return new AssignHadoopAuthentication(config.getHdfsUsername());
+            }
+        };
+    }
+
     public static Module simpleImpersonatingHdfsAuthenticationModule()
     {
         return binder -> {
