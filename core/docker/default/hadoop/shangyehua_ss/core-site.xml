@@ -1,0 +1,1053 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration xmlns:xi="http://www.w3.org/2001/XInclude">
+
+  <property>
+    <name>alluxio.zookeeper.enabled</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>alluxio.zookeeper.address</name>
+    <value>rm9ss.prod.mediav.com:2181,rm8ss.prod.mediav.com:2181,rm7ss.prod.mediav.com:2181</value>
+  </property>
+
+  <property>
+    <name>fs.defaultFS</name>
+    <value>viewfs://ss-hadoop/</value>
+    <description>Specifies the NameNode and the default file system,
+      in the form hdfs://namenode-host:namenode-port/. The default value is file///.
+      The default file system is used to resolve relative paths; for example, if fs.default.name or fs.defaultFS
+      is set to hdfs://mynamenode/, the relative URI /mydir/myfile resolves to hdfs://mynamenode/mydir/myfile.
+      Note: for the cluster to function correctly, the namenode part of the string
+      must be the hostname (for example mynamenode) not the IP address.</description>
+  </property>
+
+  <property>
+    <name>fs.trash.interval</name>
+    <value>2880</value>
+    <description>The number of minutes after which a trash checkpoint directory is deleted.
+      This option can be configured both on the server and the client;
+      in releases prior to CDH4.1 this option could be configured only on the client.
+
+      * If trash is enabled in the server configuration,
+        then the value configured on the server is used and the client configuration is ignored.
+      * If trash is disabled in the server configuration, then the client side configuration is checked.
+      * If the value of this property is zero (the default), then the trash feature is disabled.</description>
+  </property>
+
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/data/hadoop/tmp</value>
+    <description>A base for other temporary directories.</description>
+  </property>
+
+  <property>
+    <name>io.compression.codecs</name>
+    <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.SnappyCodec,org.apache.hadoop.io.compress.Lz4Codec,com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec</value>
+    <description>NOTE: value must be in one line without any spaces and line feeds</description>
+  </property>
+
+  <property>
+    <name>io.compression.codec.lzo.class</name>
+    <value>com.hadoop.compression.lzo.LzoCodec</value>
+  </property>
+
+  <property>
+    <name>net.topology.script.file.name</name>
+    <value>/etc/hadoop/conf/rack-awareness.sh</value>
+  </property>
+
+  <property>
+    <name>net.topology.script.number.args</name>
+    <value>1000</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.httpfs.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.httpfs.groups</name>
+    <value>*</value>
+  </property>
+
+  <!--- security properties -->
+  <property>
+    <name>hadoop.security.authorization</name>
+    <value>true</value>
+    <description>Is service-level authorization enabled?</description>
+  </property>
+
+  <!-- Hue WebHDFS proxy user setting -->
+  <property>
+    <name>hadoop.proxyuser.hue.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.hue.groups</name>
+    <value>*</value>
+  </property>
+
+  <!--  Oozie proxy user setting -->
+  <property>
+    <name>hadoop.proxyuser.oozie.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.oozie.groups</name>
+    <value>*</value>
+  </property>
+
+  <!--  HiveServer2 proxy user setting -->
+  <property>
+    <name>hadoop.proxyuser.hive.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.hive.groups</name>
+    <value>*</value>
+  </property>
+
+  <!--  Superset proxy user setting -->
+  <property>
+    <name>hadoop.proxyuser.superset.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.superset.groups</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>parquet.compression</name>
+    <value>LZO</value>
+  </property>
+
+  <property>
+    <name>parquet.task.side.metadata</name>
+    <value>true</value>
+  </property>
+
+<!-- for distcp from lycc  hdfs to shbt hdfs -->
+
+  <property>
+    <name>fs.AbstractFileSystem.file.impl</name>
+    <value>org.apache.hadoop.fs.local.LocalFs</value>
+  </property>
+
+  <!-- can be remove if we can drop spinner -->
+  <property>
+    <name>fs.AbstractFileSystem.qihoohdfs.impl</name>
+    <value>net.qihoo.spinner.SpinnerHdfs</value>
+  </property>
+
+  <property>
+    <name>fs.AbstractFileSystem.hdfs.impl</name>
+    <value>org.apache.hadoop.fs.Hdfs</value>
+  </property>
+
+  <property>
+    <name>fs.AbstractFileSystem.viewfs.impl</name>
+    <value>org.apache.hadoop.fs.viewfs.ViewFs</value>
+  </property>
+
+  <!-- can be remove if we can drop spinner -->
+  <property>
+    <name>fs.qihoohdfs.impl</name>
+    <value>net.qihoo.spinner.SpinnerViewFs</value>
+  </property>
+
+  <property>
+    <name>fs.hdfs.impl</name>
+    <value>org.apache.hadoop.hdfs.DistributedFileSystem</value>
+  </property>
+
+  <!-- can be remove if we can drop spinner -->
+  <property>
+    <name>hadoop.v1.jar</name>
+    <value>hadoop-0.20.2.1U21-core.jar</value>
+  </property>
+
+  <!-- can be remove if we can drop spinner -->
+  <property>
+    <name>fs.hdfsold.impl</name>
+    <value>org.apache.hadoop.hdfs.DistributedFileSystem</value>
+  </property>
+
+  <property>
+    <name>fs.hdfs.impl.disable.cache</name>
+    <value>true</value>
+  </property>
+
+<!--end-->
+
+  <!--viewfs://ss-hadoop/-->
+
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.homedir</name>
+    <value>/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./mvad</name>
+    <value>hdfs://ss-hadoop/mvad</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./data</name>
+    <value>hdfs://ss-hadoop/data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./system</name>
+    <value>hdfs://ss-hadoop/system</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./tmp</name>
+    <value>hdfs://ss-hadoop/tmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./test</name>
+    <value>hdfs://ss-hadoop4/test</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./user</name>
+    <value>hdfs://ss-hadoop2/user</value>
+  </property>
+  <!-- add home mount point for backward compatibility with xitong hadoop, will be removed future -->
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./home</name>
+    <value>hdfs://ss-hadoop3/ads</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./app</name>
+    <value>hdfs://ss-hadoop2/app</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./ads</name>
+    <value>hdfs://ss-hadoop3/ads</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./apps</name>
+    <value>hdfs://ss-hadoop-appdata/apps</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./project/mvad</name>
+    <value>hdfs://ss-hadoop/mvad</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.ss-hadoop.link./project/ads</name>
+    <value>hdfs://ss-hadoop3/ads</value>
+  </property>
+
+  <!--viewfs://safe-lycc/-->
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.homedir</name>
+    <value>/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./user</name>
+    <value>hdfs://safe-lycc-7v/home/hdp-shangye/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./project/ads</name>
+    <value>hdfs://safe-lycc-7v/home/hdp-shangye/project</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./data</name>
+    <value>hdfs://safe-lycc-7v/home/hdp-shangye/data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./test</name>
+    <value>hdfs://safe-lycc-7v/home/hdp-shangye/test</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./tmp</name>
+    <value>hdfs://safe-lycc-7v/home/hdp-shangye/tmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/yarn</name>
+    <value>hdfs://safe-lycc-6v/home/yarn</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/spark</name>
+    <value>hdfs://safe-lycc-2v/home/spark</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-dw</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-ads-dw</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-dakehu</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-ads-dakehu</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-blreport</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-ads-blreport</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-mobileshow</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-ads-mobileshow</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-max</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-ads-max</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-guanggao</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-guanggao</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-ba</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-ads-ba</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-secret</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-ads-secret</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-mh</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-ads-mh</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-ml</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-ads-ml</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-audit</name>
+    <value>hdfs://safe-lycc-3v/home/hdp-ads-audit</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-data</name>
+    <value>hdfs://safe-lycc-3v/home/hdp-ads-data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-mba</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads-mba</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-minos</name>
+    <value>hdfs://safe-lycc-5v/home/hdp-ads-minos</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-sdkrec</name>
+    <value>hdfs://safe-lycc-5v/home/hdp-ads-sdkrec</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-algo</name>
+    <value>hdfs://safe-lycc-6v/home/hdp-ads-algo</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-recordlog</name>
+    <value>hdfs://safe-lycc-6v/home/hdp-ads-recordlog</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-dmppm</name>
+    <value>hdfs://safe-lycc-6v/home/hdp-ads-dmppm</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-antifraud</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-antifraud</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-datamining</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-datamining</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-dmp</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-dmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-engine</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-engine</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-mirrors</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-mirrors</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-report</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-report</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ad-report</name>
+    <value>hdfs://safe-lycc-4v/home/hdp-ads/proj/hdp-ads-report</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-unionad</name>
+    <value>hdfs://safe-lycc-6v/home/hdp-unionad</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-safe</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-safe</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/cloud</name>
+    <value>hdfs://safe-lycc-1v/home/cloud</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-360sec-quc</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-360sec-quc</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-shoujizhushou</name>
+    <value>hdfs://safe-lycc-3v/home/hdp-shoujizhushou</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-portrait</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-portrait</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/logsget</name>
+    <value>hdfs://safe-lycc-3v/home/logsget</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-prophet-platform</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-prophet-platform</value>
+  </property>
+<!--
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-guanggao/user</name>
+    <value>hdfs://safe-lycc-5v/home/hdp-guanggao/user</value>
+  </property>
+-->
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-datamining</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-datamining</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ge-wfgg</name>
+    <value>hdfs://safe-lycc-5v/home/hdp-ge-wfgg</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-channelvalue</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-channelvalue</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-guanggaoapi-data</name>
+    <value>hdfs://safe-lycc-5v/home/hdp-guanggaoapi-data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-qy-data</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-qy-data</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-mbsdk-qhui</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-mbsdk-qhui</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-saonline-w</name>
+    <value>hdfs://safe-lycc-1v/home/hdp-saonline-w</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-ads-fenxi</name>
+    <value>hdfs://namenode.safe.lycc.qihoo.net:9000/home/hdp-ads-fenxi</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.safe-lycc.link./home/hdp-safe-cloud</name>
+    <value>hdfs://safe-lycc-2v/home/hdp-safe-cloud</value>
+  </property>
+
+
+
+  <!--viewfs://dfs-shbt/-->
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.homedir</name>
+    <value>/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./user</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-guanggao/user</value>
+  </property>
+  <!--property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./user/yarn</name>
+    <value>hdfs://dfs-shbt-6v/user/yarn</value>
+  </property-->
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./project/ads</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-guanggao/project</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./data</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-guanggao/data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./test</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-guanggao/test</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./tmp</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-guanggao/tmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/yarn</name>
+    <value>hdfs://dfs-shbt-5v/home/yarn</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/spark</name>
+    <value>hdfs://dfs-shbt-5v/home/spark</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/hdp-portrait</name>
+    <value>hdfs://dfs-shbt-6v/home/hdp-portrait</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/hdp-browser</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-browser</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/logsget</name>
+    <value>hdfs://dfs-shbt-2v/home/logsget</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/hdp-zhifu</name>
+    <value>hdfs://dfs-shbt-4v/home/hdp-zhifu</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/hdp-hao360cn-tjfx</name>
+    <value>hdfs://dfs-shbt-1v/home/hdp-hao360cn-tjfx</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.mounttable.dfs-shbt.link./home/hdp-phoenix-platform</name>
+    <value>hdfs://dfs-shbt-4v/home/hdp-phoenix-platform</value>
+  </property>
+
+  <!--viewfs://qss-zzzc/-->
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.homedir</name>
+    <value>/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./user</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-guanggao/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./project/ads</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-guanggao/project</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./data</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-guanggao/data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./test</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-guanggao/test</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./tmp</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-guanggao/tmp</value>
+  </property>
+  <!--property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-guanggao</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-guanggao</value>
+  </property-->
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/yarn</name>
+    <value>hdfs://qss-zzzc-6v/home/yarn</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/spark</name>
+    <value>hdfs://qss-zzzc-1v/home/spark</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/spider</name>
+    <value>hdfs://qss-zzzc-5v/home/spider</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/maintable</name>
+    <value>hdfs://qss-zzzc-4v/home/maintable</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-reader</name>
+    <value>hdfs://qss-zzzc-3v/home/hdp-reader</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-reader-tag</name>
+    <value>hdfs://qss-zzzc-3v/home/hdp-reader/proj/hdp-reader-tag</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-reader-cp</name>
+    <value>hdfs://qss-zzzc-3v/home/hdp-reader/proj/hdp-reader-cp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/nlp</name>
+    <value>hdfs://qss-zzzc-3v/home/nlp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-qsslab</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-qsslab</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/logsget</name>
+    <value>hdfs://qss-zzzc-3v/home/logsget</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/pagevalue</name>
+    <value>hdfs://qss-zzzc-4v/home/pagevalue</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-advalue</name>
+    <value>hdfs://qss-zzzc-6v/home/hdp-advalue</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.qss-zzzc.link./home/hdp-reader-ifda</name>
+    <value>hdfs://qss-zzzc-2v/home/hdp-reader-ifda</value>
+  </property>
+
+  <!--viewfs://shyc2/-->
+
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.homedir</name>
+    <value>/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./data</name>
+    <value>hdfs://shyc2-1v/data</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./system</name>
+    <value>hdfs://shyc2-1v/system</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./tmp</name>
+    <value>hdfs://shyc2-1v/tmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./test</name>
+    <value>hdfs://shyc2-1v/test</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./user</name>
+    <value>hdfs://shyc2-1v/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./apps</name>
+    <value>hdfs://shyc2-1v/apps</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shyc2.link./mvad</name>
+    <value>hdfs://shyc2-1v/mvad</value>
+  </property>
+
+  <!--viewfs://shbt-hbase/-->
+
+  <property>
+    <name>fs.viewfs.mounttable.shbt-hbase.homedir</name>
+    <value>/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shbt-hbase.link./system</name>
+    <value>hdfs://shbt-hbase-1v/system</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shbt-hbase.link./tmp</name>
+    <value>hdfs://shbt-hbase-1v/tmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shbt-hbase.link./test</name>
+    <value>hdfs://shbt-hbase-1v/test</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shbt-hbase.link./user</name>
+    <value>hdfs://shbt-hbase-1v/user</value>
+  </property>
+  <property>
+    <name>fs.viewfs.mounttable.shbt-hbase.link./home</name>
+    <value>hdfs://shbt-hbase-1v/home</value>
+  </property>
+
+  <!-- old home maping safe lycc-->
+  <!-- can be remove if we can drop spinner -->
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home</name>
+    <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-ads-dw</name>
+    <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/hdp-ads-dw</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-ads-audit</name>
+    <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/hdp-ads-audit</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-ads-mba</name>
+    <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/home/hdp-ads-mba</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-ads-data</name>
+    <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/hdp-ads-data</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-ads-algo</name>
+    <value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/home/hdp-ads-algo</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-unionad</name>
+    <value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/home/hdp-unionad</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-safe</name>
+    <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/hdp-safe</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/cloud</name>
+    <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/cloud</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-360sec-quc</name>
+    <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/hdp-360sec-quc</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-shoujizhushou</name>
+    <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/hdp-shoujizhushou</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-portrait</name>
+    <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/hdp-portrait</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/logsget</name>
+    <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/logsget</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-prophet-platform</name>
+    <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-prophet-platform</value>
+  </property>
+
+  <property>
+    <name>fs.viewfs.lycc-hdfs./home/hdp-datamining</name>
+    <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-datamining</value>
+  </property>
+
+<property>
+ <name>fs.viewfs.lycc-hdfs./user/hdp-guanggao/.Trash</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/user/hdp-guanggao/.Trash</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./user/hamal/.Trash</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/user/hamal/.Trash</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./user/flink/.Trash</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/user/flink/.Trash</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./user/hdp-guanggao/.flink</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/.flink</value>
+</property>
+
+<property>
+  <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/user</name>
+ <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/user</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/.staging</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/.staging</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/360_ai_proj</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/360_ai_proj</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/360ai_tool</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/360ai_tool</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/Data_Analysis</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/Data_Analysis</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/antispam</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/antispam</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/archive</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/archive</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/ba_config</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/ba_config</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/ba_data</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/ba_data</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/backup</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/backup</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/baseline</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/baseline</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/bool_engine</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/bool_engine</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/ci_search</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/ci_search</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/click</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/click</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/crm</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/crm</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/data_analysis</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/data_analysis</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/data_process</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/data_process</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/dianjing</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/dianjing</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/dianjing_ad_log</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/dianjing_ad_log</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/display_ads_optimization</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/display_ads_optimization</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/display_search</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/display_search</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/dm</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/dm</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/druid</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/druid</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/dubhe_data</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/dubhe_data</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/dynamic</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/dynamic</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/engine</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/engine</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/epage_log</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/epage_log</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/feature</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/feature</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/guess</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/guess</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/hive</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/hive</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/hq</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/hq</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/hv-dict</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/hv-dict</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/keyword_search</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/keyword_search</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/logs</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/logs</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/ls_click_log</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/ls_click_log</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/mapreduce</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/mapreduce</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/mobile_ad_log_m</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/mobile_ad_log_m</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/mobile_keyword_search</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/mobile_keyword_search</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/navguess</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/navguess</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/navsite</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/navsite</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/p13n</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/p13n</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/platform</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/platform</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/product_search</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/product_search</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/project</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/project</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/rank</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/rank</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/rawlog</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/rawlog</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/share</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/share</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/shouzhu_log</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/shouzhu_log</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/so.com</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/so.com</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/so_ad_abtest_data</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/so_ad_abtest_data</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/stor</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/stor</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/third-part</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/third-part</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/tmp</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/tmp</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/topic_model</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/topic_model</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/trend</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/trend</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/union</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/union</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/viewclick</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/viewclick</value>
+</property>
+<property>
+ <name>fs.viewfs.lycc-hdfs./home/hdp-guanggao/yuntu_grep</name>
+ <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/hdp-guanggao/yuntu_grep</value>
+</property>
+<!--end-->
+
+<!-- home maping zzzc-->
+<!-- can be remove if we can drop spinner -->
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/hdp-guanggao</name>
+    <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-guanggao</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/spider</name>
+    <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/home/spider</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/maintable</name>
+    <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home/maintable</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/hdp-reader</name>
+    <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/hdp-reader</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/hdp-reader-tag</name>
+    <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/hdp-reader/proj/hdp-reader-tag</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/hdp-reader-cp</name>
+    <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/hdp-reader/proj/hdp-reader-cp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/nlp</name>
+    <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/nlp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.zzzc-hdfs./home/hdp-qsslab</name>
+    <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-qsslab</value>
+  </property>
+<!--end-->
+
+<!-- home maping shbt-->
+<!-- can be remove if we can drop spinner -->
+  <property>
+    <name>fs.viewfs.shbt-hdfs./user/yarn</name>
+    <value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/yarn</value>
+  </property>
+  <property>
+    <name>fs.viewfs.shbt-hdfs./home/hdp-portrait</name>
+    <value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-portrait</value>
+  </property>
+  <property>
+    <name>fs.viewfs.shbt-hdfs./home/hdp-browser</name>
+    <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-browser</value>
+  </property>
+  <property>
+    <name>fs.viewfs.shbt-hdfs./home/logsget</name>
+    <value>hdfsold://namenodefd2v.dfs.shbt.qihoo.net:9000/home/logsget</value>
+  </property>
+<!--end-->
+</configuration>

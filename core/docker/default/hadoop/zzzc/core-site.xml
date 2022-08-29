@@ -1,0 +1,121 @@
+<configuration xmlns:xi="http://www.w3.org/2001/XInclude">
+<xi:include href="client-viewfs.xml">
+<xi:fallback></xi:fallback>
+</xi:include>
+<property>
+  <name>fs.alluxio.enable</name>
+  <value>false</value>
+</property>
+<property>
+  <name>fs.alluxio.impl</name>
+  <value>alluxio.hadoop.FileSystem</value>
+  <description>The Alluxio FileSystem (Hadoop 1.x and 2.x)</description>
+</property>
+<property>
+  <name>fs.AbstractFileSystem.alluxio.impl</name>
+  <value>alluxio.hadoop.AlluxioFileSystem</value>
+  <description>The Alluxio AbstractFileSystem (Hadoop 2.x)</description>
+</property>
+
+ <property>
+  <name>alluxio.master.rpc.addresses</name>
+ <value>mixedm01.hulk.bjpdc.qihoo.net:19998,mixedm02.hulk.bjpdc.qihoo.net:19998</value>
+</property> 
+
+<property>
+   <name>fs.defaultFS</name>
+   <value>hdfs://namenodefd1v.qss.zzzc.qihoo.net:9000</value>
+</property>
+
+<property>
+   <name>fs.AbstractFileSystem.file.impl</name>
+   <value>org.apache.hadoop.fs.local.LocalFs</value>
+</property>
+
+<property>
+   <name>fs.AbstractFileSystem.hdfs.impl</name>
+   <value>org.apache.hadoop.fs.viewfs.ViewFs</value>
+</property>
+
+<property>
+   <name>fs.hdfs.impl</name>
+   <value>org.apache.hadoop.fs.viewfs.ViewFileSystem</value>
+</property>
+
+<property>
+  <name>hadoop.v1.jar</name>
+  <value>hadoop-0.20.2.1-core.jar</value>
+</property>
+
+<property>
+   <name>fs.hdfsold.impl</name>
+   <value>org.apache.hadoop.hdfs.DistributedFileSystem</value>
+</property>
+
+
+<property>
+    <name>fs.trash.interval</name>
+    <value>1440</value>
+</property>
+
+<property>
+    <name>ipc.server.listen.queue.size</name>
+    <value>1024</value>
+</property>
+
+
+<property>
+   <name>io.compression.codecs</name>
+   <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec,org.apache.hadoop.io.compress.BZip2Codec</value>
+</property>
+
+<property>
+    <name>io.compression.codec.lzo.class</name>
+    <value>com.hadoop.compression.lzo.LzoCodec</value>
+</property>
+
+<property>
+   <name>ha.zookeeper.quorum</name>
+   <value>w-m16.qss.zzzc.qihoo.net:2181,w-m17.qss.zzzc.qihoo.net:2181,w-m18.qss.zzzc.qihoo.net:2181,w-m19.qss.zzzc.qihoo.net:2181,w-m20.qss.zzzc.qihoo.net:2181</value>
+</property>
+
+<property>
+    <name>fs.hdfs.impl.disable.cache</name>
+    <value>true</value>
+</property>
+
+<property>
+    <name>dfs.support.ugi.access</name>
+    <value>true</value>
+</property>
+
+<property>
+    <name>thrift.max.ipc.handle</name>
+    <value>4096</value>
+</property>
+
+<!-- v1 default fs -->
+<property>
+    <name>fs.default.name</name>
+    <value>hdfs://namenodefd1v.qss.zzzc.qihoo.net:9000</value>
+</property>
+
+<property>
+  <name>ipc.client.connect.max.retries.on.timeouts</name>
+  <value>5</value>
+</property>
+
+<property>
+    <name>fs.ugi.v1.enable </name>
+    <value>true</value>
+</property>
+<property>
+     <name>dfs.checksum.type</name>
+     <value>CRC32</value>
+</property>
+<property>
+     <name>fs.AbstractFileSystem.hdfsold.impl</name>
+     <value>org.apache.hadoop.fs.Hdfs</value>
+</property>
+
+</configuration>

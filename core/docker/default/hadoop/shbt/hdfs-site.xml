@@ -1,0 +1,105 @@
+<configuration>
+
+<property>
+  <name>dfs.support.append</name>
+  <value>true</value>
+  <description>Allow append support since we have the HDFS-200 patch and
+               need append/close support for HLog.java#splitLog</description>
+</property>
+
+<property>
+  <name>dfs.replication</name>
+  <value>3</value>
+</property>
+
+<property>
+  <name>dfs.block.size</name>
+  <value>134217728</value>
+</property>
+
+<property>
+  <name>dfs.datanode.socket.write.timeout</name>
+  <value>30000</value>
+</property>
+
+<property>
+  <name>dfs.socket.timeout</name>
+  <value>20000</value>
+</property>
+
+<property>
+  <name>dfs.client.max.block.acquire.failures</name>
+  <value>1</value>
+</property>
+
+<property>
+  <name>dfs.client.baseTimeWindow.waitOn.BlockMissingException</name>
+  <value>0</value>
+</property>
+
+<!-- configuration item for avatar begin -->
+
+  <property>
+    <name>dfs.avatarnode.port</name>
+    <value>9001</value>
+  </property>
+
+  <property> 
+    <name>dfs.cli.support.metrics</name> 
+    <value>false</value> 
+  </property> 
+
+  <property> 
+    <name>fs.ha.retrywrites</name> 
+    <value>true</value> 
+  </property> 
+
+  <property> 
+    <name>dfs.client.block.write.locateFollowingBlock.retries</name> 
+    <value>8</value> 
+  </property>
+  
+<!-- configuration item for avatar end -->
+
+  <property>
+    <name>hdfs.raid.locations</name>
+    <value>/archive-raid/meta/xor</value>
+  </property>
+  
+  <property>
+    <name>hdfs.raidrs.locations</name>
+    <value>/archive-raid/meta/rs</value>
+  </property>
+  
+  <property>
+    <name>hdfs.raid.stripeLength</name>
+    <value>10</value>
+  </property>
+  
+  <property>
+    <name>hdfs.raidrs.paritylength</name>
+    <value>3</value>
+  </property>
+  
+  <property>
+    <name>dfs.raidnode.client.fastfix</name>
+    <value>true</value>
+  </property>
+  
+  <property>
+   <name>dfs.user.home.dir.prefix</name>
+   <value>/home</value>
+  </property>
+
+
+  <property>
+    <name>dfs.client.hedged.read.threshold.millis</name>
+    <value>1500</value>
+  </property>
+
+  <property>
+    <name>dfs.client.hedged.read.threadpool.size</name>
+    <value>128</value>
+  </property>
+
+</configuration>

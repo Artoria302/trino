@@ -1,0 +1,120 @@
+<configuration xmlns:xi="http://www.w3.org/2001/XInclude">
+ <xi:include href="client-viewfs.xml">
+ <xi:fallback></xi:fallback>
+ </xi:include>
+<property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://namenode.dfs.shbt.qihoo.net:9000</value>
+</property>
+
+<property>
+    <name>fs.AbstractFileSystem.file.impl</name>
+    <value>org.apache.hadoop.fs.local.LocalFs</value>
+</property>
+
+<property>
+    <name>fs.AbstractFileSystem.hdfs.impl</name>
+    <value>org.apache.hadoop.fs.viewfs.ViewFs</value>
+</property>
+
+<property>
+    <name>fs.hdfs.impl</name>
+    <value>org.apache.hadoop.fs.viewfs.ViewFileSystem</value>
+</property>
+
+<property>
+    <name>hadoop.v1.jar</name>
+    <value>hadoop-0.20.2.1-core.jar,hadoop-0.20.2.1-highavailability.jar,hive-shims-0.7.1.jar</value>
+</property>
+
+<property>
+    <name>io.file.buffer.size</name>
+    <value>131072</value>
+</property>
+
+<property>
+    <name>fs.trash.interval</name>
+    <value>1440</value>
+</property>
+
+<property>
+    <name>ipc.server.listen.queue.size</name>
+    <value>1024</value>
+</property>
+
+<property>
+    <name>thrift.max.ipc.handle</name>
+    <value>4096</value>
+</property>
+
+<property>
+   <name>io.serializations</name>
+   <value>org.apache.hadoop.io.serializer.WritableSerialization,org.apache.hadoop.io.serializer.avro.AvroSpecificSerialization,org.apache.hadoop.io.serializer.avro.AvroReflectSerialization</value>
+</property>
+
+<property>
+   <name>io.compression.codecs</name>
+   <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec,org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.SnappyCodec,org.apache.hadoop.io.compress.LzmaCodec</value>
+</property>
+
+<property>
+    <name>io.compression.codec.lzo.class</name>
+    <value>com.hadoop.compression.lzo.LzoCodec</value>
+</property>
+
+<property>
+   <name>ha.zookeeper.quorum</name>
+   <value>m2.dfs.shbt.qihoo.net:2181,m3.dfs.shbt.qihoo.net:2181,m4.dfs.shbt.qihoo.net:2181,m5.dfs.shbt.qihoo.net:2181,m6.dfs.shbt.qihoo.net:2181</value>
+</property>
+
+<property>
+    <name>fs.hdfs.impl.disable.cache</name>
+    <value>false</value>
+</property>
+
+<property>
+    <name>dfs.support.ugi.access</name>
+    <value>true</value>
+</property>
+
+<property>
+    <name>hadoop.security.authorization</name>
+    <value>true</value>
+</property>
+
+<!-- configuration item for avatar begin -->
+
+<property>
+    <name>fs.default.name</name>
+    <value>hdfs://namenode.dfs.shbt.qihoo.net:9000</value>
+</property>
+
+<property>
+    <name>fs.ha.zookeeper.quorum</name>
+    <value>m2.dfs.shbt.qihoo.net:2181,m3.dfs.shbt.qihoo.net:2181,m4.dfs.shbt.qihoo.net:2181,m5.dfs.shbt.qihoo.net:2181,m6.dfs.shbt.qihoo.net:2181</value>
+</property>
+
+<property>
+    <name>fs.hdfsold.impl</name>
+    <value>org.apache.hadoop.hdfs.DistributedFileSystem</value>
+</property>
+
+<property>
+  <name>ipc.client.connect.max.retries.on.timeouts</name>
+  <value>5</value>
+</property>
+
+<property>
+    <name>fs.ugi.v1.enable </name>
+    <value>true</value>
+</property>
+<property>
+    <name>dfs.checksum.type</name>
+    <value>CRC32</value>
+</property>
+<property>
+    <name>fs.AbstractFileSystem.hdfsold.impl</name>
+    <value>org.apache.hadoop.fs.Hdfs</value>
+</property>
+
+</configuration>

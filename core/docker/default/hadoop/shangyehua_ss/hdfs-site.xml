@@ -1,0 +1,1525 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+  <property>
+    <name>dfs.nameservices</name>
+    <value>ss-hadoop,ss-hadoop2,ss-hadoop3,ss-hadoop4,ss-hbase,ss-hadoop-appdata,safe-lycc-1v,safe-lycc-2v,safe-lycc-3v,safe-lycc-4v,safe-lycc-5v,safe-lycc-6v,safe-lycc-7v,dfs-shbt-1v,dfs-shbt-2v,dfs-shbt-3v,dfs-shbt-4v,dfs-shbt-5v,dfs-shbt-6v,qss-zzzc-1v,qss-zzzc-2v,qss-zzzc-3v,qss-zzzc-4v,qss-zzzc-5v,qss-zzzc-6v,shyc2-1v,shbt-hbase-1v</value>
+    <description>Comma-separated list of nameservices.</description>
+  </property>
+
+<!-- ss-hadoop nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hadoop</name>
+    <value>nn1,nn2</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop.nn1</name>
+    <value>nn1ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop.nn2</name>
+    <value>nn2ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop.nn1</name>
+    <value>nn1ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop.nn2</name>
+    <value>nn2ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop.nn1</name>
+    <value>nn1ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop.nn2</name>
+    <value>nn2ss.prod.mediav.com:50070</value>
+  </property>
+
+<!-- ss-hadoop2 nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hadoop2</name>
+    <value>nn11,nn12</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop2.nn11</name>
+    <value>nn11ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop2.nn12</name>
+    <value>nn12ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop2.nn11</name>
+    <value>nn11ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop2.nn12</name>
+    <value>nn12ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop2.nn11</name>
+    <value>nn11ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop2.nn12</name>
+    <value>nn12ss.prod.mediav.com:50070</value>
+  </property>
+
+<!-- ss-hadoop3 nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hadoop3</name>
+    <value>nn14,nn15</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop3.nn14</name>
+    <value>nn14ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop3.nn15</name>
+    <value>nn15ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop3.nn14</name>
+    <value>nn14ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop3.nn15</name>
+    <value>nn15ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop3.nn14</name>
+    <value>nn14ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop3.nn15</name>
+    <value>nn15ss.prod.mediav.com:50070</value>
+  </property>
+
+  <!-- ss-hadoop4 nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hadoop4</name>
+    <value>nn17,nn18</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop4.nn17</name>
+    <value>nn17ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop4.nn18</name>
+    <value>nn18ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop4.nn17</name>
+    <value>nn17ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop4.nn18</name>
+    <value>nn18ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop4.nn17</name>
+    <value>nn17ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop4.nn18</name>
+    <value>nn18ss.prod.mediav.com:50070</value>
+  </property>
+
+<!-- ss-hbase nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hbase</name>
+    <value>nn4,nn5</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hbase.nn4</name>
+    <value>nn4ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hbase.nn5</name>
+    <value>nn5ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hbase.nn4</name>
+    <value>nn4ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hbase.nn5</name>
+    <value>nn5ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hbase.nn4</name>
+    <value>nn4ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hbase.nn5</name>
+    <value>nn5ss.prod.mediav.com:50070</value>
+  </property>
+
+<!-- ss-hbase2 nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hbase2</name>
+    <value>nn7,nn8</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hbase2.nn7</name>
+    <value>nn7ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hbase2.nn8</name>
+    <value>nn8ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hbase2.nn7</name>
+    <value>nn7ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hbase2.nn8</name>
+    <value>nn8ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hbase2.nn7</name>
+    <value>nn7ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hbase2.nn8</name>
+    <value>nn8ss.prod.mediav.com:50070</value>
+  </property>
+
+  <!-- ss-hadoop-appdata nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.ss-hadoop-appdata</name>
+    <value>rm4,rm5</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop-appdata.rm4</name>
+    <value>rm4ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.ss-hadoop-appdata.rm5</name>
+    <value>rm5ss.prod.mediav.com:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop-appdata.rm4</name>
+    <value>rm4ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.ss-hadoop-appdata.rm5</name>
+    <value>rm5ss.prod.mediav.com:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop-appdata.rm4</name>
+    <value>rm4ss.prod.mediav.com:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.ss-hadoop-appdata.rm5</name>
+    <value>rm5ss.prod.mediav.com:50070</value>
+  </property>
+
+<!-- safe-lycc-1v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-1v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-1v.nn1</name>
+        <value>mhdp31.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-1v.nn2</name>
+        <value>mhdp32.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-1v.nn1</name>
+        <value>mhdp31.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-1v.nn2</name>
+        <value>mhdp32.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-1v.nn1</name>
+        <value>mhdp31.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-1v.nn2</name>
+        <value>mhdp32.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- safe-lycc-2v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-2v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-2v.nn1</name>
+        <value>mhdp33.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-2v.nn2</name>
+        <value>mhdp34.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-2v.nn1</name>
+        <value>mhdp33.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-2v.nn2</name>
+        <value>mhdp34.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-2v.nn1</name>
+        <value>mhdp33.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-2v.nn2</name>
+        <value>mhdp34.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- safe-lycc-3v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-3v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-3v.nn1</name>
+        <value>mhdp37.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-3v.nn2</name>
+        <value>mhdp38.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-3v.nn1</name>
+        <value>mhdp37.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-3v.nn2</name>
+        <value>mhdp38.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-3v.nn1</name>
+        <value>mhdp37.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-3v.nn2</name>
+        <value>mhdp38.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- safe-lycc-4v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-4v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-4v.nn1</name>
+        <value>mhdp39.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-4v.nn2</name>
+        <value>mhdp40.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-4v.nn1</name>
+        <value>mhdp39.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-4v.nn2</name>
+        <value>mhdp40.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-4v.nn1</name>
+        <value>mhdp39.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-4v.nn2</name>
+        <value>mhdp40.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- safe-lycc-5v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-5v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-5v.nn1</name>
+        <value>mhdp41.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-5v.nn2</name>
+        <value>mhdp42.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-5v.nn1</name>
+        <value>mhdp41.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-5v.nn2</name>
+        <value>mhdp42.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-5v.nn1</name>
+        <value>mhdp41.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-5v.nn2</name>
+        <value>mhdp42.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- safe-lycc-6v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-6v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-6v.nn1</name>
+        <value>mhdp43.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-6v.nn2</name>
+        <value>mhdp44.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-6v.nn1</name>
+        <value>mhdp43.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-6v.nn2</name>
+        <value>mhdp44.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-6v.nn1</name>
+        <value>mhdp43.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-6v.nn2</name>
+        <value>mhdp44.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- safe-lycc-7v config -->
+    <property>
+        <name>dfs.ha.namenodes.safe-lycc-7v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-7v.nn1</name>
+        <value>mhdp45.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.safe-lycc-7v.nn2</name>
+        <value>mhdp46.safe.lycc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-7v.nn1</name>
+        <value>mhdp45.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.safe-lycc-7v.nn2</name>
+        <value>mhdp46.safe.lycc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-7v.nn1</name>
+        <value>mhdp45.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.safe-lycc-7v.nn2</name>
+        <value>mhdp46.safe.lycc.qihoo.net:50070</value>
+    </property>
+
+    <!-- dfs-shbt-1v config -->
+    <property>
+        <name>dfs.ha.namenodes.dfs-shbt-1v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-1v.nn1</name>
+        <value>m1.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-1v.nn2</name>
+        <value>m2.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-1v.nn1</name>
+        <value>m1.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-1v.nn2</name>
+        <value>m2.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-1v.nn1</name>
+        <value>m1.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-1v.nn2</name>
+        <value>m2.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <!-- dfs-shbt-2v config -->
+    <property>
+        <name>dfs.ha.namenodes.dfs-shbt-2v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-2v.nn1</name>
+        <value>m4.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-2v.nn2</name>
+        <value>m5.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-2v.nn1</name>
+        <value>m4.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-2v.nn2</name>
+        <value>m5.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-2v.nn1</name>
+        <value>m4.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-2v.nn2</name>
+        <value>m5.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <!-- dfs-shbt-3v config -->
+    <property>
+        <name>dfs.ha.namenodes.dfs-shbt-3v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-3v.nn1</name>
+        <value>m13.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-3v.nn2</name>
+        <value>m14.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-3v.nn1</name>
+        <value>m13.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-3v.nn2</name>
+        <value>m14.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-3v.nn1</name>
+        <value>m13.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-3v.nn2</name>
+        <value>m14.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <!-- dfs-shbt-4v config -->
+    <property>
+        <name>dfs.ha.namenodes.dfs-shbt-4v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-4v.nn1</name>
+        <value>m17.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-4v.nn2</name>
+        <value>m18.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-4v.nn1</name>
+        <value>m17.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-4v.nn2</name>
+        <value>m18.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-4v.nn1</name>
+        <value>m17.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-4v.nn2</name>
+        <value>m18.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <!-- dfs-shbt-5v config -->
+    <property>
+        <name>dfs.ha.namenodes.dfs-shbt-5v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-5v.nn1</name>
+        <value>m22.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-5v.nn2</name>
+        <value>m23.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-5v.nn1</name>
+        <value>m22.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-5v.nn2</name>
+        <value>m23.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-5v.nn1</name>
+        <value>m22.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-5v.nn2</name>
+        <value>m23.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <!-- dfs-shbt-6v config -->
+    <property>
+        <name>dfs.ha.namenodes.dfs-shbt-6v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-6v.nn1</name>
+        <value>m27.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.dfs-shbt-6v.nn2</name>
+        <value>m28.dfs.shbt.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-6v.nn1</name>
+        <value>m27.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.dfs-shbt-6v.nn2</name>
+        <value>m28.dfs.shbt.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-6v.nn1</name>
+        <value>m27.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.dfs-shbt-6v.nn2</name>
+        <value>m28.dfs.shbt.qihoo.net:50070</value>
+    </property>
+
+    <!-- qss-zzzc-1v config -->
+    <property>
+        <name>dfs.ha.namenodes.qss-zzzc-1v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-1v.nn1</name>
+        <value>mzh1.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-1v.nn2</name>
+        <value>mzh2.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-1v.nn1</name>
+        <value>mzh1.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-1v.nn2</name>
+        <value>mzh2.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-1v.nn1</name>
+        <value>mzh1.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-1v.nn2</name>
+        <value>mzh2.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <!-- qss-zzzc-2v config -->
+    <property>
+        <name>dfs.ha.namenodes.qss-zzzc-2v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-2v.nn1</name>
+        <value>mzh3.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-2v.nn2</name>
+        <value>mzh4.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-2v.nn1</name>
+        <value>mzh3.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-2v.nn2</name>
+        <value>mzh4.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-2v.nn1</name>
+        <value>mzh3.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-2v.nn2</name>
+        <value>mzh4.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <!-- qss-zzzc-3v config -->
+    <property>
+        <name>dfs.ha.namenodes.qss-zzzc-3v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-3v.nn1</name>
+        <value>mzh5.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-3v.nn2</name>
+        <value>mzh6.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-3v.nn1</name>
+        <value>mzh5.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-3v.nn2</name>
+        <value>mzh6.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-3v.nn1</name>
+        <value>mzh5.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-3v.nn2</name>
+        <value>mzh6.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <!-- qss-zzzc-4v config -->
+    <property>
+        <name>dfs.ha.namenodes.qss-zzzc-4v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-4v.nn1</name>
+        <value>mzh7.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-4v.nn2</name>
+        <value>mzh8.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-4v.nn1</name>
+        <value>mzh7.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-4v.nn2</name>
+        <value>mzh8.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-4v.nn1</name>
+        <value>mzh7.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-4v.nn2</name>
+        <value>mzh8.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <!-- qss-zzzc-5v config -->
+    <property>
+        <name>dfs.ha.namenodes.qss-zzzc-5v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-5v.nn1</name>
+        <value>mzh9.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-5v.nn2</name>
+        <value>mzh10.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-5v.nn1</name>
+        <value>mzh9.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-5v.nn2</name>
+        <value>mzh10.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-5v.nn1</name>
+        <value>mzh9.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-5v.nn2</name>
+        <value>mzh10.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <!-- qss-zzzc-6v config -->
+    <property>
+        <name>dfs.ha.namenodes.qss-zzzc-6v</name>
+        <value>nn1,nn2</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-6v.nn1</name>
+        <value>mzh11.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.rpc-address.qss-zzzc-6v.nn2</name>
+        <value>mzh12.qss.zzzc.qihoo.net:9000</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-6v.nn1</name>
+        <value>mzh11.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.servicerpc-address.qss-zzzc-6v.nn2</name>
+        <value>mzh12.qss.zzzc.qihoo.net:9003</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-6v.nn1</name>
+        <value>mzh11.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address.qss-zzzc-6v.nn2</name>
+        <value>mzh12.qss.zzzc.qihoo.net:50070</value>
+    </property>
+
+  <!-- shyc2-1v nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.shyc2-1v</name>
+    <value>nn1,nn2</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.shyc2-1v.nn1</name>
+    <value>nn1.adsys.shyc2.qihoo.net:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.shyc2-1v.nn2</name>
+    <value>nn2.adsys.shyc2.qihoo.net:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.shyc2-1v.nn1</name>
+    <value>nn1.adsys.shyc2.qihoo.net:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.shyc2-1v.nn2</name>
+    <value>nn2.adsys.shyc2.qihoo.net:8040</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.shyc2-1v.nn1</name>
+    <value>nn1.adsys.shyc2.qihoo.net:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.shyc2-1v.nn2</name>
+    <value>nn2.adsys.shyc2.qihoo.net:50070</value>
+  </property>
+
+  <!-- shyc2-1v nameservice -->
+  <property>
+    <name>dfs.ha.namenodes.shbt-hbase-1v</name>
+    <value>nn1,nn2</value>
+    <description>
+      The prefix for a given nameservice, contains a comma-separated
+      list of namenodes for a given nameservice (eg EXAMPLENAMESERVICE).
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.shbt-hbase-1v.nn1</name>
+    <value>m01.shangye.shbt.qihoo.net:9000</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.shbt-hbase-1v.nn2</name>
+    <value>m02.shangye.shbt.qihoo.net:9000</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.shbt-hbase-1v.nn1</name>
+    <value>m01.shangye.shbt.qihoo.net:9002</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.servicerpc-address.shbt-hbase-1v.nn2</name>
+    <value>m02.shangye.shbt.qihoo.net:9002</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.shbt-hbase-1v.nn1</name>
+    <value>m01.shangye.shbt.qihoo.net:50070</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.http-address.shbt-hbase-1v.nn2</name>
+    <value>m02.shangye.shbt.qihoo.net:50070</value>
+  </property>
+
+<!--  ss-hadoop QJM storage -->
+<!--  NOTE: ss-hadoop should assign another address !!! -->
+  <property>
+    <name>dfs.namenode.shared.edits.dir</name>
+    <value>qjournal://nn1ss.prod.mediav.com:8485;nn2ss.prod.mediav.com:8485;nn3ss.prod.mediav.com:8485/ss-hadoop</value>
+    <description>A directory on shared storage between the multiple namenodes
+    in an HA cluster. This directory will be written by the active and read
+    by the standby in order to keep the namespaces synchronized. This directory
+    does not need to be listed in dfs.namenode.edits.dir above. It should be
+    left empty in a non-HA cluster.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.journalnode.edits.dir</name>
+    <value>/data/dfs/jn</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.ss-hadoop</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.ss-hadoop2</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.ss-hadoop3</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.ss-hadoop4</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.ss-hbase</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.ss-hadoop-appdata</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-1v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-2v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-3v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-4v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-5v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-6v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.safe-lycc-7v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.dfs-shbt-1v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.dfs-shbt-2v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.dfs-shbt-3v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.dfs-shbt-4v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.dfs-shbt-5v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.dfs-shbt-6v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.qss-zzzc-1v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.qss-zzzc-2v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.qss-zzzc-3v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.qss-zzzc-4v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.qss-zzzc-5v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+      <name>dfs.client.failover.proxy.provider.qss-zzzc-6v</name>
+      <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.shyc2-1v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.shbt-hbase-1v</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.ha.automatic-failover.enabled</name>
+    <value>true</value>
+    <description>
+      Whether automatic failover is enabled. See the HDFS High
+      Availability documentation for details on automatic HA
+      configuration.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.ha.fencing.methods</name>
+    <value>sshfence</value>
+    <description>
+      List of fencing methods to use for service fencing. May contain
+      builtin methods (eg shell and sshfence) or user-defined method.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.ha.fencing.ssh.connect-timeout</name>
+    <value>30000</value>
+    <description>
+      SSH connection timeout, in milliseconds, to use with the builtin
+      sshfence fencer.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.ha.fencing.ssh.private-key-files</name>
+    <value>/var/lib/hadoop-hdfs/.ssh/id_rsa</value>
+    <description>
+      The SSH private key files to use with the builtin sshfence fencer.
+    </description>
+  </property>
+
+<!--  ss-hadoop HA Zookeeper -->
+<!--  NOTE: ss-hbase2 should assign another address !!! -->
+  <property>
+    <name>ha.zookeeper.quorum</name>
+    <value>nn1ss.prod.mediav.com:2181,nn2ss.prod.mediav.com:2181,nn3ss.prod.mediav.com:2181</value>
+    <description>
+      A list of ZooKeeper server addresses, separated by commas, that are
+      to be used by the ZKFailoverController in automatic failover.
+    </description>
+  </property>
+
+  <property>
+    <name>ha.zookeeper.session-timeout.ms</name>
+    <value>5000</value>
+    <description>
+      The session timeout to use when the ZKFC connects to ZooKeeper.
+      Setting this value to a lower value implies that server crashes
+      will be detected more quickly, but risks triggering failover too
+      aggressively in the case of a transient error or network blip.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.permissions.superusergroup</name>
+    <value>supergroup</value>
+    <description>Specifies the UNIX group containing users that will be treated as superusers by HDFS.
+      To give users root privileges in HDFS, create a UNIX group with the same name as this group
+      (or change the value of the configuration to correspond to an existing UNIX group)
+      and add them to the group.</description>
+  </property>
+
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>
+        file:///data/dfs/nn
+    </value>
+    <description>This property specifies the URIs of the directories
+      where the NameNode stores its metadata and edit logs.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.data.dir</name>
+    <value>
+        file:///hadoopdir1/dfs/dn,
+        file:///hadoopdir2/dfs/dn,
+        file:///hadoopdir3/dfs/dn,
+        file:///hadoopdir4/dfs/dn,
+        file:///hadoopdir5/dfs/dn,
+        file:///hadoopdir6/dfs/dn,
+        file:///hadoopdir7/dfs/dn,
+        file:///hadoopdir8/dfs/dn,
+        file:///hadoopdir9/dfs/dn,
+        file:///hadoopdir10/dfs/dn,
+        file:///hadoopdir11/dfs/dn,
+        file:///hadoopdir12/dfs/dn
+    </value>
+    <description>This property specifies the URIs of the directories where the DataNode stores blocks.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.failed.volumes.tolerated</name>
+    <value>3</value>
+    <description>if the value for this parameter is 3, the DataNode will only shut down after four or more
+      data directories have failed. This value is respected on DataNode startup;
+      in this example the DataNode will start up as long as no more than three directories have failed.
+
+      It is important that dfs.datanode.failed.volumes.tolerated not be configured to tolerate too many
+      directory failures, as the DataNode will perform poorly if it has few functioning data directories.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.fsdataset.volume.choosing.policy</name>
+    <value>org.apache.hadoop.hdfs.server.datanode.fsdataset.AvailableSpaceVolumeChoosingPolicy</value>
+  </property>
+
+  <property>
+    <name>dfs.webhdfs.enabled</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.blocksize</name>
+    <value>268435456</value>
+  </property>
+
+  <property>
+    <name>dfs.replication</name>
+    <value>3</value>
+  </property>
+
+  <property>
+    <name>dfs.support.append</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.handler.count</name>
+    <value>600</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.service.handler.count</name>
+    <value>300</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.edits.asynclogging</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.audit.log.async</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.accesstime.precision</name>
+    <value>0</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.acls.enabled</name>
+    <value>true</value>
+    <description>
+      Set to true to enable support for HDFS ACLs (Access Control Lists).  By
+      default, ACLs are disabled.  When ACLs are disabled, the NameNode rejects
+      all RPCs related to setting or getting ACLs.
+    </description>
+  </property>
+
+  <!-- Configuring AvailableSpaceBlockPlacementPolicy   -->
+  <property>
+    <name>dfs.block.replicator.classname</name>
+    <value>org.apache.hadoop.hdfs.server.blockmanagement.AvailableSpaceBlockPlacementPolicy</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.available-space-block-placement-policy.balanced-space-preference-fraction</name>
+    <value>0.8f</value>
+  </property>
+
+  <property>
+    <name>dfs.block.invalidate.limit</name>
+    <value>5000</value>
+  </property>
+
+  <!-- Configuring FairCallQueue -->
+  <property>
+    <name>ipc.8020.callqueue.impl</name>
+    <value>org.apache.hadoop.ipc.FairCallQueue</value>
+  </property>
+
+  <property>
+    <name>ipc.8020.faircallqueue.priority-levels</name>
+    <value>10</value>
+  </property>
+
+  <property>
+    <name>ipc.8020.backoff.enable</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.image.compress</name>
+    <value>true</value>
+    <description>Should the dfs image be compressed?
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.image.compression.codec</name>
+    <value>org.apache.hadoop.io.compress.SnappyCodec</value>
+    <description>If the dfs image is compressed, how should they be compressed?
+               This has to be a codec defined in io.compression.codecs.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.image.transfer.timeout</name>
+    <value>3600000</value>
+    <description>
+        Timeout for image transfer in milliseconds. This timeout and the related
+        dfs.image.transfer.bandwidthPerSec parameter should be configured such
+        that normal image transfer can complete within the timeout.
+        This timeout prevents client hangs when the sender fails during
+        image transfer, which is particularly important during checkpointing.
+        Note that this timeout applies to the entirety of image transfer, and
+        is not a socket timeout.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.image.transfer.bandwidthPerSec</name>
+    <value>8388608</value>
+    <description>
+        Maximum bandwidth used for image transfer in bytes per second.
+        This can help keep normal namenode operations responsive during
+        checkpointing. The maximum bandwidth and timeout in
+        dfs.image.transfer.timeout should be set such that normal image
+        transfers can complete successfully.
+        A default value of 0 indicates that throttling is disabled.
+    </description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.balance.bandwidthPerSec</name>
+    <value>20971520</value>
+    <description>Specifies the maximum bandwidth that each datanode can utilize for the balancing purpose
+      in term of the number of bytes per second.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.du.reserved</name>
+    <value>214748364800</value>
+    <description>Reserved space in bytes per volume. Always leave this much space free for non dfs use.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.handler.count</name>
+    <value>60</value>
+    <description>The number of server threads for the datanode.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.max.transfer.threads</name>
+    <value>40960</value>
+    <description>Specifies the maximum number of threads
+      to use for transferring data in and out of the DN.</description>
+  </property>
+
+  <property>
+    <name>dfs.datanode.socket.write.timeout</name>
+    <value>4800000</value>
+  </property>
+
+  <property>
+    <name>dfs.client.socket-timeout</name>
+    <value>600000</value>
+  </property>
+
+  <property>
+    <name>dfs.qjournal.write-txns.timeout.ms</name>
+    <value>60000</value>
+  </property>
+
+  <property>
+    <name>dfs.hosts.exclude</name>
+    <value>/etc/hadoop/conf/dfs.hosts.exclude</value>
+  </property>
+
+  <property>
+    <name>dfs.client.read.shortcircuit</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.client.read.shortcircuit.streams.cache.size</name>
+    <value>1000</value>
+  </property>
+
+  <property>
+    <name>dfs.client.read.shortcircuit.streams.cache.expiry.ms</name>
+    <value>10000</value>
+  </property>
+
+  <property>
+    <name>dfs.client.block.write.locateFollowingBlock.retries</name>
+    <value>10</value>
+  </property>
+
+  <property>
+    <name>dfs.client.block.write.retries</name>
+    <value>10</value>
+  </property>
+
+  <property>
+    <name>dfs.domain.socket.path</name>
+    <value>/var/run/hadoop-hdfs/dn._PORT</value>
+  </property>
+
+</configuration>

@@ -1,0 +1,54 @@
+<configuration>
+
+<property>
+  <name>dfs.support.append</name>
+  <value>true</value>
+  <description>Allow append support since we have the HDFS-200 patch and need append/close support for HLog.java#splitLog</description>
+</property>
+
+<property>
+  <name>dfs.replication</name>
+  <value>3</value>
+</property>
+
+<property>
+  <name>dfs.block.size</name>
+  <value>134217728</value>
+</property>
+
+<property>
+  <name>dfs.datanode.socket.write.timeout</name>
+  <value>30000</value>
+</property>
+
+<property>
+  <name>dfs.socket.timeout</name>
+  <value>20000</value>
+</property>
+
+<property>
+  <name>dfs.client.max.block.acquire.failures</name>
+  <value>1</value>
+</property>
+
+<property>
+  <name>dfs.client.baseTimeWindow.waitOn.BlockMissingException</name>
+  <value>0</value>
+</property>
+
+<property>
+  <name>dfs.use.inetpair</name>
+  <value>true</value>
+</property>
+
+<property>
+  <name>dfs.client.hedged.read.threshold.millis</name>
+  <value>1500</value>
+</property>
+
+<property>
+  <name>dfs.client.hedged.read.threadpool.size</name>
+  <value>128</value>
+</property>
+
+</configuration>

@@ -1,0 +1,1845 @@
+<configuration>
+<property>
+    <name>fs.viewfs.tob23.bigdata.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://tob23.bigdata.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.tob15.bigdata.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://tob15.bigdata.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.tob16.bigdata.lycc.qihoo.net:9000./user</name>
+    <value>hdfsold://tob16.bigdata.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+    <name>fs.viewfs.tob15.bigdata.lycc.qihoo.net:9000./user</name>
+    <value>hdfsold://tob15.bigdata.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-wangzhan</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-wangzhan</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-portrait</name>
+  <value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-portrait/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-portrait</name>
+  <value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-portrait</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./user/hdp-ads-audit/.Trash</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/user/hdp-ads-audit/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-360sec</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-360sec</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-shoujiserver</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-shoujiserver</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/cloudops</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/cloudops</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/dlc</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/dlc</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-browser</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-browser</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-reader-ifda</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-reader-ifda</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/eng-build/.Trash</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/user/eng-build/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-kidsguard</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-kidsguard</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-guanggao</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-guanggao</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/whitelist</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/home/whitelist</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-like</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-like</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-huajiao</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-huajiao</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/timeline</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/nlp/proj/timeline</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/nlp-online/.Trash</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/user/nlp-online/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.shjc.qihoo.net:9000./user</name>
+  <value>hdfsold://w-namenode1v.safe.shjc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-iot</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-iot</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-ms</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-ms</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.sec.zzbc.qihoo.net:9000./home/hbase-bulkimport</name>
+  <value>hdfsold://namenode1v.sec.zzzc.qihoo.net:9000/home/hbase-bulkimport</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.sec.zzzc.qihoo.net:9000./home/</name>
+  <value>hdfsold://namenode1v.sec.zzzc.qihoo.net:9000/home/</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.sec.zzzc.qihoo.net:9000./user/</name>
+  <value>hdfsold://namenode1v.sec.zzzc.qihoo.net:9000/user/</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/spider</name>
+  <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/home/spider</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-guanggao</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-guanggao</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-360wifi-r</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-360wifi-r</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.shjc.qihoo.net:9000./home</name>
+  <value>hdfsold://w-namenode1v.safe.shjc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/work</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/work</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-dba</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-dba</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.bjdt.qihoo.net:9000./user</name>
+  <value>hdfsold://w-namenode1v.safe.bjdt.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/shixi</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/shixi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-mobi</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-mobi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/nlp</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/nlp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-data</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-data</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/360sec</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/home/360sec</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/spider</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/spider</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/nlp-online</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/nlp/proj/nlp-online</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/360sec</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/360sec</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.zzbc.qihoo.net:9000./home</name>
+  <value>hdfsold://w-namenode1v.safe.zzbc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/hdp-qsslab-louvre/.Trash</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/user/hdp-qsslab-louvre/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./tmp</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./userfd2v</name>
+  <value>hdfsold://namenodefd2v.dfs.shbt.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-shoujiweishi</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-shoujiweishi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./userfd1v</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-zhifu-pay</name>
+  <value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-zhifu</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/logsget</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/logsget</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-zlhzsjyy</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-zlhzsjyy</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-arp</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-arp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-mgame-zhibo</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-mgame-zhibo</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/hdp-vertical-s/.Trash</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/user/hdp-vertical-s/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-add-infra</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-add-infra</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-shoujidatamining</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-shoujidatamining</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./userfd4v</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/webchecker</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/home/webchecker</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/mr</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/mr</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenodefd1v.dfs.shjt.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.shjc.qihoo.net:9000./tmp</name>
+  <value>hdfsold://w-namenode1v.safe.shjc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-engine</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-engine</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.safe.shyc2.qihoo.net:9000./home</name>
+  <value>hdfsold://namenode1v.safe.shyc2.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-shoujihaiwai</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-shoujihaiwai</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./userfd3v</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/spider-online/.Trash</name>
+  <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/user/spider-online/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/cloud</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/cloud</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/xitong</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/xitong</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd2v.safe.lycc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/spark</name>
+  <value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/spark</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-ads-data</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/hdp-ads-data</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-skygate</name>
+  <value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-skygate</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.bjdt.qihoo.net:9000./tmp</name>
+  <value>hdfsold://w-namenode1v.safe.bjdt.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.bjdt.qihoo.net:9000./home</name>
+  <value>hdfsold://w-namenode1v.safe.bjdt.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./userfd5v</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-adlab</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-adlab</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-datamining</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-datamining</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/yuntu</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/yuntu</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-safe</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-safe</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.zzbc.qihoo.net:9000./tmp</name>
+  <value>hdfsold://w-namenode1v.safe.zzbc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/maintable-s</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home/maintable/proj/maintable-s</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hadoop-news</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hadoop-news</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-gametg</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-gametg</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-guess</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/hdp-guess</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/maintable</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home/maintable</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-sz-search</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-sz-search</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-wangzhan</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-wangzhan</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-zhida</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-zhida</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./tmp</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/spider-online</name>
+  <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/home/spider/proj/spider-online</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./userfd2v</name>
+  <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/cassandra</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/cassandra</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-situation</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-situation</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-unionad</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-unionad</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/dm-safe</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/dm-safe</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./userfd1v</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-wireless</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-wireless</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-reader</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/hdp-reader</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./user/hdp-reader</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/user/hdp-reader</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/hdp-guess</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/hdp-guess</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/cloud</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/cloud</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-ai</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-ai</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodeonline1v.dfs.shbt.qihoo.net:9000./home/hbase-bulkimport</name>
+  <value>hdfsold://namenodeonline1v.dfs.shbt.qihoo.net:9000/home/hbase-bulkimport</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hbase-bulkimport</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hbase-bulkimport</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-lab</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-lab</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-add-infra</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-add-infra</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hbase</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hbase</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./archive-raid/meta/rs/home/pagevalue</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/archive-raid/meta/rs/home/pagevalue</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-btime</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-btime</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-add</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-add</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/search</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/search</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-map</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-map</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/pagevalue</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home/pagevalue</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/qss</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/qss</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.sec.lycc.qihoo.net:9000./home/hbase-bulkimport</name>
+  <value>hdfsold://namenode1v.sec.lycc.qihoo.net:9000/home/hbase-bulkimport</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.sec.lycc.qihoo.net:9000./tmp/</name>
+  <value>hdfsold://namenode1v.sec.lycc.qihoo.net:9000/tmp/</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.sec.lycc.qihoo.net:9000./user/</name>
+  <value>hdfsold://namenode1v.sec.lycc.qihoo.net:9000/user/</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.sec.lycc.qihoo.net:9000./home/</name>
+  <value>hdfsold://namenode1v.sec.lycc.qihoo.net:9000/home/</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-wlxstore</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-wlxstore</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/vm</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/vm</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.safe.shyc2.qihoo.net:9000./tmp</name>
+  <value>hdfsold://namenode1v.safe.shyc2.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/webchecker</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/webchecker</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-channelvalue</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-channelvalue</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-jin</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-jin</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-jia-master</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-jia-master</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-bbt</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-bbt</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/spiderdm</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/spiderdm</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-skyeye</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-skyeye</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/xitong</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/xitong</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/yarn</name>
+  <value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/yarn</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd1.qss.zzzc.qihoo.net:9000./user/hdp-qsslab-louvre/.Trash</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/user/hdp-qsslab-louvre/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./archive-raid/meta/rs/home/spider</name>
+  <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/archive-raid/meta/rs/home/spider</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd2v.qss.zzzc.qihoo.net:9000./home/mr</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/mr</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./tmp</name>
+  <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-safe</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home/hdp-safe</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-channelvalue</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-channelvalue</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.zzbc.qihoo.net:9000./user</name>
+  <value>hdfsold://w-namenode1v.safe.zzbc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-skyeye</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-skyeye</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/yunpan</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/yunpan</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-ads-audit</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/hdp-ads-audit</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-vertical</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-vertical</value>
+</property>
+<property>
+  <name>fs.viewfs.w-m1.sys.shgt.qihoo.net:9000./tmp</name>
+  <value>hdfsold://w-m1.sys.shgt.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/whitelist</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/whitelist</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/nlp</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/nlp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./archive-raid</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/archive-raid</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/whitelist</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/whitelist</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.psnap.shbt.qihoo.net:9000./home/hbase-bulkimport</name>
+  <value>hdfsold://namenode1v.psnap.shbt.qihoo.net:9000/home/hbase-bulkimport</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/360baike</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/360baike</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-shoujizhushou</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/hdp-shoujizhushou</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-multi</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-multi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.gzst.qihoo.net:9000./user</name>
+  <value>hdfsold://w-namenode1v.safe.gzst.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/eng-test</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/eng-test</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/scribe</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/scribe</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-skyeye-algorithm</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/hdp-skyeye-algorithm</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/timeline/.Trash</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/user/timeline/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-zhushou-msdk</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-zhushou-msdk</value>
+</property>
+<property>
+  <name>fs.viewfs.w-hdp497.safe.zzbc.qihoo.net:9000./tmp</name>
+  <value>hdfsold://w-hdp497.safe.zzbc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-shoujizhushou</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-shoujizhushou</value>
+</property>
+<property>
+  <name>fs.viewfs.w-hdp497.safe.zzbc.qihoo.net:9000./home</name>
+  <value>hdfsold://w-hdp497.safe.zzbc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/logsget</name>
+  <value>hdfsold://namenodefd2v.dfs.shbt.qihoo.net:9000/home/logsget</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.safe.shyc2.qihoo.net:9000./user</name>
+  <value>hdfsold://namenode1v.safe.shyc2.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-qinglidashi</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-qinglidashi</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/hdp-vertical-s</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-vertical/proj/hdp-vertical-s</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-ipcam</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-ipcam</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.gzst.qihoo.net:9000./home</name>
+  <value>hdfsold://w-namenode1v.safe.gzst.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/hdp-qsslab-louvre</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-qsslab/proj/hdp-qsslab-louvre</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/mr</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/mr</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/search</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/search</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/cloud</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/cloud</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-platform</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-platform</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-qianyi</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-qianyi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cse</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-cse</value>
+</property>
+<property>
+  <name>fs.viewfs.w-m1.yun.shgt.qihoo.net:9000./home</name>
+  <value>hdfsold://w-m1.yun.shgt.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/meta</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/meta</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/dlc</name>
+  <value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/dlc</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/img</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/img</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-pvadmin</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-pvadmin</value>
+</property>
+<property>
+  <name>fs.viewfs.w-m1.sys.shgt.qihoo.net:9000./home</name>
+  <value>hdfsold://w-m1.sys.shgt.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/game</name>
+  <value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/game</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/eng</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/eng</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/logsget</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home/logsget</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./home/eng-build</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/eng/proj/eng-build</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home</name>
+  <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-jiagu</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-jiagu</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-qssweb</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-qssweb</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/filter</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/filter</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-cvadmin</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-cvadmin</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/yunpan</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/yunpan</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./archive-raid/meta/rs/home/logsget</name>
+  <value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/archive-raid/meta/rs/home/logsget</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-advalue</name>
+  <value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/home/hdp-advalue</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-ludashi</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home/hdp-ludashi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/mpi</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/mpi</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-kidsguard</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-kidsguard</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/client</name>
+  <value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home/client</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-ms</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-ms</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/scribe</name>
+  <value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/home/scribe</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/tmp</name>
+  <value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-ads-audit</name>
+  <value>hdfsold://namenodefd1v.qss.zzzc.qihoo.net:9000/home/hdp-ads-audit</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/hdp-ly</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/hdp-ly</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode.qss.zzzc.qihoo.net:9000./user/maintable-s/.Trash</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/user/maintable-s/.Trash</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode1v.safe.gzst.qihoo.net:9000./tmp</name>
+  <value>hdfsold://w-namenode1v.safe.gzst.qihoo.net:9000/tmp</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hbase</name>
+  <value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hbase</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd1v.se.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd1v.se.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./user</name>
+  <value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/user</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./home/mr</name>
+  <value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/home/mr</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./home/hdp-channelvalue</name>
+  <value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home/hdp-channelvalue</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./home/pagevalue</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home/pagevalue</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./home/maintable</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home/maintable</value>
+</property>
+<property>
+  <name>fs.viewfs.searchnamenode1v.qss.zzzc.qihoo.net:9000./home/spider</name>
+  <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/home/spider</value>
+</property>
+<property>
+  <name>fs.viewfs.w-namenode.qss.zzbc2.qihoo.net:9000./home/xitong</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home/xitong</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.psnap.shbt.qihoo.net:9000./home</name>
+  <value>hdfsold://namenode1v.psnap.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenode1v.psnap.shbt.qihoo.net:9000./user</name>
+  <value>hdfsold://namenode1v.psnap.shbt.qihoo.net:9000/user</value>
+</property>
+<property> 
+<name>fs.viewfs.namenode.dfs.zwyc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenode1v.dfs.zwyc.qihoo.net:9000/home</value> 
+</property> 
+<property>
+<name>fs.viewfs.namenode1v.dfs.zwyc.qihoo.net:9000./home</name>
+<value>hdfsold://namenode1v.dfs.zwyc.qihoo.net:9000/home</value>
+</property>
+<property>
+      <name>fs.viewfs.namenodefd1v.ai.zzzc.qihoo.net:9000./home/</name>
+      <value>hdfsold://namenodefd1v.ai.zzzc.qihoo.net:9000/home/</value>
+</property>
+<property>
+      <name>fs.viewfs.namenodefd1v.ai.zzzc.qihoo.net:9000./tmp/</name>
+      <value>hdfsold://namenodefd1v.ai.zzzc.qihoo.net:9000/tmp/</value>
+</property>
+<property>
+      <name>fs.viewfs.namenodefd1v.ai.zzzc.qihoo.net:9000./user/</name>
+      <value>hdfsold://namenodefd1v.ai.zzzc.qihoo.net:9000/user/</value>
+</property>
+<property>
+  <name>fs.viewfs.m01.ai.zzzc.qihoo.net:9000./home/hdp-ai</name>
+  <value>hdfsold://namenodefd1v.ai.zzzc.qihoo.net:9000/home/hdp-ai</value>
+</property>
+<property>
+  <name>fs.viewfs.m01.ai.zzzc.qihoo.net:9000./user/hdp-ai</name>
+  <value>hdfsold://namenodefd1v.ai.zzzc.qihoo.net:9000/user/hdp-ai</value>
+</property>
+<property> 
+<name>fs.viewfs.psnapnamenode1v.qss.zzzc.qihoo.net:9000./home</name> 
+<value>hdfsold://psnapnamenode1v.qss.zzzc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.psnapnamenode1v.qss.zzzc.qihoo.net:9000./user</name> 
+<value>hdfsold://psnapnamenode1v.qss.zzzc.qihoo.net:9000/user</value> 
+</property> 
+<property>
+ <name>fs.viewfs.namenode1v.dfs.bjyt.qihoo.net:9000./home/hbase-bulkimport</name>
+ <value>hdfsold://namenode1v.dfs.bjyt.qihoo.net:9000/home/hbase-bulkimport</value>
+ </property>
+<property> 
+<name>fs.viewfs.namenodefd6v.qss.zzzc.qihoo.net:9000./home/cloudops</name> 
+<value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/home/cloudops</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd6v.qss.zzzc.qihoo.net:9000./user/cloudops/.Trash</name> 
+<value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/user/cloudops/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd6v.qss.zzzc.qihoo.net:9000./tmp</name> 
+<value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/tmp</value> 
+</property> 
+<property>
+  <name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-zhifu</name>
+  <value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-zhifu/</value>
+</property>
+<property>
+<name>fs.viewfs.10.211.194.12:9000./home</name>
+<value>hdfsold://10.211.194.12:9000/home</value>
+</property>
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-netops-stream</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-netops-stream</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-netops-stream/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-netops-stream/.Trash</value> 
+</property> 
+<property>
+    <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-netlab</name>
+    <value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/home/hdp-netlab</value>
+</property>
+<property>
+    <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./user/hdp-netlab</name>
+    <value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/user/hdp-netlab</value>
+</property>
+<property>
+    <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-unionad</name>
+    <value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/home/hdp-unionad</value>
+</property>
+<property>
+    <name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./user/hdp-unionad</name>
+    <value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/user/hdp-unionad</value>
+</property>
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-yuntu-testflash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-yuntu-testflash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-yuntu-testflash/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-yuntu-testflash/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-yuntu-testxxx</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-yuntu-testxxx</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-yuntu-testxxx/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-yuntu-testxxx/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-yuntu-testooo</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-yuntu-testooo</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-yuntu-testooo/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-yuntu-testooo/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-fjja-speaker</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-fjja-speaker</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-fjja-speaker/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-fjja-speaker/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/logsget-bigdata</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/logsget-bigdata</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/logsget-bigdata/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/logsget-bigdata/.Trash</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode2v.safe.zwyc.qihoo.net:9000./home</name> 
+     <value>hdfsold://namenode2v.safe.zwyc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode2v.safe.zwyc.qihoo.net:9000./user</name> 
+     <value>hdfsold://namenode2v.safe.zwyc.qihoo.net:9000/user</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode2v.safe.zwyc.qihoo.net:9000./tmp</name> 
+     <value>hdfsold://namenode2v.safe.zwyc.qihoo.net:9000/tmp</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-sec-quc</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-sec-quc</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-sec-quc/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-sec-quc/.Trash</value> 
+</property>
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-qdns-os</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-qdns-os</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-qdns-os/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-qdns-os/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/flink</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/flink</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/flink/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/flink/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-fihi-syslog</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-fihi-syslog</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-fihi-syslog/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-fihi-syslog/.Trash</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode1v.safe.zwyc.qihoo.net:9000./home</name> 
+     <value>hdfsold://namenode1v.safe.zwyc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode1v.safe.zwyc.qihoo.net:9000./user</name> 
+     <value>hdfsold://namenode1v.safe.zwyc.qihoo.net:9000/user</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode1v.safe.zwyc.qihoo.net:9000./tmp</name> 
+     <value>hdfsold://namenode1v.safe.zwyc.qihoo.net:9000/tmp</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode2v.safe.shbt.qihoo.net:9000./home</name> 
+     <value>hdfsold://namenode2v.safe.shbt.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+    <name>fs.viewfs.namenode2v.safe.shbt.qihoo.net:9000./user</name> 
+     <value>hdfsold://namenode2v.safe.shbt.qihoo.net:9000/user</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-fegd-pcdn</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-fegd-pcdn</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-fegd-pcdn/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-fegd-pcdn/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-gdei-chenqi</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-gdei-chenqi</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-gdei-chenqi/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-gdei-chenqi/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-dcopen-qdas</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-dcopen-qdas</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-dcopen-qdas/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-dcopen-qdas/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-fihi-qr</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-fihi-qr</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-fihi-qr/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-fihi-qr/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-fihi-cai</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-fihi-cai</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-fihi-cai/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-fihi-cai/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cbeh-ipc</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-cbeh-ipc</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cbeh-ipc/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-cbeh-ipc/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-qvm-dev</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-qvm-dev</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-qvm-dev/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-qvm-dev/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-fihi-nlu</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-fihi-nlu</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-fihi-nlu/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-fihi-nlu/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-sihai-hy</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-sihai-hy</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-sihai-hy/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-sihai-hy/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-joyme-z</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-joyme-z</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-joyme-z/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-joyme-z/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-gfjb-wxcard</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-gfjb-wxcard</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-gfjb-wxcard/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-gfjb-wxcard/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-reader-flink</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-reader-flink</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-reader-flink/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-reader-flink/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-sec-net</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-sec-net</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-sec-net/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-sec-net/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-spider-flink</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-spider-flink</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-spider-flink/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-spider-flink/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-xgraph-graphtest</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-xgraph-graphtest</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-xgraph-graphtest/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-xgraph-graphtest/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-shbttest-test111</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-shbttest-test111</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-shbttest-test111/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-shbttest-test111/.Trash</value> 
+</property> 
+<property>
+    <name>fs.viewfs.namenode1v.trans.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://namenode1v.trans.lycc.qihoo.net:9000/home</value>
+  </property> 
+  <property>
+    <name>fs.viewfs.namenode1v.trans.lycc.qihoo.net:9000./tmp</name>
+    <value>hdfsold://namenode1v.trans.lycc.qihoo.net:9000/tmp</value>
+  </property>
+  <property>
+    <name>fs.viewfs.namenode1v.trans.lycc.qihoo.net:9000./user</name>   
+     <value>hdfsold://namenode1v.trans.lycc.qihoo.net:9000/user</value> 
+  </property>
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cace-active</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-cace-active</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cace-active/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-cace-active/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-chemaster-ai</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-chemaster-ai</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-chemaster-ai/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-chemaster-ai/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hao360cn-haostat</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-hao360cn-haostat</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hao360cn-haostat/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-hao360cn-haostat/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cfeb-sm</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-cfeb-sm</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cfeb-sm/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-cfeb-sm/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-gjbc-cmlog</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-gjbc-cmlog</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-gjbc-cmlog/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-gjbc-cmlog/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hbae-haox</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-hbae-haox</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hbae-haox/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-hbae-haox/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hbjf-zqfw</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-hbjf-zqfw</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hbjf-zqfw/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-hbjf-zqfw/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hagj-safehome</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-hagj-safehome</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hagj-safehome/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-hagj-safehome/.Trash</value> 
+</property> 
+<property>
+  <name>fs.viewfs.w-jiaofu111.se.shyc2.qihoo.net:9000./home/hdp-gdbg-offline/</name>
+  <value>hdfsold://w-jiaofu111.se.shyc2.qihoo.net:9000/home/hdp-gdbg-offline/</value>
+</property>
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hbae-site</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-hbae-site</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hbae-site/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-hbae-site/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-citybrain-citysecurity</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-citybrain-citysecurity</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-citybrain-citysecurity/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-citybrain-citysecurity/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-yuntu-xpolaristest</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-yuntu-xpolaristest</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-yuntu-xpolaristest/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-yuntu-xpolaristest/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-yuntu-xpolaris</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-yuntu-xpolaris</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-yuntu-xpolaris/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-yuntu-xpolaris/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-ads-minos</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home/hdp-ads-minos</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-ads-minos/.Trash</name> 
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/user/hdp-ads-minos/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-os-dj</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-os-dj</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-os-dj/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-os-dj/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hdch-darknet</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-hdch-darknet</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hdch-darknet/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-hdch-darknet/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-eicf-influxdb</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-eicf-influxdb</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-eicf-influxdb/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-eicf-influxdb/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-imd-log</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-imd-log</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-imd-log/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-imd-log/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-msic-kpatch001</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-msic-kpatch001</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-msic-kpatch001/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-msic-kpatch001/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cuishou-intelligence</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-cuishou-intelligence</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cuishou-intelligence/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-cuishou-intelligence/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-eeai-quake</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home/hdp-eeai-quake</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-eeai-quake/.Trash</name> 
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/user/hdp-eeai-quake/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-testaa-sdddaaa</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-testaa-sdddaaa</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-testaa-sdddaaa/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-testaa-sdddaaa/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-titan-rtime</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-titan-rtime</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-titan-rtime/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-titan-rtime/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-titan-bigdata</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-titan-bigdata</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-titan-bigdata/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-titan-bigdata/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-jiagu-read</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-jiagu-read</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-jiagu-read/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-jiagu-read/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-kjj-common</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-kjj-common</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-kjj-common/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-kjj-common/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cjdg-kubeflow</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-cjdg-kubeflow</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cjdg-kubeflow/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-cjdg-kubeflow/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-health_data-healthSys</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-health_data-healthSys</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-health_data-healthSys/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-health_data-healthSys/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-health_sys-healthSys</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-health_sys-healthSys</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-health_sys-healthSys/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-health_sys-healthSys/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-intelligence-health</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-intelligence-health</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-intelligence-health/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-intelligence-health/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-intelldev-seer</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-intelldev-seer</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-intelldev-seer/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-intelldev-seer/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-pcg-root</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-pcg-root</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-pcg-root/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-pcg-root/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-jiagu-deepfinder</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-jiagu-deepfinder</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-jiagu-deepfinder/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-jiagu-deepfinder/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-hyads-sys</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-hyads-sys</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-hyads-sys/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-hyads-sys/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-svideo-algo</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-svideo-algo</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-svideo-algo/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-svideo-algo/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.tob16.bigdata.lycc.qihoo.net:9000./home/hdp-titan-bigdata</name> 
+<value>hdfsold://tob16.bigdata.lycc.qihoo.net:9000/home/hdp-titan-bigdata</value> 
+</property> 
+<property> 
+<name>fs.viewfs.tob16.bigdata.lycc.qihoo.net:9000./user/hdp-titan-bigdata/.Trash</name> 
+<value>hdfsold://tob16.bigdata.lycc.qihoo.net:9000/user/hdp-titan-bigdata/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.tob16.bigdata.lycc.qihoo.net:9000./home/tanganfeng</name> 
+<value>hdfsold://tob16.bigdata.lycc.qihoo.net:9000/home/tanganfeng</value> 
+</property> 
+<property> 
+<name>fs.viewfs.tob16.bigdata.lycc.qihoo.net:9000./user/tanganfeng/.Trash</name> 
+<value>hdfsold://tob16.bigdata.lycc.qihoo.net:9000/user/tanganfeng/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cloudquery-fw</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-cloudquery-fw</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cloudquery-fw/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-cloudquery-fw/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-cfia-netops</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-cfia-netops</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-cfia-netops/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-cfia-netops/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-yuqing-lbz</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-yuqing-lbz</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-yuqing-lbz/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-yuqing-lbz/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-dnsapi-fulllog</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-dnsapi-fulllog</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-dnsapi-fulllog/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-dnsapi-fulllog/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-reader-jdrtime</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-reader-jdrtime</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-reader-jdrtime/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-reader-jdrtime/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-mdr-flink</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home/hdp-mdr-flink</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-mdr-flink/.Trash</name> 
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/user/hdp-mdr-flink/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./home/hdp-xp-xs</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home/hdp-xp-xs</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.dfs.shgt.qihoo.net:9000./user/hdp-xp-xs/.Trash</name> 
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/user/hdp-xp-xs/.Trash</value> 
+</property> 
+<property> 
+<name>fs.viewfs.w-namenode.safe.zzbc.qihoo.net:9000./home/hdp-ticloud-sa</name> 
+<value>hdfsold://w-namenode.safe.zzbc.qihoo.net:9000/home/hdp-ticloud-sa</value> 
+</property> 
+<property>
+  <name>fs.viewfs.mhdp01.cert.lycc.qihoo.net:9000./home/</name>
+  <value>hdfsold://mhdp01.cert.lycc.qihoo.net:9000/home/</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://namenodefd1v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd2v.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://namenodefd2v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd3v.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://namenodefd3v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd4v.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://namenodefd4v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd5v.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://namenodefd5v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd6v.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://namenodefd6v.dfs.shbt.qihoo.net:9000/home</value>
+</property>
+<property> 
+<name>fs.viewfs.namenodefd1v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd1v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd2v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd2v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd3v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd3v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd4v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd4v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd5v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd5v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd6v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd6v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd7v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd7v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property> 
+<name>fs.viewfs.namenodefd8v.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://namenodefd8v.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property>
+  <name>fs.viewfs.namenodefd2v.qss.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd2v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd3v.qss.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd3v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd4v.qss.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd4v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd5v.qss.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd5v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property>
+  <name>fs.viewfs.namenodefd6v.qss.zzzc.qihoo.net:9000./home</name>
+  <value>hdfsold://namenodefd6v.qss.zzzc.qihoo.net:9000/home</value>
+</property>
+<property> 
+<name>fs.viewfs.pdrtsm01.safe.lycc.qihoo.net:9000./home</name> 
+<value>hdfsold://pdrtsm01.safe.lycc.qihoo.net:9000/home</value> 
+</property> 
+<property>
+    <name>fs.viewfs.tob16.bigdata.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://tob16.bigdata.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.god1v.test.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://namenodefd1v.god.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.god1v.test.lycc.qihoo.net:9000./user</name>
+    <value>hdfsold://namenodefd1v.god.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+    <name>fs.viewfs.god1v.test.lycc.qihoo.net:9000./tmp</name>
+    <value>hdfsold://namenodefd1v.god.lycc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+    <name>fs.viewfs.god11v.test.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://namenodefd2v.god.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.god11v.test.lycc.qihoo.net:9000./user</name>
+    <value>hdfsold://namenodefd2v.god.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+    <name>fs.viewfs.god11v.test.lycc.qihoo.net:9000./tmp</name>
+    <value>hdfsold://namenodefd2v.god.lycc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+    <name>fs.viewfs.namenodefd1v.god.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://namenodefd1v.god.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.namenodefd2v.god.lycc.qihoo.net:9000./home</name>
+    <value>hdfsold://namenodefd2v.god.lycc.qihoo.net:9000/home</value>
+</property>
+<property>
+    <name>fs.viewfs.namenodefd1v.god.lycc.qihoo.net:9000./user</name>
+    <value>hdfsold://namenodefd1v.god.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+    <name>fs.viewfs.namenodefd2v.god.lycc.qihoo.net:9000./tmp</name>
+    <value>hdfsold://namenodefd2v.god.lycc.qihoo.net:9000/tmp</value>
+</property>
+<property>
+    <name>fs.viewfs.namenodefd2v.god.lycc.qihoo.net:9000./user</name>
+    <value>hdfsold://namenodefd2v.god.lycc.qihoo.net:9000/user</value>
+</property>
+<property>
+    <name>fs.viewfs.namenodefd1v.god.lycc.qihoo.net:9000./tmp</name>
+    <value>hdfsold://namenodefd1v.god.lycc.qihoo.net:9000/tmp</value>
+</property>
+<!--qss_zzzc router  -->
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./archive-raid</name>
+<value>hdfsold://10.173.194.160:9000/archive-raid</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./home</name>
+<value>hdfsold://10.173.194.160:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./user</name>
+<value>hdfsold://10.173.194.160:9000/user</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd1v</name>
+<value>hdfsold://10.173.194.160:9000/userfd1v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd2v</name>
+<value>hdfsold://10.173.194.160:9000/userfd2v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd3v</name>
+<value>hdfsold://10.173.194.160:9000/userfd3v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd4v</name>
+<value>hdfsold://10.173.194.160:9000/userfd4v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd5v</name>
+<value>hdfsold://10.173.194.160:9000/userfd5v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd6v</name>
+<value>hdfsold://10.173.194.160:9000/userfd6v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./userfd1v</name>
+<value>hdfsold://10.173.194.160:9000/userfd1v</value>
+</property>
+<property>
+<name>fs.viewfs.namenodefd1v.qss.zzzc.qihoo.net:9000./tmp</name>
+<value>hdfsold://10.173.194.160:9000/tmp</value>
+</property>
+<property> 
+<name>fs.viewfs.10.173.194.160:9000./home</name> 
+<value>hdfsold://10.173.194.160:9000/home</value> 
+</property> 
+<!--safe_lycc_router -->
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./archive-raid</name>
+<value>hdfsold://10.160.228.94:9000/archive-raid</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./home</name>
+<value>hdfsold://10.160.228.94:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./user</name>
+<value>hdfsold://10.160.228.94:9000/user</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd1v</name>
+<value>hdfsold://10.160.228.94:9000/userfd1v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd2v</name>
+<value>hdfsold://10.160.228.94:9000/userfd2v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd3v</name>
+<value>hdfsold://10.160.228.94:9000/userfd3v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd4v</name>
+<value>hdfsold://10.160.228.94:9000/userfd4v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd5v</name>
+<value>hdfsold://10.160.228.94:9000/userfd5v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd6v</name>
+<value>hdfsold://10.160.228.94:9000/userfd6v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd7v</name>
+<value>hdfsold://10.160.228.94:9000/userfd7v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./userfd8v</name>
+<value>hdfsold://10.160.228.94:9000/userfd8v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.safe.lycc.qihoo.net:9000./tmp</name>
+<value>hdfsold://10.160.228.94:9000/tmp</value>
+</property>
+<property> 
+<name>fs.viewfs.10.160.228.94:9000./home</name> 
+<value>hdfsold://10.160.228.94:9000/home</value> 
+</property>
+<!--dfs_shbt_router -->
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./archive-raid</name>
+<value>hdfsold://10.217.116.84:9000/archive-raid</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./home</name>
+<value>hdfsold://10.217.116.84:9000/home</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./user</name>
+<value>hdfsold://10.217.116.84:9000/user</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd1v</name>
+<value>hdfsold://10.217.116.84:9000/userfd1v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd2v</name>
+<value>hdfsold://10.217.116.84:9000/userfd2v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd3v</name>
+<value>hdfsold://10.217.116.84:9000/userfd3v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd4v</name>
+<value>hdfsold://10.217.116.84:9000/userfd4v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd5v</name>
+<value>hdfsold://10.217.116.84:9000/userfd5v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd6v</name>
+<value>hdfsold://10.217.116.84:9000/userfd6v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd7v</name>
+<value>hdfsold://10.217.116.84:9000/userfd7v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./userfd8v</name>
+<value>hdfsold://10.217.116.84:9000/userfd8v</value>
+</property>
+<property>
+<name>fs.viewfs.namenode.dfs.shbt.qihoo.net:9000./tmp</name>
+<value>hdfsold://10.217.116.84:9000/tmp</value>
+</property>
+<property> 
+<name>fs.viewfs.10.217.116.84:9000./home</name> 
+<value>hdfsold://10.217.116.84:9000/home</value> 
+</property>
+</configuration>

@@ -1,0 +1,8 @@
+<configuration>
+
+<property>
+    <name>fs.trash.interval</name>
+    <value>1440</value>
+</property>
+
+</configuration>
