@@ -16,6 +16,7 @@ package io.trino.sql.planner.iterative.rule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.trino.Session;
 import io.trino.matching.Captures;
 import io.trino.matching.Pattern;
 import io.trino.sql.ir.Expression;
@@ -45,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.SystemSessionProperties.isValuesExpressionRewrite;
 import static io.trino.sql.planner.plan.Patterns.aggregation;
 import static io.trino.sql.planner.plan.Patterns.filter;
 import static io.trino.sql.planner.plan.Patterns.join;
@@ -283,6 +285,12 @@ public class ExpressionRewriteRuleSet
         ValuesExpressionRewrite(ExpressionRewriter rewriter)
         {
             this.rewriter = rewriter;
+        }
+
+        @Override
+        public boolean isEnabled(Session session)
+        {
+            return isValuesExpressionRewrite(session);
         }
 
         @Override
