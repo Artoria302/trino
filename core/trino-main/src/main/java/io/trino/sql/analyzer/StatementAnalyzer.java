@@ -4718,7 +4718,8 @@ class StatementAnalyzer
             if (limit.isEmpty() && offset.isEmpty()) {
                 rawOrderBy = orderBy.get();
             }
-        } else {
+        }
+        else {
             QueryBody queryBody = query.getQueryBody();
             if (queryBody instanceof QuerySpecification) {
                 QuerySpecification querySpecification = (QuerySpecification) queryBody;
