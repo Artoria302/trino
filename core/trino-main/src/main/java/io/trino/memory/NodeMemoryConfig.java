@@ -19,6 +19,10 @@ import io.airlift.configuration.DefunctConfig;
 import io.airlift.units.DataSize;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.OptionalDouble;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 // This is separate from MemoryManagerConfig because it's difficult to test the default value of maxQueryMemoryPerNode
 @DefunctConfig({
         "deprecated.legacy-system-pool-enabled",
@@ -31,13 +35,15 @@ public class NodeMemoryConfig
 {
     public static final long AVAILABLE_HEAP_MEMORY = Runtime.getRuntime().maxMemory();
     private DataSize maxQueryMemoryPerNode = DataSize.ofBytes(Math.round(AVAILABLE_HEAP_MEMORY * 0.3));
+    private OptionalDouble maxQueryMemoryPerNodeRate = OptionalDouble.empty();
 
     private DataSize heapHeadroom = DataSize.ofBytes(Math.round(AVAILABLE_HEAP_MEMORY * 0.3));
+    private OptionalDouble heapHeadroomRate = OptionalDouble.empty();
 
     @NotNull
     public DataSize getMaxQueryMemoryPerNode()
     {
-        return maxQueryMemoryPerNode;
+        return maxQueryMemoryPerNodeRate.isEmpty() ? maxQueryMemoryPerNode : DataSize.ofBytes(Math.round(AVAILABLE_HEAP_MEMORY * maxQueryMemoryPerNodeRate.getAsDouble()));
     }
 
     @Config("query.max-memory-per-node")
@@ -47,10 +53,24 @@ public class NodeMemoryConfig
         return this;
     }
 
+    public OptionalDouble getMaxQueryMemoryPerNodeRate()
+    {
+        return maxQueryMemoryPerNodeRate;
+    }
+
+    @Config("query.max-memory-per-node-rate")
+    public NodeMemoryConfig setMaxQueryMemoryPerNodeRate(double maxQueryMemoryPerNodeRate)
+    {
+        checkArgument(maxQueryMemoryPerNodeRate > 0.0 && maxQueryMemoryPerNodeRate < 1.0,
+                "query.max-memory-per-node-rate must greater than 0.0 and less than 1.0");
+        this.maxQueryMemoryPerNodeRate = OptionalDouble.of(maxQueryMemoryPerNodeRate);
+        return this;
+    }
+
     @NotNull
     public DataSize getHeapHeadroom()
     {
-        return heapHeadroom;
+        return heapHeadroomRate.isEmpty() ? heapHeadroom : DataSize.ofBytes(Math.round(AVAILABLE_HEAP_MEMORY * heapHeadroomRate.getAsDouble()));
     }
 
     @Config("memory.heap-headroom-per-node")
@@ -58,6 +78,20 @@ public class NodeMemoryConfig
     public NodeMemoryConfig setHeapHeadroom(DataSize heapHeadroom)
     {
         this.heapHeadroom = heapHeadroom;
+        return this;
+    }
+
+    public OptionalDouble getHeapHeadroomRate()
+    {
+        return heapHeadroomRate;
+    }
+
+    @Config("memory.heap-headroom-per-node-rate")
+    public NodeMemoryConfig setHeapHeadroomRate(double heapHeadroomRate)
+    {
+        checkArgument(heapHeadroomRate > 0.0 && heapHeadroomRate < 1.0,
+                "memory.heap-headroom-per-node-rate must greater than 0.0 and less than 1.0");
+        this.heapHeadroomRate = OptionalDouble.of(heapHeadroomRate);
         return this;
     }
 }
