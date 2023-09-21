@@ -4,7 +4,8 @@ set -xeuo pipefail
 
 launcher_opts=(--etc-dir /etc/trino)
 if ! grep -s -q 'node.id' /etc/trino/node.properties; then
-    launcher_opts+=("-Dnode.id=${HOSTNAME}")
+    UUID=$(cat /proc/sys/kernel/random/uuid)
+    launcher_opts+=("-Dnode.id=${HOSTNAME//./-}--${UUID}")
 fi
 
 exec /usr/lib/trino/bin/launcher run "${launcher_opts[@]}" "$@"
