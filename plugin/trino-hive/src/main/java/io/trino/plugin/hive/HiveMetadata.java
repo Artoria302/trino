@@ -301,6 +301,7 @@ import static io.trino.plugin.hive.util.HiveUtil.getPartitionKeyColumnHandles;
 import static io.trino.plugin.hive.util.HiveUtil.getRegularColumnHandles;
 import static io.trino.plugin.hive.util.HiveUtil.getTableColumnMetadata;
 import static io.trino.plugin.hive.util.HiveUtil.hiveColumnHandles;
+import static io.trino.plugin.hive.util.HiveUtil.isArcherTable;
 import static io.trino.plugin.hive.util.HiveUtil.isDeltaLakeTable;
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.plugin.hive.util.HiveUtil.isHudiTable;
@@ -525,6 +526,9 @@ public class HiveMetadata
         if (isHudiTable(table)) {
             throw new TrinoException(UNSUPPORTED_TABLE_TYPE, format("Cannot query Hudi table '%s'", tableName));
         }
+        if (isArcherTable(table)) {
+            throw new TrinoException(UNSUPPORTED_TABLE_TYPE, format("Cannot query Archer table '%s'", tableName));
+        }
 
         // we must not allow system tables due to how permissions are checked in SystemTableAwareAccessControl
         if (getSourceTableNameFromSystemTable(systemTableProviders, tableName).isPresent()) {
@@ -642,7 +646,7 @@ public class HiveMetadata
         Table table = metastore.getTable(tableName.getSchemaName(), tableName.getTableName())
                 .orElseThrow(() -> new TableNotFoundException(tableName));
 
-        if (isIcebergTable(table) || isDeltaLakeTable(table)) {
+        if (isIcebergTable(table) || isDeltaLakeTable(table) || isArcherTable(table)) {
             throw new TrinoException(UNSUPPORTED_TABLE_TYPE, format("Not a Hive table '%s'", tableName));
         }
 

@@ -37,3 +37,6 @@ product-test-reports
 /plugin-test/
 /logs/
 var/
+
+hs_err_pid*.log
+.attach_pid*

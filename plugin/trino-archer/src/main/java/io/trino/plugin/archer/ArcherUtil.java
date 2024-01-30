@@ -1,0 +1,928 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.trino.plugin.archer;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import io.airlift.slice.Slice;
+import io.airlift.slice.SliceUtf8;
+import io.airlift.slice.Slices;
+import io.trino.filesystem.Location;
+import io.trino.filesystem.TrinoFileSystem;
+import io.trino.filesystem.TrinoInputFile;
+import io.trino.filesystem.TrinoInputStream;
+import io.trino.plugin.archer.PartitionTransforms.ColumnTransform;
+import io.trino.plugin.archer.catalog.ArcherTableOperations;
+import io.trino.plugin.archer.catalog.ArcherTableOperationsProvider;
+import io.trino.plugin.archer.catalog.TrinoCatalog;
+import io.trino.plugin.archer.util.DefaultLocationProvider;
+import io.trino.plugin.archer.util.VersionedPath;
+import io.trino.spi.TrinoException;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.ColumnMetadata;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorTableMetadata;
+import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.function.InvocationConvention;
+import io.trino.spi.predicate.Domain;
+import io.trino.spi.predicate.NullableValue;
+import io.trino.spi.predicate.Range;
+import io.trino.spi.predicate.ValueSet;
+import io.trino.spi.type.DecimalType;
+import io.trino.spi.type.Int128;
+import io.trino.spi.type.MapType;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.type.TypeOperators;
+import io.trino.spi.type.UuidType;
+import io.trino.spi.type.VarbinaryType;
+import io.trino.spi.type.VarcharType;
+import net.qihoo.archer.BaseTable;
+import net.qihoo.archer.Deletion;
+import net.qihoo.archer.FileFormat;
+import net.qihoo.archer.FileScanTask;
+import net.qihoo.archer.FileSummary;
+import net.qihoo.archer.GenericFileSummary;
+import net.qihoo.archer.HistoryEntry;
+import net.qihoo.archer.InvertedIndex;
+import net.qihoo.archer.PartitionField;
+import net.qihoo.archer.PartitionSpec;
+import net.qihoo.archer.Schema;
+import net.qihoo.archer.Snapshot;
+import net.qihoo.archer.SnapshotUpdate;
+import net.qihoo.archer.SortOrder;
+import net.qihoo.archer.StructLike;
+import net.qihoo.archer.Table;
+import net.qihoo.archer.TableMetadata;
+import net.qihoo.archer.TableOperations;
+import net.qihoo.archer.Transaction;
+import net.qihoo.archer.io.LocationProvider;
+import net.qihoo.archer.types.Type.PrimitiveType;
+import net.qihoo.archer.types.Types.NestedField;
+import net.qihoo.archer.types.Types.StructType;
+import org.roaringbitmap.BitmapDataProvider;
+import org.roaringbitmap.RoaringBitmap;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandle;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Verify.verify;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static io.airlift.slice.Slices.utf8Slice;
+import static io.trino.metastore.Table.TABLE_COMMENT;
+import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_BAD_DATA;
+import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_INVALID_PARTITION_VALUE;
+import static io.trino.plugin.archer.ArcherTableProperties.FILE_FORMAT_PROPERTY;
+import static io.trino.plugin.archer.ArcherTableProperties.FORMAT_VERSION_PROPERTY;
+import static io.trino.plugin.archer.ArcherTableProperties.INVERTED_INDEXED_BY_PROPERTY;
+import static io.trino.plugin.archer.ArcherTableProperties.LOCATION_PROPERTY;
+import static io.trino.plugin.archer.ArcherTableProperties.PARTITIONING_PROPERTY;
+import static io.trino.plugin.archer.ArcherTableProperties.enableDeleteMetadataAfterCommit;
+import static io.trino.plugin.archer.ArcherTableProperties.getInvertedIndex;
+import static io.trino.plugin.archer.ArcherTableProperties.getMaxMetadataVersions;
+import static io.trino.plugin.archer.ArcherTableProperties.getPartitioning;
+import static io.trino.plugin.archer.ArcherTableProperties.getSortOrder;
+import static io.trino.plugin.archer.ColumnIdentity.createColumnIdentity;
+import static io.trino.plugin.archer.InvertedIndexFieldUtils.parseInvertedIndexFields;
+import static io.trino.plugin.archer.InvertedIndexFieldUtils.toInvertedIndexFields;
+import static io.trino.plugin.archer.PartitionFields.parsePartitionFields;
+import static io.trino.plugin.archer.PartitionFields.toPartitionFields;
+import static io.trino.plugin.archer.SortFieldUtils.parseSortFields;
+import static io.trino.plugin.archer.TypeConverter.toArcherType;
+import static io.trino.plugin.archer.TypeConverter.toArcherTypeForNewColumn;
+import static io.trino.plugin.archer.TypeConverter.toTrinoType;
+import static io.trino.plugin.archer.util.Timestamps.timestampTzFromMicros;
+import static io.trino.plugin.hive.HiveMetadata.TRINO_QUERY_ID_NAME;
+import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
+import static io.trino.spi.StandardErrorCode.INVALID_ARGUMENTS;
+import static io.trino.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.function.InvocationConvention.InvocationArgumentConvention.NEVER_NULL;
+import static io.trino.spi.function.InvocationConvention.InvocationReturnConvention.FAIL_ON_NULL;
+import static io.trino.spi.predicate.Utils.nativeValueToBlock;
+import static io.trino.spi.type.BigintType.BIGINT;
+import static io.trino.spi.type.BooleanType.BOOLEAN;
+import static io.trino.spi.type.DateType.DATE;
+import static io.trino.spi.type.DoubleType.DOUBLE;
+import static io.trino.spi.type.IntegerType.INTEGER;
+import static io.trino.spi.type.RealType.REAL;
+import static io.trino.spi.type.TimeType.TIME_MICROS;
+import static io.trino.spi.type.TimestampType.TIMESTAMP_MICROS;
+import static io.trino.spi.type.TimestampWithTimeZoneType.TIMESTAMP_TZ_MICROS;
+import static io.trino.spi.type.Timestamps.PICOSECONDS_PER_MICROSECOND;
+import static io.trino.spi.type.UuidType.javaUuidToTrinoUuid;
+import static java.lang.Double.parseDouble;
+import static java.lang.Float.floatToRawIntBits;
+import static java.lang.Float.parseFloat;
+import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
+import static java.lang.String.format;
+import static java.math.RoundingMode.UNNECESSARY;
+import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
+import static java.util.UUID.randomUUID;
+import static net.qihoo.archer.BaseMetastoreTableOperations.ARCHER_TABLE_TYPE_VALUE;
+import static net.qihoo.archer.BaseMetastoreTableOperations.TABLE_TYPE_PROP;
+import static net.qihoo.archer.InvertedIndex.INVERTED_INDEX_DIRECTORY;
+import static net.qihoo.archer.TableProperties.DEFAULT_FILE_FORMAT;
+import static net.qihoo.archer.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+import static net.qihoo.archer.TableProperties.FORMAT_VERSION;
+import static net.qihoo.archer.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED;
+import static net.qihoo.archer.TableProperties.METADATA_PREVIOUS_VERSIONS_MAX;
+import static net.qihoo.archer.TableProperties.WRITE_DATA_LOCATION;
+import static net.qihoo.archer.TableProperties.WRITE_METADATA_LOCATION;
+import static net.qihoo.archer.types.Type.TypeID.BINARY;
+import static net.qihoo.archer.types.Type.TypeID.FIXED;
+
+public final class ArcherUtil
+{
+    public static final String METADATA_FILE_EXTENSION = ".metadata.json";
+    private static final Pattern SIMPLE_NAME = Pattern.compile("[a-z][a-z0-9]*");
+
+    // Metadata file name examples
+    //  - 00001-409702ba-4735-4645-8f14-09537cc0b2c8.metadata.json
+    //  - 00001-409702ba-4735-4645-8f14-09537cc0b2c8.gz.metadata.json (https://github.com/apache/iceberg/blob/ab398a0d5ff195f763f8c7a4358ac98fa38a8de7/core/src/main/java/org/apache/iceberg/TableMetadataParser.java#L141)
+    //  - 00001-409702ba-4735-4645-8f14-09537cc0b2c8.metadata.json.gz (https://github.com/apache/iceberg/blob/ab398a0d5ff195f763f8c7a4358ac98fa38a8de7/core/src/main/java/org/apache/iceberg/TableMetadataParser.java#L146)
+    private static final Pattern METADATA_FILE_NAME_PATTERN = Pattern.compile("(?<version>\\d+)-(?<uuid>[-a-fA-F0-9]*)(?<compression>\\.[a-zA-Z0-9]+)?" + Pattern.quote(METADATA_FILE_EXTENSION) + "(?<compression2>\\.[a-zA-Z0-9]+)?");
+    // Hadoop Generated Metadata file name examples
+    //  - v0.metadata.json
+    //  - v0.gz.metadata.json
+    //  - v0.metadata.json.gz
+    private static final Pattern HADOOP_GENERATED_METADATA_FILE_NAME_PATTERN = Pattern.compile("v(?<version>\\d+)(?<compression>\\.[a-zA-Z0-9]+)?" + Pattern.quote(METADATA_FILE_EXTENSION) + "(?<compression2>\\.[a-zA-Z0-9]+)?");
+
+    private ArcherUtil() {}
+
+    public static boolean isArcherTable(io.trino.metastore.Table table)
+    {
+        return ARCHER_TABLE_TYPE_VALUE.equalsIgnoreCase(table.getParameters().get(TABLE_TYPE_PROP));
+    }
+
+    public static Table loadArcherTable(TrinoCatalog catalog, ArcherTableOperationsProvider tableOperationsProvider, ConnectorSession session, SchemaTableName table)
+    {
+        TableOperations operations = tableOperationsProvider.createTableOperations(
+                catalog,
+                session,
+                table.getSchemaName(),
+                table.getTableName(),
+                Optional.empty(),
+                Optional.empty());
+        return new BaseTable(operations, quotedTableName(table));
+    }
+
+    public static Table getArcherTableWithMetadata(
+            TrinoCatalog catalog,
+            ArcherTableOperationsProvider tableOperationsProvider,
+            ConnectorSession session,
+            SchemaTableName table,
+            TableMetadata tableMetadata)
+    {
+        ArcherTableOperations operations = tableOperationsProvider.createTableOperations(
+                catalog,
+                session,
+                table.getSchemaName(),
+                table.getTableName(),
+                Optional.empty(),
+                Optional.empty());
+        operations.initializeFromMetadata(tableMetadata);
+        return new BaseTable(operations, quotedTableName(table));
+    }
+
+    public static Map<String, Object> getArcherTableProperties(Table archerTable)
+    {
+        ImmutableMap.Builder<String, Object> properties = ImmutableMap.builder();
+        properties.put(FILE_FORMAT_PROPERTY, getFileFormat(archerTable));
+        if (!archerTable.spec().fields().isEmpty()) {
+            properties.put(PARTITIONING_PROPERTY, toPartitionFields(archerTable.spec()));
+        }
+
+        InvertedIndex invertedIndex = archerTable.invertedIndex();
+        if (invertedIndex.isIndexed()) {
+            List<String> indexColumnNames = toInvertedIndexFields(invertedIndex);
+            properties.put(INVERTED_INDEXED_BY_PROPERTY, indexColumnNames);
+        }
+
+        if (!archerTable.location().isEmpty()) {
+            properties.put(LOCATION_PROPERTY, archerTable.location());
+        }
+
+        int formatVersion = ((BaseTable) archerTable).operations().current().formatVersion();
+        properties.put(FORMAT_VERSION_PROPERTY, formatVersion);
+
+        return properties.buildOrThrow();
+    }
+
+    public static List<ArcherColumnHandle> getColumns(Schema schema, TypeManager typeManager)
+    {
+        return schema.columns().stream()
+                .map(column -> getColumnHandle(column, typeManager))
+                .collect(toImmutableList());
+    }
+
+    public static ArcherColumnHandle getColumnHandle(NestedField column, TypeManager typeManager)
+    {
+        Type type = toTrinoType(column.type(), typeManager);
+        return new ArcherColumnHandle(
+                createColumnIdentity(column),
+                type,
+                ImmutableList.of(),
+                type,
+                column.isOptional(),
+                Optional.ofNullable(column.doc()));
+    }
+
+    public static Schema schemaFromHandles(List<ArcherColumnHandle> columns)
+    {
+        List<NestedField> archerColumns = columns.stream()
+                .map(column -> NestedField.optional(column.getId(), column.getName(), toArcherType(column.getType(), column.getColumnIdentity())))
+                .collect(toImmutableList());
+        return new Schema(StructType.of(archerColumns).asStructType().fields());
+    }
+
+    public static Map<PartitionField, Integer> getIdentityPartitions(PartitionSpec partitionSpec)
+    {
+        // TODO: expose transform information in Archer library
+        ImmutableMap.Builder<PartitionField, Integer> columns = ImmutableMap.builder();
+        for (int i = 0; i < partitionSpec.fields().size(); i++) {
+            PartitionField field = partitionSpec.fields().get(i);
+            if (field.transform().isIdentity()) {
+                columns.put(field, i);
+            }
+        }
+        return columns.buildOrThrow();
+    }
+
+    public static Map<Integer, PrimitiveType> primitiveFieldTypes(Schema schema)
+    {
+        return primitiveFieldTypes(schema.columns())
+                .collect(toImmutableMap(Entry::getKey, Entry::getValue));
+    }
+
+    private static Stream<Entry<Integer, PrimitiveType>> primitiveFieldTypes(List<NestedField> nestedFields)
+    {
+        return nestedFields.stream()
+                .flatMap(ArcherUtil::primitiveFieldTypes);
+    }
+
+    private static Stream<Entry<Integer, PrimitiveType>> primitiveFieldTypes(NestedField nestedField)
+    {
+        net.qihoo.archer.types.Type fieldType = nestedField.type();
+        if (fieldType.isPrimitiveType()) {
+            return Stream.of(Map.entry(nestedField.fieldId(), fieldType.asPrimitiveType()));
+        }
+
+        if (fieldType.isNestedType()) {
+            return primitiveFieldTypes(fieldType.asNestedType().fields());
+        }
+
+        throw new IllegalStateException("Unsupported field type: " + nestedField);
+    }
+
+    public static ArcherFileFormat getFileFormat(Table table)
+    {
+        return getFileFormat(table.properties());
+    }
+
+    public static ArcherFileFormat getFileFormat(Map<String, String> storageProperties)
+    {
+        return ArcherFileFormat.fromArcher(FileFormat.valueOf(storageProperties
+                .getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
+    }
+
+    public static Optional<String> getTableComment(Table table)
+    {
+        return Optional.ofNullable(table.properties().get(TABLE_COMMENT));
+    }
+
+    public static String quotedTableName(SchemaTableName name)
+    {
+        return quotedName(name.getSchemaName()) + "." + quotedName(name.getTableName());
+    }
+
+    private static String quotedName(String name)
+    {
+        if (SIMPLE_NAME.matcher(name).matches()) {
+            return name;
+        }
+        return '"' + name.replace("\"", "\"\"") + '"';
+    }
+
+    public static boolean canEnforceColumnConstraintInSpecs(
+            TypeOperators typeOperators,
+            Table table,
+            Set<Integer> partitionSpecIds,
+            ArcherColumnHandle columnHandle,
+            Domain domain)
+    {
+        return table.specs().values().stream()
+                .filter(partitionSpec -> partitionSpecIds.contains(partitionSpec.specId()))
+                .allMatch(spec -> canEnforceConstraintWithinPartitioningSpec(typeOperators, spec, columnHandle, domain));
+    }
+
+    private static boolean canEnforceConstraintWithinPartitioningSpec(TypeOperators typeOperators, PartitionSpec spec, ArcherColumnHandle column, Domain domain)
+    {
+        for (PartitionField field : spec.getFieldsBySourceId(column.getId())) {
+            if (canEnforceConstraintWithPartitionField(typeOperators, field, column, domain)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean canEnforceConstraintWithPartitionField(TypeOperators typeOperators, PartitionField field, ArcherColumnHandle column, Domain domain)
+    {
+        if (field.transform().toString().equals("void")) {
+            // Useless for filtering.
+            return false;
+        }
+        if (field.transform().isIdentity()) {
+            // A predicate on an identity partitioning column can always be enforced.
+            return true;
+        }
+
+        ColumnTransform transform = PartitionTransforms.getColumnTransform(field, column.getType());
+        if (transform.preservesNonNull()) {
+            // Partitioning transform must return NULL for NULL input.
+            // Below we assume it never returns NULL for non-NULL input,
+            // so NULL values and non-NULL values are always segregated.
+            // In practice, this condition matches the void transform only,
+            // which isn't useful for filtering anyway.
+            return false;
+        }
+        ValueSet valueSet = domain.getValues();
+
+        boolean canEnforce = valueSet.getValuesProcessor().transform(
+                ranges -> {
+                    MethodHandle targetTypeEqualOperator = typeOperators.getEqualOperator(
+                            transform.type(), InvocationConvention.simpleConvention(FAIL_ON_NULL, NEVER_NULL, NEVER_NULL));
+                    for (Range range : ranges.getOrderedRanges()) {
+                        if (!canEnforceRangeWithPartitioningField(field, transform, range, targetTypeEqualOperator)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+                discreteValues -> false,
+                allOrNone -> true);
+        return canEnforce;
+    }
+
+    private static boolean canEnforceRangeWithPartitioningField(PartitionField field, ColumnTransform transform, Range range, MethodHandle targetTypeEqualOperator)
+    {
+        if (!transform.monotonic()) {
+            // E.g. bucketing transform
+            return false;
+        }
+        Type type = range.getType();
+        if (!type.isOrderable()) {
+            return false;
+        }
+        if (!range.isLowUnbounded()) {
+            Object boundedValue = range.getLowBoundedValue();
+            Optional<Object> adjacentValue = range.isLowInclusive() ? type.getPreviousValue(boundedValue) : type.getNextValue(boundedValue);
+            if (adjacentValue.isEmpty() || yieldSamePartitioningValue(field, transform, type, boundedValue, adjacentValue.get(), targetTypeEqualOperator)) {
+                return false;
+            }
+        }
+        if (!range.isHighUnbounded()) {
+            Object boundedValue = range.getHighBoundedValue();
+            Optional<Object> adjacentValue = range.isHighInclusive() ? type.getNextValue(boundedValue) : type.getPreviousValue(boundedValue);
+            if (adjacentValue.isEmpty() || yieldSamePartitioningValue(field, transform, type, boundedValue, adjacentValue.get(), targetTypeEqualOperator)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean yieldSamePartitioningValue(
+            PartitionField field,
+            ColumnTransform transform,
+            Type sourceType,
+            Object first,
+            Object second,
+            MethodHandle targetTypeEqualOperator)
+    {
+        requireNonNull(first, "first is null");
+        requireNonNull(second, "second is null");
+        Object firstTransformed = transform.valueTransform().apply(nativeValueToBlock(sourceType, first), 0);
+        Object secondTransformed = transform.valueTransform().apply(nativeValueToBlock(sourceType, second), 0);
+        // The pushdown logic assumes NULLs and non-NULLs are segregated, so that we have to think about non-null values only.
+        verify(firstTransformed != null && secondTransformed != null, "Transform for %s returned null for non-null input", field);
+        try {
+            return (boolean) targetTypeEqualOperator.invoke(firstTransformed, secondTransformed);
+        }
+        catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public static Object deserializePartitionValue(Type type, String valueString, String name)
+    {
+        if (valueString == null) {
+            return null;
+        }
+
+        try {
+            if (type.equals(BOOLEAN)) {
+                if (valueString.equalsIgnoreCase("true")) {
+                    return true;
+                }
+                if (valueString.equalsIgnoreCase("false")) {
+                    return false;
+                }
+                throw new IllegalArgumentException();
+            }
+            if (type.equals(INTEGER)) {
+                return parseLong(valueString);
+            }
+            if (type.equals(BIGINT)) {
+                return parseLong(valueString);
+            }
+            if (type.equals(REAL)) {
+                return (long) floatToRawIntBits(parseFloat(valueString));
+            }
+            if (type.equals(DOUBLE)) {
+                return parseDouble(valueString);
+            }
+            if (type.equals(DATE)) {
+                return parseLong(valueString);
+            }
+            if (type.equals(TIME_MICROS)) {
+                return parseLong(valueString) * PICOSECONDS_PER_MICROSECOND;
+            }
+            if (type.equals(TIMESTAMP_MICROS)) {
+                return parseLong(valueString);
+            }
+            if (type.equals(TIMESTAMP_TZ_MICROS)) {
+                return timestampTzFromMicros(parseLong(valueString));
+            }
+            if (type instanceof VarcharType varcharType) {
+                Slice value = utf8Slice(valueString);
+                if (!varcharType.isUnbounded() && SliceUtf8.countCodePoints(value) > varcharType.getBoundedLength()) {
+                    throw new IllegalArgumentException();
+                }
+                return value;
+            }
+            if (type.equals(VarbinaryType.VARBINARY)) {
+                return Slices.wrappedBuffer(Base64.getDecoder().decode(valueString));
+            }
+            if (type.equals(UuidType.UUID)) {
+                return javaUuidToTrinoUuid(UUID.fromString(valueString));
+            }
+            if (type instanceof DecimalType decimalType) {
+                BigDecimal decimal = new BigDecimal(valueString);
+                decimal = decimal.setScale(decimalType.getScale(), UNNECESSARY);
+                if (decimal.precision() > decimalType.getPrecision()) {
+                    throw new IllegalArgumentException();
+                }
+                BigInteger unscaledValue = decimal.unscaledValue();
+                return decimalType.isShort() ? unscaledValue.longValue() : Int128.valueOf(unscaledValue);
+            }
+        }
+        catch (IllegalArgumentException e) {
+            throw new TrinoException(ARCHER_INVALID_PARTITION_VALUE, format(
+                    "Invalid partition value '%s' for %s partition key: %s",
+                    valueString,
+                    type.getDisplayName(),
+                    name));
+        }
+        // Archer tables don't partition by non-primitive-type columns.
+        throw new TrinoException(GENERIC_INTERNAL_ERROR, "Invalid partition type " + type);
+    }
+
+    /**
+     * Returns a map from fieldId to serialized partition value containing entries for all identity partitions.
+     * {@code null} partition values are represented with {@link Optional#empty}.
+     */
+    public static Map<Integer, Optional<String>> getPartitionKeys(FileScanTask scanTask)
+    {
+        return getPartitionKeys(scanTask.file().partition(), scanTask.spec());
+    }
+
+    public static Map<Integer, Optional<String>> getPartitionKeys(StructLike partition, PartitionSpec spec)
+    {
+        Map<PartitionField, Integer> fieldToIndex = getIdentityPartitions(spec);
+        ImmutableMap.Builder<Integer, Optional<String>> partitionKeys = ImmutableMap.builder();
+
+        fieldToIndex.forEach((field, index) -> {
+            int id = field.sourceId();
+            net.qihoo.archer.types.Type type = spec.schema().findType(id);
+            Class<?> javaClass = type.typeId().javaClass();
+            Object value = partition.get(index, javaClass);
+
+            if (value == null) {
+                partitionKeys.put(id, Optional.empty());
+            }
+            else {
+                String partitionValue;
+                if (type.typeId() == FIXED || type.typeId() == BINARY) {
+                    // this is safe because Archer PartitionData directly wraps the byte array
+                    partitionValue = Base64.getEncoder().encodeToString(getWrappedBytes(((ByteBuffer) value)));
+                }
+                else {
+                    partitionValue = value.toString();
+                }
+                partitionKeys.put(id, Optional.of(partitionValue));
+            }
+        });
+
+        return partitionKeys.buildOrThrow();
+    }
+
+    public static byte[] getWrappedBytes(ByteBuffer byteBuffer)
+    {
+        checkArgument(byteBuffer.hasArray(), "buffer does not have array");
+        checkArgument(byteBuffer.arrayOffset() == 0, "buffer has non-zero array offset: %s", byteBuffer.arrayOffset());
+        checkArgument(byteBuffer.position() == 0, "buffer has been repositioned to %s", byteBuffer.position());
+        byte[] array = byteBuffer.array();
+        checkArgument(byteBuffer.remaining() == array.length, "buffer has %s remaining bytes while array length is %s", byteBuffer.remaining(), array.length);
+        return array;
+    }
+
+    public static Map<ColumnHandle, NullableValue> getPartitionValues(
+            Set<ArcherColumnHandle> identityPartitionColumns,
+            Map<Integer, Optional<String>> partitionKeys)
+    {
+        ImmutableMap.Builder<ColumnHandle, NullableValue> bindings = ImmutableMap.builder();
+        for (ArcherColumnHandle partitionColumn : identityPartitionColumns) {
+            Object partitionValue = deserializePartitionValue(
+                    partitionColumn.getType(),
+                    partitionKeys.get(partitionColumn.getId()).orElse(null),
+                    partitionColumn.getName());
+            NullableValue bindingValue = new NullableValue(partitionColumn.getType(), partitionValue);
+            bindings.put(partitionColumn, bindingValue);
+        }
+        return bindings.buildOrThrow();
+    }
+
+    public static LocationProvider getLocationProvider(SchemaTableName schemaTableName, String tableLocation, Map<String, String> storageProperties)
+    {
+        return new DefaultLocationProvider(tableLocation, storageProperties);
+    }
+
+    public static Schema schemaFromMetadata(List<ColumnMetadata> columns)
+    {
+        List<NestedField> archerColumns = new ArrayList<>();
+        int visibleColumnCount = (int) columns.stream().filter(column -> !column.isHidden()).count();
+        AtomicInteger nextFieldId = new AtomicInteger(visibleColumnCount + 1);
+        for (ColumnMetadata column : columns) {
+            if (!column.isHidden()) {
+                int index = archerColumns.size() + 1;
+                net.qihoo.archer.types.Type type = toArcherTypeForNewColumn(column.getType(), nextFieldId);
+                NestedField field = NestedField.of(index, column.isNullable(), column.getName(), type, column.getComment());
+                archerColumns.add(field);
+            }
+        }
+        net.qihoo.archer.types.Type archerSchema = StructType.of(archerColumns);
+        return new Schema(archerSchema.asStructType().fields());
+    }
+
+    public static Transaction newCreateTableTransaction(TrinoCatalog catalog, ConnectorTableMetadata tableMetadata, ConnectorSession session, boolean replace, String tableLocation)
+    {
+        SchemaTableName schemaTableName = tableMetadata.getTable();
+        Schema schema = schemaFromMetadata(tableMetadata.getColumns());
+        PartitionSpec partitionSpec = parsePartitionFields(schema, getPartitioning(tableMetadata.getProperties()));
+        SortOrder sortOrder = parseSortFields(schema, getSortOrder(tableMetadata.getProperties()));
+        InvertedIndex invertedIndex = parseInvertedIndexFields(schema, getInvertedIndex(tableMetadata.getProperties()));
+
+        if (replace) {
+            return catalog.newCreateOrReplaceTableTransaction(session, schemaTableName, schema, partitionSpec, sortOrder, invertedIndex, tableLocation, createTableProperties(tableMetadata));
+        }
+        return catalog.newCreateTableTransaction(session, schemaTableName, schema, partitionSpec, sortOrder, invertedIndex, tableLocation, createTableProperties(tableMetadata));
+    }
+
+    public static Map<String, String> createTableProperties(ConnectorTableMetadata tableMetadata)
+    {
+        ImmutableMap.Builder<String, String> propertiesBuilder = ImmutableMap.builder();
+        ArcherFileFormat fileFormat = ArcherTableProperties.getFileFormat(tableMetadata.getProperties());
+        propertiesBuilder.put(DEFAULT_FILE_FORMAT, fileFormat.toArcher().toString());
+        propertiesBuilder.put(FORMAT_VERSION, Integer.toString(ArcherTableProperties.getFormatVersion(tableMetadata.getProperties())));
+
+        boolean enableDeleteMetadataAfterCommit = enableDeleteMetadataAfterCommit(tableMetadata.getProperties());
+        propertiesBuilder.put(METADATA_DELETE_AFTER_COMMIT_ENABLED, String.valueOf(enableDeleteMetadataAfterCommit));
+        int maxMetadataVersions = getMaxMetadataVersions(tableMetadata.getProperties());
+        propertiesBuilder.put(METADATA_PREVIOUS_VERSIONS_MAX, String.valueOf(maxMetadataVersions));
+
+        if (tableMetadata.getComment().isPresent()) {
+            propertiesBuilder.put(TABLE_COMMENT, tableMetadata.getComment().get());
+        }
+        return propertiesBuilder.buildOrThrow();
+    }
+
+    /**
+     * Find the first snapshot in the table. First snapshot is the last snapshot
+     * in snapshot parents chain starting at {@link Table#currentSnapshot()}.
+     *
+     * @return First (oldest) Snapshot reachable from {@link Table#currentSnapshot()} or empty if table history
+     * expiration makes it impossible to find the snapshot.
+     * @throws IllegalArgumentException when table has no snapshot.
+     */
+    public static Optional<Snapshot> firstSnapshot(Table table)
+    {
+        Snapshot current = table.currentSnapshot();
+        checkArgument(current != null, "No current snapshot in %s when looking for the first snapshot", table);
+
+        while (true) {
+            if (current.parentId() == null) {
+                return Optional.of(current);
+            }
+            current = table.snapshot(current.parentId());
+            if (current == null) {
+                // History expired
+                return Optional.empty();
+            }
+        }
+    }
+
+    /**
+     * @return First (oldest) snapshot that is reachable from {@link Table#currentSnapshot()} but is not
+     * reachable from snapshot with id {@code baseSnapshotId}. Returns empty if table history
+     * expiration makes it impossible to find the snapshot.
+     * @throws IllegalArgumentException when table has no snapshot,
+     * {@code baseSnapshotId} is not a valid snapshot in the table or
+     * the {@code baseSnapshotId} is the current snapshot.
+     */
+    public static Optional<Snapshot> firstSnapshotAfter(Table table, long baseSnapshotId)
+    {
+        Snapshot current = table.currentSnapshot();
+        checkArgument(current != null, "No current snapshot in %s when looking for the first snapshot after %s", table, baseSnapshotId);
+        checkArgument(current.snapshotId() != baseSnapshotId, "No snapshot after %s in %s, current snapshot is %s", baseSnapshotId, table, current);
+
+        while (true) {
+            if (current.parentId() == null) {
+                // Current is the first snapshot in the table, which means we reached end of table history not finding baseSnapshotId. This is possible
+                // when table was rolled back and baseSnapshotId is no longer referenced.
+                return Optional.empty();
+            }
+            if (current.parentId() == baseSnapshotId) {
+                return Optional.of(current);
+            }
+            current = table.snapshot(current.parentId());
+            if (current == null) {
+                // History expired
+                return Optional.empty();
+            }
+        }
+    }
+
+    public static long getSnapshotIdAsOfTime(Table table, long epochMillis)
+    {
+        // The order of table.history() elements is not guaranteed, refer: https://github.com/apache/iceberg/issues/3891#issuecomment-1012303069
+        return table.history().stream()
+                .filter(logEntry -> logEntry.timestampMillis() <= epochMillis)
+                .max(comparing(HistoryEntry::timestampMillis))
+                .orElseThrow(() -> new TrinoException(INVALID_ARGUMENTS, format("No version history table %s at or before %s", table.name(), Instant.ofEpochMilli(epochMillis))))
+                .snapshotId();
+    }
+
+    public static void validateTableCanBeDropped(Table table)
+    {
+        // TODO: support path override in Archer table creation: https://github.com/trinodb/trino/issues/8861
+        if (table.properties().containsKey(WRITE_METADATA_LOCATION) ||
+                table.properties().containsKey(WRITE_DATA_LOCATION)) {
+            throw new TrinoException(NOT_SUPPORTED, "Table contains Archer path override properties and cannot be dropped from Trino: " + table.name());
+        }
+    }
+
+    private static void checkFormatForProperty(FileFormat actualStorageFormat, FileFormat expectedStorageFormat, String propertyName)
+    {
+        if (actualStorageFormat != expectedStorageFormat) {
+            throw new TrinoException(INVALID_TABLE_PROPERTY, format("Cannot specify %s table property for storage format: %s", propertyName, actualStorageFormat));
+        }
+    }
+
+    private static void validateOrcBloomFilterColumns(ConnectorTableMetadata tableMetadata, List<String> orcBloomFilterColumns)
+    {
+        Set<String> allColumns = tableMetadata.getColumns().stream()
+                .map(ColumnMetadata::getName)
+                .collect(toImmutableSet());
+        if (!allColumns.containsAll(orcBloomFilterColumns)) {
+            throw new TrinoException(INVALID_TABLE_PROPERTY, format("Orc bloom filter columns %s not present in schema", Sets.difference(ImmutableSet.copyOf(orcBloomFilterColumns), allColumns)));
+        }
+    }
+
+    public static int parseVersion(String metadataFileName)
+            throws TrinoException
+    {
+        checkArgument(!metadataFileName.contains("/"), "Not a file name: %s", metadataFileName);
+        Matcher matcher = METADATA_FILE_NAME_PATTERN.matcher(metadataFileName);
+        if (matcher.matches()) {
+            return parseInt(matcher.group("version"));
+        }
+        matcher = HADOOP_GENERATED_METADATA_FILE_NAME_PATTERN.matcher(metadataFileName);
+        if (matcher.matches()) {
+            return parseInt(matcher.group("version"));
+        }
+        throw new TrinoException(ARCHER_BAD_DATA, "Invalid metadata file name: " + metadataFileName);
+    }
+
+    public static String fixBrokenMetadataLocation(String location)
+    {
+        // Version 393-394 stored metadata location with double slash https://github.com/trinodb/trino/commit/e95fdcc7d1ec110b10977d17458e06fc4e6f217d#diff-9bbb7c0b6168f0e6b4732136f9a97f820aa082b04efb5609b6138afc118831d7R46
+        // e.g. s3://bucket/db/table//metadata/00001.metadata.json
+        // It caused failure when accessing S3 objects https://github.com/trinodb/trino/issues/14299
+        // Version 395 fixed the above issue by removing trailing slash https://github.com/trinodb/trino/pull/13984,
+        // but the change was insufficient for existing table cases created by 393 and 394. This method covers existing table cases.
+        String fileName = fileName(location);
+        String correctSuffix = "/metadata/" + fileName;
+        String brokenSuffix = "//metadata/" + fileName;
+        if (!location.endsWith(brokenSuffix)) {
+            return location;
+        }
+        return location.replaceFirst(Pattern.quote(brokenSuffix) + "$", Matcher.quoteReplacement(correctSuffix));
+    }
+
+    public static String fileName(String path)
+    {
+        return path.substring(path.lastIndexOf('/') + 1);
+    }
+
+    public static String segmentFileName(String path)
+    {
+        Location location = Location.of(path);
+        path = location.path();
+        verifyValidFilePath(path);
+
+        int idx1 = path.lastIndexOf('/');
+        checkState(idx1 >= 0, "not find file name in %s", path);
+        String fileName = path.substring(idx1 + 1);
+
+        int idx2 = path.lastIndexOf('/', idx1 - 1);
+        checkState(idx2 >= 0, "not find parent path segment in %s", path);
+        String segment0 = path.substring(idx2 + 1, idx1);
+        if (!INVERTED_INDEX_DIRECTORY.equals(segment0)) {
+            return segment0 + '/' + fileName;
+        }
+
+        int idx3 = path.lastIndexOf('/', idx2 - 1);
+        checkState(idx3 >= 0, "not find parent of parent path segment in %s", path);
+        String segment1 = path.substring(idx3 + 1, idx2);
+
+        return segment1 + '/' + segment0 + '/' + fileName;
+    }
+
+    public static void verifyValidFilePath(String path)
+    {
+        // file path must not be empty
+        checkState(!path.isEmpty() && !path.equals("/"), "File location must contain a path: %s", path);
+        // file path cannot end with a slash or contains double slash
+        checkState(!path.endsWith("/") && !path.contains("//"), "File location cannot end with '/' or contains double '/': %s", path);
+    }
+
+    public static String makeSurePathSchema(String segmentPath)
+            throws URISyntaxException
+    {
+        URI fullUri = new URI(segmentPath);
+        String schema = fullUri.getScheme();
+        if (schema == null) {
+            return new URI("file", fullUri.getAuthority(), fullUri.getPath(), null, null).toString();
+        }
+        else {
+            return segmentPath;
+        }
+    }
+
+    public static void checkMapType(MapType mapType)
+    {
+        if (mapType.getKeyType().getTypeId() == UuidType.UUID.getTypeId()) {
+            throw new TrinoException(NOT_SUPPORTED, "Use uuid type as map key is not supported for now");
+        }
+        if (mapType.getValueType().getTypeId() == UuidType.UUID.getTypeId()) {
+            throw new TrinoException(NOT_SUPPORTED, "Use uuid type as map value is not supported for now");
+        }
+    }
+
+    public static int newDataFileVersion(int oldVersion)
+    {
+        return oldVersion != Integer.MAX_VALUE ? oldVersion + 1 : 1;
+    }
+
+    public static String deletionFileName(int version)
+    {
+        return format("del-%s-%s.bin", version, randomUUID());
+    }
+
+    public static BitmapDataProvider deletionToBitmap(TrinoFileSystem fileSystem, String segmentPath, Deletion deletion)
+    {
+        long deletedRecordCount = deletion.deletedRecordCount();
+        if (deletedRecordCount != 0) {
+            ByteBuffer deletionMemory = deletion.deletionMemory();
+            FileSummary deletionFile = deletion.deletionFile();
+            if (deletedRecordCount <= 0) {
+                throw new TrinoException(ARCHER_BAD_DATA, format("Deletion is null but deleted record count <= 0 (%s), file path: %s", deletedRecordCount, segmentPath));
+            }
+            if (deletionMemory != null && deletionFile != null) {
+                throw new TrinoException(ARCHER_BAD_DATA, format("Both delta memory and file is not null, file path: %s", segmentPath));
+            }
+
+            if (deletionMemory != null) {
+                try {
+                    RoaringBitmap bitmap = new RoaringBitmap();
+                    bitmap.deserialize(deletionMemory);
+                    return bitmap;
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+
+            if (deletionFile != null) {
+                String deltaFile = deletionFile.fileName();
+                Location wholePath = Location.of(segmentPath + "/" + deltaFile);
+                try {
+                    RoaringBitmap bitmap = new RoaringBitmap();
+                    try (TrinoInputStream input = fileSystem.newInputFile(wholePath).newStream();
+                            DataInputStream inputStream = new DataInputStream(input)) {
+                        bitmap.deserialize(inputStream);
+                    }
+                    return bitmap;
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+            throw new TrinoException(ARCHER_BAD_DATA, format("Delta record count greater than 0, but both delta memory and file is null, file path: %s", segmentPath));
+        }
+        else {
+            return new RoaringBitmap();
+        }
+    }
+
+    public static Deletion fileDeletionToDeletion(TrinoFileSystem fileSystem, VersionedPath versionedPath, FileDeletion deletion)
+    {
+        BitmapDataProvider bitmap = deletion.rowsToDelete();
+        System.out.println(bitmap.serializedSizeInBytes());
+        if (bitmap instanceof RoaringBitmap rr) {
+            rr.runOptimize();
+        }
+        System.out.println(bitmap.serializedSizeInBytes());
+        int size = bitmap.serializedSizeInBytes();
+        if (size > 256) {
+            try {
+                String deltaFileName = deletionFileName(deletion.version());
+                Location deletionFilePath = Location.of(versionedPath.getPath() + "/" + deltaFileName);
+                try (DataOutputStream stream = new DataOutputStream(fileSystem.newOutputFile(deletionFilePath).create())) {
+                    bitmap.serialize(stream);
+                }
+                TrinoInputFile inputFile = fileSystem.newInputFile(deletionFilePath);
+                return new Deletion(
+                        deletion.deletedRecordCount(),
+                        new GenericFileSummary(GenericFileSummary.DELTA_FILE_SCHEMA, deltaFileName, inputFile.length(), inputFile.lastModified().toEpochMilli()));
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        else {
+            byte[] array = new byte[size];
+            ByteBuffer buffer = ByteBuffer.wrap(array);
+            bitmap.serialize(buffer);
+            return new Deletion(deletion.deletedRecordCount(), array);
+        }
+    }
+
+    public static void commit(SnapshotUpdate<?> update, ConnectorSession session)
+    {
+        update.set(TRINO_QUERY_ID_NAME, session.getQueryId());
+        update.commit();
+    }
+}

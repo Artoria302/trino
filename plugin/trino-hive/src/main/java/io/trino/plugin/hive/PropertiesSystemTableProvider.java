@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.plugin.hive.SystemTableHandler.PROPERTIES;
+import static io.trino.plugin.hive.util.HiveUtil.isArcherTable;
 import static io.trino.plugin.hive.util.HiveUtil.isDeltaLakeTable;
 import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.plugin.hive.util.SystemTables.createSystemTable;
@@ -61,7 +62,7 @@ public class PropertiesSystemTableProvider
                 .getTable(sourceTableName.getSchemaName(), sourceTableName.getTableName())
                 .orElseThrow(() -> new TableNotFoundException(tableName));
 
-        if (isDeltaLakeTable(table) || isIcebergTable(table)) {
+        if (isDeltaLakeTable(table) || isIcebergTable(table) || isArcherTable(table)) {
             return Optional.empty();
         }
         Map<String, String> sortedTableParameters = ImmutableSortedMap.copyOf(table.getParameters());

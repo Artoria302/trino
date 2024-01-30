@@ -37,6 +37,7 @@ import static io.trino.plugin.hive.metastore.MetastoreUtil.verifyOnline;
 import static io.trino.plugin.hive.util.HiveBucketing.getHiveBucketHandle;
 import static io.trino.plugin.hive.util.HiveUtil.getPartitionKeyColumnHandles;
 import static io.trino.plugin.hive.util.HiveUtil.getRegularColumnHandles;
+import static io.trino.plugin.hive.util.HiveUtil.isArcherTable;
 import static io.trino.plugin.hive.util.HiveUtil.isDeltaLakeTable;
 import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.plugin.hive.util.SystemTables.createSystemTable;
@@ -77,7 +78,7 @@ public class PartitionsSystemTableProvider
         Table sourceTable = metadata.getMetastore()
                 .getTable(sourceTableName.getSchemaName(), sourceTableName.getTableName())
                 .orElse(null);
-        if (sourceTable == null || isDeltaLakeTable(sourceTable) || isIcebergTable(sourceTable)) {
+        if (sourceTable == null || isDeltaLakeTable(sourceTable) || isIcebergTable(sourceTable) || isArcherTable(sourceTable)) {
             return Optional.empty();
         }
         verifyOnline(sourceTableName, Optional.empty(), getProtectMode(sourceTable), sourceTable.getParameters());

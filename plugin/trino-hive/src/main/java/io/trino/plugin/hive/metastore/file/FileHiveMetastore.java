@@ -118,6 +118,7 @@ import static io.trino.plugin.hive.util.HiveUtil.SPARK_TABLE_PROVIDER_KEY;
 import static io.trino.plugin.hive.util.HiveUtil.escapePathName;
 import static io.trino.plugin.hive.util.HiveUtil.escapeSchemaName;
 import static io.trino.plugin.hive.util.HiveUtil.escapeTableName;
+import static io.trino.plugin.hive.util.HiveUtil.isArcherTable;
 import static io.trino.plugin.hive.util.HiveUtil.isIcebergTable;
 import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.NOT_FOUND;
@@ -604,6 +605,10 @@ public class FileHiveMetastore
             throw new TrinoException(HIVE_CONCURRENT_MODIFICATION_DETECTED, "Cannot update Iceberg table: supplied previous location does not match current location");
         }
 
+        if (isArcherTable(table) && !Objects.equals(table.getParameters().get("metadata_location"), newTable.getParameters().get("previous_metadata_location"))) {
+            throw new TrinoException(HIVE_CONCURRENT_MODIFICATION_DETECTED, "Cannot update Archer table: supplied previous location does not match current location");
+        }
+
         Location tableMetadataDirectory = getTableMetadataDirectory(table);
         writeSchemaFile(TABLE, tableMetadataDirectory, tableCodec, new TableMetadata(currentVersion, newTable), true);
 
@@ -637,7 +642,7 @@ public class FileHiveMetastore
         Location newPath = getTableMetadataDirectory(newDatabaseName, newTableName);
 
         try {
-            if (isIcebergTable(table)) {
+            if (isIcebergTable(table) || isArcherTable(table)) {
                 fileSystem.createDirectory(newPath);
                 // Iceberg metadata references files in the old path, so these cannot be moved. Moving table description (metadata from metastore perspective) only.
                 fileSystem.renameFile(getSchemaFile(TABLE, oldPath), getSchemaFile(TABLE, newPath));

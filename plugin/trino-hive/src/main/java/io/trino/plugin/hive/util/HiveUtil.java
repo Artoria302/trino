@@ -149,6 +149,9 @@ public final class HiveUtil
     public static final String ICEBERG_TABLE_TYPE_NAME = "table_type";
     public static final String ICEBERG_TABLE_TYPE_VALUE = "iceberg";
 
+    public static final String ARCHER_TABLE_TYPE_NAME = "table_type";
+    public static final String ARCHER_TABLE_TYPE_VALUE = "archer";
+
     private static final HexFormat HEX_UPPER_FORMAT = HexFormat.of().withUpperCase();
 
     private static final LocalDateTime EPOCH_DAY = new LocalDateTime(1970, 1, 1, 0, 0);
@@ -818,6 +821,16 @@ public final class HiveUtil
                 HUDI_PARQUET_REALTIME_INPUT_FORMAT.equals(inputFormat) ||
                 HUDI_INPUT_FORMAT.equals(inputFormat) ||
                 HUDI_REALTIME_INPUT_FORMAT.equals(inputFormat);
+    }
+
+    public static boolean isArcherTable(Table table)
+    {
+        return isArcherTable(table.getParameters());
+    }
+
+    public static boolean isArcherTable(Map<String, String> tableParameters)
+    {
+        return ARCHER_TABLE_TYPE_VALUE.equalsIgnoreCase(tableParameters.get(ARCHER_TABLE_TYPE_NAME));
     }
 
     public static boolean isSparkBucketedTable(Table table)
