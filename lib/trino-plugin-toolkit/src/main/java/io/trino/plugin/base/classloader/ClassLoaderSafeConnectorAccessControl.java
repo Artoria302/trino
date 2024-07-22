@@ -47,6 +47,14 @@ public class ClassLoaderSafeConnectorAccessControl
     }
 
     @Override
+    public String getFixedUser()
+    {
+        try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {
+            return delegate.getFixedUser();
+        }
+    }
+
+    @Override
     public void checkCanCreateSchema(ConnectorSecurityContext context, String schemaName, Map<String, Object> properties)
     {
         try (ThreadContextClassLoader _ = new ThreadContextClassLoader(classLoader)) {

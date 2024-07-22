@@ -1569,9 +1569,14 @@ public class AccessControlManager
 
     private ConnectorSecurityContext toConnectorSecurityContext(String catalogName, TransactionId requiredTransactionId, Identity identity, QueryId queryId)
     {
+        String user = null;
+        ConnectorAccessControl connectorAccessControl = getConnectorAccessControl(requiredTransactionId, catalogName);
+        if (connectorAccessControl != null) {
+            user = connectorAccessControl.getFixedUser();
+        }
         return new ConnectorSecurityContext(
                 transactionManager.getRequiredCatalogMetadata(requiredTransactionId, catalogName).getTransactionHandleFor(CatalogHandleType.NORMAL),
-                identity.toConnectorIdentity(catalogName),
+                user != null ? identity.toConnectorIdentity(catalogName, user) : identity.toConnectorIdentity(catalogName),
                 queryId);
     }
 

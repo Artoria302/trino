@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import io.trino.metastore.Database;
 import io.trino.metastore.HivePrincipal;
 import io.trino.metastore.HivePrivilegeInfo;
+import io.trino.plugin.hive.HiveConfig;
 import io.trino.spi.TrinoException;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.ColumnSchema;
@@ -120,14 +121,23 @@ public class SqlStandardAccessControl
 
     private final String catalogName;
     private final SqlStandardAccessControlMetastore metastore;
+    private final String fixedUser;
 
     @Inject
     public SqlStandardAccessControl(
             CatalogName catalogName,
-            SqlStandardAccessControlMetastore metastore)
+            SqlStandardAccessControlMetastore metastore,
+            HiveConfig hiveConfig)
     {
         this.catalogName = catalogName.toString();
         this.metastore = requireNonNull(metastore, "metastore is null");
+        this.fixedUser = hiveConfig.getPermissionUser();
+    }
+
+    @Override
+    public String getFixedUser()
+    {
+        return fixedUser;
     }
 
     @Override

@@ -176,6 +176,22 @@ public class HiveConfig
 
     private S3StorageClassFilter s3StorageClassFilter = S3StorageClassFilter.READ_ALL;
 
+    private String permissionUser;
+
+    @Nullable
+    public String getPermissionUser()
+    {
+        return permissionUser;
+    }
+
+    @Config("hive.permission-user")
+    @ConfigDescription("yz specify the permission user for access")
+    public HiveConfig setPermissionUser(String permissionUser)
+    {
+        this.permissionUser = permissionUser;
+        return this;
+    }
+
     public boolean isSingleStatementWritesOnly()
     {
         return singleStatementWritesOnly;

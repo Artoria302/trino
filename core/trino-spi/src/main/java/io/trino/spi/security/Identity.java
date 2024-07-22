@@ -115,6 +115,17 @@ public class Identity
                 .build();
     }
 
+    public ConnectorIdentity toConnectorIdentity(String catalog, String user)
+    {
+        return ConnectorIdentity.forUser(user)
+                .withGroups(groups)
+                .withPrincipal(principal)
+                .withEnabledSystemRoles(enabledRoles)
+                .withConnectorRole(Optional.ofNullable(catalogRoles.get(catalog)))
+                .withExtraCredentials(extraCredentials)
+                .build();
+    }
+
     public void destroy()
     {
         onDestroy.ifPresent(Runnable::run);

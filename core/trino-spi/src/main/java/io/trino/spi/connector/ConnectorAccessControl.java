@@ -89,6 +89,11 @@ import static java.util.Collections.emptySet;
 
 public interface ConnectorAccessControl
 {
+    default String getFixedUser()
+    {
+        return null;
+    }
+
     /**
      * Check if identity is allowed to create the specified schema with properties.
      *
