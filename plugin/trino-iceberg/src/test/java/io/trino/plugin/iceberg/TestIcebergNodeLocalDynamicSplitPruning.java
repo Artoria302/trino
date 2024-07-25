@@ -68,6 +68,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.orc.metadata.CompressionKind.NONE;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_ENVIRONMENT;
 import static io.trino.plugin.hive.HiveTestUtils.HDFS_FILE_SYSTEM_STATS;
@@ -576,7 +577,8 @@ public class TestIcebergNodeLocalDynamicSplitPruning
                 stats,
                 ORC_READER_CONFIG,
                 PARQUET_READER_CONFIG,
-                TESTING_TYPE_MANAGER);
+                TESTING_TYPE_MANAGER,
+                NO_OP_CACHE_MANAGER);
         return factory.createPageSourceProvider().createPageSource(
                 transaction,
                 getSession(icebergConfig),

@@ -15,6 +15,7 @@ package io.trino.plugin.iceberg.cache;
 
 import io.trino.filesystem.TrinoInputFile;
 import io.trino.filesystem.cache.CacheKeyProvider;
+import io.trino.spi.localcache.FileIdentifier;
 
 import java.util.Optional;
 
@@ -31,5 +32,17 @@ public class IcebergCacheKeyProvider
         }
         // Iceberg data and metadata files are immutable
         return Optional.of(path);
+    }
+
+    @Override
+    public Optional<FileIdentifier> getCacheIdentifier(TrinoInputFile inputFile)
+    {
+        String path = inputFile.location().path();
+        if (path.endsWith(".trinoSchema") || path.contains("/.trinoPermissions/")) {
+            // Needed to avoid caching files from FileHiveMetastore on coordinator during tests
+            return Optional.empty();
+        }
+        // Iceberg data and metadata files are immutable
+        return Optional.of(new FileIdentifier(path, 0));
     }
 }

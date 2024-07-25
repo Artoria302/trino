@@ -50,6 +50,7 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.function.FunctionProvider;
 import io.trino.spi.function.table.ConnectorTableFunction;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.MBeanModule;
@@ -107,6 +108,7 @@ public class IcebergConnectorFactory
                         binder.bind(CatalogHandle.class).toInstance(context.getCatalogHandle());
                         binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                         binder.bind(PageSorter.class).toInstance(context.getPageSorter());
+                        binder.bind(CacheManager.class).toInstance(context.getCacheManager());
                     },
                     module);
 

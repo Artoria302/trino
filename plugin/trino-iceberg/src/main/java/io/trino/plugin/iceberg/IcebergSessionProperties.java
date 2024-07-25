@@ -108,6 +108,8 @@ public final class IcebergSessionProperties
     private static final String QUERY_PARTITION_FILTER_REQUIRED = "query_partition_filter_required";
     private static final String QUERY_PARTITION_FILTER_REQUIRED_SCHEMAS = "query_partition_filter_required_schemas";
     private static final String INCREMENTAL_REFRESH_ENABLED = "incremental_refresh_enabled";
+    private static final String LOCAL_CACHE_ENABLED = "local_cache_enabled";
+    private static final String CACHE_NODE_COUNT = "cache_node_count";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -137,6 +139,16 @@ public final class IcebergSessionProperties
                         USE_FILE_SIZE_FROM_METADATA,
                         "Use file size stored in Iceberg metadata",
                         icebergConfig.isUseFileSizeFromMetadata(),
+                        false))
+                .add(booleanProperty(
+                        LOCAL_CACHE_ENABLED,
+                        "Is local file cache enabled",
+                        icebergConfig.isLocalCacheEnabled(),
+                        false))
+                .add(integerProperty(
+                        CACHE_NODE_COUNT,
+                        "Cache node count when select nodes",
+                        icebergConfig.getCacheNodeCount(),
                         false))
                 .add(booleanProperty(
                         ORC_BLOOM_FILTERS_ENABLED,
@@ -623,5 +635,15 @@ public final class IcebergSessionProperties
     public static boolean isIncrementalRefreshEnabled(ConnectorSession session)
     {
         return session.getProperty(INCREMENTAL_REFRESH_ENABLED, Boolean.class);
+    }
+
+    public static boolean isLocalCacheEnabled(ConnectorSession session)
+    {
+        return session.getProperty(LOCAL_CACHE_ENABLED, Boolean.class);
+    }
+
+    public static int getCacheNodeCount(ConnectorSession session)
+    {
+        return session.getProperty(CACHE_NODE_COUNT, Integer.class);
     }
 }

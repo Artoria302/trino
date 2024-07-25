@@ -85,6 +85,8 @@ public class IcebergConfig
     private Set<String> queryPartitionFilterRequiredSchemas = ImmutableSet.of();
     private int splitManagerThreads = Runtime.getRuntime().availableProcessors() * 2;
     private boolean incrementalRefreshEnabled = true;
+    private boolean localCacheEnabled = true;
+    private int cacheNodeCount = 1;
 
     public CatalogType getCatalogType()
     {
@@ -468,5 +470,30 @@ public class IcebergConfig
     public boolean isStorageSchemaSetWhenHidingIsEnabled()
     {
         return hideMaterializedViewStorageTable && materializedViewsStorageSchema.isPresent();
+    }
+
+    public boolean isLocalCacheEnabled()
+    {
+        return localCacheEnabled;
+    }
+
+    @Config("iceberg.local-cache-enabled")
+    public IcebergConfig setLocalCacheEnabled(boolean localCacheEnabled)
+    {
+        this.localCacheEnabled = localCacheEnabled;
+        return this;
+    }
+
+    @Min(1)
+    public int getCacheNodeCount()
+    {
+        return cacheNodeCount;
+    }
+
+    @Config("iceberg.cache-node-count")
+    public IcebergConfig setCacheNodeCount(int count)
+    {
+        this.cacheNodeCount = count;
+        return this;
     }
 }

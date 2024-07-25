@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.plugin.iceberg.IcebergFileSystemFactory;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.security.ConnectorIdentity;
 
 import java.util.Map;
@@ -38,5 +39,11 @@ public class DefaultIcebergFileSystemFactory
     public TrinoFileSystem create(ConnectorIdentity identity, Map<String, String> fileIoProperties)
     {
         return fileSystemFactory.create(identity);
+    }
+
+    @Override
+    public TrinoFileSystem create(ConnectorIdentity identity, CacheManager cacheManager, Map<String, String> fileIoProperties)
+    {
+        return fileSystemFactory.create(identity, cacheManager);
     }
 }

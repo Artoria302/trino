@@ -14,6 +14,7 @@
 package io.trino.plugin.iceberg;
 
 import io.trino.filesystem.TrinoFileSystem;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.security.ConnectorIdentity;
 
 import java.util.Map;
@@ -21,4 +22,9 @@ import java.util.Map;
 public interface IcebergFileSystemFactory
 {
     TrinoFileSystem create(ConnectorIdentity identity, Map<String, String> fileIoProperties);
+
+    default TrinoFileSystem create(ConnectorIdentity identity, CacheManager cacheManager, Map<String, String> fileIoProperties)
+    {
+        return create(identity, fileIoProperties);
+    }
 }

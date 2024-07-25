@@ -71,6 +71,7 @@ import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.EmptyPageSource;
 import io.trino.spi.connector.FixedPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.predicate.TupleDomain;
@@ -151,6 +152,7 @@ import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcTinyStripeT
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetMaxReadBlockRowCount;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetMaxReadBlockSize;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetSmallFileThreshold;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isOrcBloomFiltersEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isOrcNestedLazy;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isParquetIgnoreStatistics;
@@ -208,6 +210,7 @@ public class IcebergPageSourceProvider
     private final OrcReaderOptions orcReaderOptions;
     private final ParquetReaderOptions parquetReaderOptions;
     private final TypeManager typeManager;
+    private final CacheManager cacheManager;
     private final DeleteManager unpartitionedTableDeleteManager;
     private final Map<Integer, Function<PartitionData, PartitionKey>> partitionKeyFactories = new ConcurrentHashMap<>();
     private final Map<PartitionKey, DeleteManager> partitionedDeleteManagers = new ConcurrentHashMap<>();
@@ -217,13 +220,15 @@ public class IcebergPageSourceProvider
             FileFormatDataSourceStats fileFormatDataSourceStats,
             OrcReaderOptions orcReaderOptions,
             ParquetReaderOptions parquetReaderOptions,
-            TypeManager typeManager)
+            TypeManager typeManager,
+            CacheManager cacheManager)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
         this.orcReaderOptions = requireNonNull(orcReaderOptions, "orcReaderOptions is null");
         this.parquetReaderOptions = requireNonNull(parquetReaderOptions, "parquetReaderOptions is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
         this.unpartitionedTableDeleteManager = new DeleteManager(typeManager);
     }
 
@@ -337,7 +342,10 @@ public class IcebergPageSourceProvider
             return new EmptyPageSource();
         }
 
-        TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity(), fileIoProperties);
+        boolean localCacheEnabled = isLocalCacheEnabled(session);
+        TrinoFileSystem fileSystem = localCacheEnabled && cacheManager.isValid()
+                ? fileSystemFactory.create(session.getIdentity(), cacheManager, fileIoProperties)
+                : fileSystemFactory.create(session.getIdentity(), fileIoProperties);
         TrinoInputFile inputfile = isUseFileSizeFromMetadata(session)
                 ? fileSystem.newInputFile(Location.of(path), fileSize)
                 : fileSystem.newInputFile(Location.of(path));

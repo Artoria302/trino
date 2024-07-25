@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Verify.verify;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.plugin.hive.TestingThriftHiveMetastoreBuilder.testingThriftHiveMetastoreBuilder;
 import static io.trino.plugin.hive.containers.HiveHadoop.HIVE3_IMAGE;
 import static io.trino.plugin.hive.metastore.cache.CachingHiveMetastore.createPerTransactionCache;
@@ -130,7 +131,8 @@ public class TestTrinoHiveCatalogWithHiveMetastore
                     {
                         return thriftMetastore;
                     }
-                }),
+                },
+                        NO_OP_CACHE_MANAGER),
                 useUniqueTableLocations,
                 false,
                 false,

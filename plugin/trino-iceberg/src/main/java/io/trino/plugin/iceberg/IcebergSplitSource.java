@@ -27,6 +27,7 @@ import io.trino.cache.NonEvictableCache;
 import io.trino.filesystem.cache.CachingHostAddressProvider;
 import io.trino.plugin.iceberg.delete.DeleteFile;
 import io.trino.plugin.iceberg.util.DataFileWithDeleteFiles;
+import io.trino.spi.HostAddress;
 import io.trino.spi.SplitWeight;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorSession;
@@ -82,7 +83,9 @@ import static io.trino.cache.SafeCaches.buildNonEvictableCache;
 import static io.trino.plugin.iceberg.ExpressionConverter.isConvertableToIcebergExpression;
 import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getCacheNodeCount;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getSplitSize;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.iceberg.IcebergSplitManager.ICEBERG_DOMAIN_COMPACTION_THRESHOLD;
 import static io.trino.plugin.iceberg.IcebergTypes.convertIcebergValueToTrino;
 import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
@@ -141,6 +144,9 @@ public class IcebergSplitSource
     private long outputRowsLowerBound;
     private final CachingHostAddressProvider cachingHostAddressProvider;
 
+    private final boolean localCacheEnabled;
+    private final int cacheNodeCount;
+
     public IcebergSplitSource(
             IcebergFileSystemFactory fileSystemFactory,
             ConnectorSession session,
@@ -189,6 +195,8 @@ public class IcebergSplitSource
                 .collect(toImmutableSet());
         this.fileModifiedTimeDomain = getFileModifiedTimePathDomain(tableHandle.getEnforcedPredicate());
         this.cachingHostAddressProvider = requireNonNull(cachingHostAddressProvider, "cachingHostAddressProvider is null");
+        this.localCacheEnabled = isLocalCacheEnabled(session);
+        this.cacheNodeCount = getCacheNodeCount(session);
     }
 
     @Override
@@ -509,6 +517,9 @@ public class IcebergSplitSource
 
     private IcebergSplit toIcebergSplit(FileScanTask task, TupleDomain<IcebergColumnHandle> fileStatisticsDomain)
     {
+        List<HostAddress> addresses = localCacheEnabled && !recordScannedFiles
+                ? cachingHostAddressProvider.getHosts(task.file().path().toString(), cacheNodeCount, ImmutableList.of())
+                : ImmutableList.of();
         return new IcebergSplit(
                 task.file().path().toString(),
                 task.start(),
@@ -524,7 +535,7 @@ public class IcebergSplitSource
                 SplitWeight.fromProportion(clamp((double) task.length() / tableScan.targetSplitSize(), minimumAssignedSplitWeight, 1.0)),
                 fileStatisticsDomain,
                 fileIoProperties,
-                cachingHostAddressProvider.getHosts(task.file().path().toString(), ImmutableList.of()),
+                addresses,
                 task.file().dataSequenceNumber());
     }
 }

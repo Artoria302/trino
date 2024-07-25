@@ -21,6 +21,7 @@ import io.trino.plugin.hive.orc.OrcReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorPageSourceProviderFactory;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.type.TypeManager;
 
 import static java.util.Objects.requireNonNull;
@@ -33,6 +34,7 @@ public class IcebergPageSourceProviderFactory
     private final OrcReaderOptions orcReaderOptions;
     private final ParquetReaderOptions parquetReaderOptions;
     private final TypeManager typeManager;
+    private final CacheManager cacheManager;
 
     @Inject
     public IcebergPageSourceProviderFactory(
@@ -40,18 +42,20 @@ public class IcebergPageSourceProviderFactory
             FileFormatDataSourceStats fileFormatDataSourceStats,
             OrcReaderConfig orcReaderConfig,
             ParquetReaderConfig parquetReaderConfig,
-            TypeManager typeManager)
+            TypeManager typeManager,
+            CacheManager cacheManager)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
         this.orcReaderOptions = orcReaderConfig.toOrcReaderOptions();
         this.parquetReaderOptions = parquetReaderConfig.toParquetReaderOptions();
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
     }
 
     @Override
     public ConnectorPageSourceProvider createPageSourceProvider()
     {
-        return new IcebergPageSourceProvider(fileSystemFactory, fileFormatDataSourceStats, orcReaderOptions, parquetReaderOptions, typeManager);
+        return new IcebergPageSourceProvider(fileSystemFactory, fileFormatDataSourceStats, orcReaderOptions, parquetReaderOptions, typeManager, cacheManager);
     }
 }
