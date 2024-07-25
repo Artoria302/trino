@@ -16,6 +16,7 @@ package io.trino.hdfs.s3;
 import com.amazonaws.AbortedException;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.Request;
@@ -46,6 +47,7 @@ import com.amazonaws.services.s3.AmazonS3Encryption;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.AmazonS3EncryptionClientBuilder;
 import com.amazonaws.services.s3.Headers;
+import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.internal.Constants;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -973,8 +975,10 @@ public class TrinoS3FileSystem
                     .run("getS3ObjectMetadata", () -> {
                         try {
                             STATS.newMetadataCall();
-                            return s3.getObjectMetadata(new GetObjectMetadataRequest(bucketName, key)
-                                    .withRequesterPays(requesterPaysEnabled));
+                            GetObjectMetadataRequest request = new GetObjectMetadataRequest(bucketName, key).withRequesterPays(requesterPaysEnabled);
+                            try (ReadWriteRecorder _ = new ReadWriteRecorder("getS3ObjectMetadata", bucketName, key, s3, request, 500)) {
+                                return s3.getObjectMetadata(request);
+                            }
                         }
                         catch (RuntimeException e) {
                             STATS.newGetMetadataError();
@@ -1349,6 +1353,7 @@ public class TrinoS3FileSystem
         private final AtomicBoolean closed = new AtomicBoolean();
 
         private InputStream in;
+        private GetObjectRequest request;
         private long streamPosition;
         private long nextReadPosition;
 
@@ -1394,10 +1399,10 @@ public class TrinoS3FileSystem
                         .run("getS3Object", () -> {
                             InputStream stream;
                             String key = keyFromPath(path);
-                            try {
-                                GetObjectRequest request = new GetObjectRequest(bucket, key)
-                                        .withRange(position, (position + length) - 1)
-                                        .withRequesterPays(requesterPaysEnabled);
+                            GetObjectRequest request = new GetObjectRequest(bucket, key)
+                                    .withRange(position, (position + length) - 1)
+                                    .withRequesterPays(requesterPaysEnabled);
+                            try (ReadWriteRecorder _ = new ReadWriteRecorder(format("openReadPosition(off=%s, len=%s)", position, length), bucket, key, s3, request, 3000)) {
                                 stream = s3.getObject(request).getObjectContent();
                             }
                             catch (RuntimeException e) {
@@ -1425,7 +1430,10 @@ public class TrinoS3FileSystem
                             try {
                                 int read = 0;
                                 while (read < length) {
-                                    int n = stream.read(buffer, offset + read, length - read);
+                                    int n;
+                                    try (ReadWriteRecorder _ = new ReadWriteRecorder(format("readPosition(off=%s, len=%s)", position + read, length - read), bucket, key, s3, request, 3000)) {
+                                        n = stream.read(buffer, offset + read, length - read);
+                                    }
                                     if (n <= 0) {
                                         if (read > 0) {
                                             return read;
@@ -1492,7 +1500,9 @@ public class TrinoS3FileSystem
                         .run("readStream", () -> {
                             seekStream();
                             try {
-                                return in.read(buffer, offset, length);
+                                try (ReadWriteRecorder _ = new ReadWriteRecorder(format("readStream(off=%s, len=%s)", nextReadPosition, length), bucket, keyFromPath(path), s3, request, 3000)) {
+                                    return in.read(buffer, offset, length);
+                                }
                             }
                             catch (Exception e) {
                                 STATS.newReadError(e);
@@ -1571,10 +1581,12 @@ public class TrinoS3FileSystem
                         .run("getS3Object", () -> {
                             String key = keyFromPath(path);
                             try {
-                                GetObjectRequest request = new GetObjectRequest(bucket, key)
+                                request = new GetObjectRequest(bucket, key)
                                         .withRange(start)
                                         .withRequesterPays(requesterPaysEnabled);
-                                return s3.getObject(request).getObjectContent();
+                                try (ReadWriteRecorder _ = new ReadWriteRecorder(format("openStream(off=%s)", start), bucket, key, s3, request, 3000)) {
+                                    return s3.getObject(request).getObjectContent();
+                                }
                             }
                             catch (RuntimeException e) {
                                 STATS.newGetObjectError();
@@ -1607,6 +1619,7 @@ public class TrinoS3FileSystem
         private void closeStream()
         {
             if (in != null) {
+                request = null;
                 abortStream(in);
                 in = null;
                 STATS.connectionReleased();
@@ -1717,13 +1730,15 @@ public class TrinoS3FileSystem
                 PutObjectRequest request = new PutObjectRequest(bucket, key, tempFile);
                 requestCustomizer.accept(request);
 
-                Upload upload = transferManager.upload(request);
+                try (ReadWriteRecorder _ = new ReadWriteRecorder(format("uploadObject(file=%s, len=%s)", tempFile, tempFile.length()), bucket, key, transferManager.getAmazonS3Client(), request, 5000)) {
+                    Upload upload = transferManager.upload(request);
 
-                if (log.isDebugEnabled()) {
-                    upload.addProgressListener(createProgressListener(upload));
+                    if (log.isDebugEnabled()) {
+                        upload.addProgressListener(createProgressListener(upload));
+                    }
+
+                    upload.waitForCompletion();
                 }
-
-                upload.waitForCompletion();
                 STATS.uploadSuccessful();
                 log.debug("Completed upload for bucket: %s, key: %s", bucket, key);
             }
@@ -1919,7 +1934,7 @@ public class TrinoS3FileSystem
                 PutObjectRequest request = new PutObjectRequest(bucketName, key, in, metadata);
                 requestCustomizer.accept(request);
 
-                try {
+                try (ReadWriteRecorder _ = new ReadWriteRecorder(format("putObject(len=%s)", bufferSize), bucketName, key, s3, request, 3000)) {
                     s3.putObject(request);
                     return;
                 }
@@ -1992,7 +2007,10 @@ public class TrinoS3FileSystem
                     .withPartSize(length)
                     .withMD5Digest(getMd5AsBase64(data, 0, length));
 
-            UploadPartResult partResult = s3.uploadPart(uploadRequest);
+            UploadPartResult partResult;
+            try (ReadWriteRecorder _ = new ReadWriteRecorder(format("uploadPart(uploadId=%s, part=%s, len=%s)", uploadId.get(), currentPartNumber, length), bucketName, key, s3, uploadRequest, 3000)) {
+                partResult = s3.uploadPart(uploadRequest);
+            }
             parts.add(partResult);
             return partResult;
         }
@@ -2002,7 +2020,10 @@ public class TrinoS3FileSystem
             List<PartETag> etags = parts.stream()
                     .map(UploadPartResult::getPartETag)
                     .collect(toList());
-            s3.completeMultipartUpload(new CompleteMultipartUploadRequest(bucketName, key, uploadId, etags));
+            CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest(bucketName, key, uploadId, etags);
+            try (ReadWriteRecorder _ = new ReadWriteRecorder(format("finishMultipartUpload(uploadId=%s)", uploadId), bucketName, key, s3, request, 3000)) {
+                s3.completeMultipartUpload(request);
+            }
 
             STATS.uploadSuccessful();
         }
@@ -2132,6 +2153,41 @@ public class TrinoS3FileSystem
             if (delegate != null) {
                 delegate.afterError(request, response, e);
             }
+        }
+    }
+
+    static class ReadWriteRecorder
+            implements AutoCloseable
+    {
+        private final String operation;
+        private final String bucket;
+        private final String key;
+        private final AmazonS3 s3;
+        private final AmazonWebServiceRequest request;
+        private final long threshold;
+        private final long startTimeMillis;
+
+        ReadWriteRecorder(String operation, String bucket, String key, AmazonS3 s3, AmazonWebServiceRequest request, long thresholdMills)
+        {
+            this.operation = requireNonNull(operation, "label is null");
+            this.bucket = requireNonNull(bucket, "bucket is null");
+            this.key = requireNonNull(key, "key is null");
+            this.s3 = requireNonNull(s3, "s3 is null");
+            this.request = requireNonNull(request, "request is null");
+            this.threshold = thresholdMills;
+            this.startTimeMillis = System.currentTimeMillis();
+        }
+
+        @Override
+        public void close()
+        {
+            long latency = System.currentTimeMillis() - startTimeMillis;
+            if (latency < threshold) {
+                return;
+            }
+            S3ResponseMetadata metadata = s3.getCachedResponseMetadata(request);
+            log.warn("[%s] slow s3 request, bucket: %s, key: %s, took %d ms (threshold=%d ms); S3ResponseMetadata %s",
+                    operation, bucket, key, latency, threshold, metadata);
         }
     }
 }
