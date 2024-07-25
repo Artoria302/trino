@@ -40,6 +40,7 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.EmptyPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.Type;
 import org.joda.time.DateTimeZone;
@@ -57,6 +58,7 @@ import static io.trino.hive.formats.HiveClassNames.LAZY_BINARY_COLUMNAR_SERDE_CL
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_BAD_DATA;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_CANNOT_OPEN_SPLIT;
 import static io.trino.plugin.hive.HivePageSourceProvider.projectBaseColumns;
+import static io.trino.plugin.hive.HiveSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.hive.ReaderPageSource.noProjectionAdaptation;
 import static io.trino.plugin.hive.util.HiveUtil.getDeserializerClassName;
 import static io.trino.plugin.hive.util.HiveUtil.splitError;
@@ -100,7 +102,8 @@ public class RcFilePageSourceFactory
             Optional<AcidInfo> acidInfo,
             OptionalInt bucketNumber,
             boolean originalFile,
-            AcidTransaction transaction)
+            AcidTransaction transaction,
+            CacheManager cacheManager)
     {
         ColumnEncodingFactory columnEncodingFactory;
         String deserializerClassName = getDeserializerClassName(schema);
@@ -125,7 +128,10 @@ public class RcFilePageSourceFactory
                     .collect(toImmutableList());
         }
 
-        TrinoFileSystem trinoFileSystem = fileSystemFactory.create(session);
+        boolean localCacheEnabled = isLocalCacheEnabled(session);
+        TrinoFileSystem trinoFileSystem = localCacheEnabled && cacheManager.isValid()
+                ? fileSystemFactory.create(session, cacheManager)
+                : fileSystemFactory.create(session);
         TrinoInputFile inputFile = trinoFileSystem.newInputFile(path);
         try {
             length = min(inputFile.length() - start, length);

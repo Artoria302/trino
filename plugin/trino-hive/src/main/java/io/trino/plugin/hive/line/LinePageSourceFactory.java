@@ -35,6 +35,7 @@ import io.trino.plugin.hive.acid.AcidTransaction;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.EmptyPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.TupleDomain;
 
 import java.io.InputStream;
@@ -49,6 +50,7 @@ import static io.trino.hive.formats.line.LineDeserializer.EMPTY_LINE_DESERIALIZE
 import static io.trino.hive.thrift.metastore.hive_metastoreConstants.FILE_INPUT_FORMAT;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_CANNOT_OPEN_SPLIT;
 import static io.trino.plugin.hive.HivePageSourceProvider.projectBaseColumns;
+import static io.trino.plugin.hive.HiveSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.hive.ReaderPageSource.noProjectionAdaptation;
 import static io.trino.plugin.hive.util.HiveUtil.getDeserializerClassName;
 import static io.trino.plugin.hive.util.HiveUtil.getFooterCount;
@@ -88,7 +90,8 @@ public abstract class LinePageSourceFactory
             Optional<AcidInfo> acidInfo,
             OptionalInt bucketNumber,
             boolean originalFile,
-            AcidTransaction transaction)
+            AcidTransaction transaction,
+            CacheManager cacheManager)
     {
         if (!lineReaderFactory.getHiveInputFormatClassNames().contains(schema.get(FILE_INPUT_FORMAT)) ||
                 !lineDeserializerFactory.getHiveSerDeClassNames().contains(getDeserializerClassName(schema))) {
@@ -131,7 +134,10 @@ public abstract class LinePageSourceFactory
             return Optional.of(noProjectionAdaptation(new EmptyPageSource()));
         }
 
-        TrinoFileSystem trinoFileSystem = fileSystemFactory.create(session);
+        boolean localCacheEnabled = isLocalCacheEnabled(session);
+        TrinoFileSystem trinoFileSystem = localCacheEnabled && cacheManager.isValid()
+                ? fileSystemFactory.create(session, cacheManager)
+                : fileSystemFactory.create(session);
         TrinoInputFile inputFile = trinoFileSystem.newInputFile(path);
         try {
             // buffer file if small

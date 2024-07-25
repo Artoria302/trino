@@ -98,6 +98,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.testing.Assertions.assertBetweenInclusive;
 import static io.airlift.units.DataSize.Unit.BYTE;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.metadata.FunctionManager.createTestingFunctionManager;
 import static io.trino.orc.OrcReader.MAX_BATCH_SIZE;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
@@ -585,7 +586,8 @@ public class TestOrcPageSourceMemoryTracking
                     Optional.empty(),
                     false,
                     NO_ACID_TRANSACTION,
-                    columnMappings).orElseThrow();
+                    columnMappings,
+                    NO_OP_CACHE_MANAGER).orElseThrow();
             return connectorPageSource;
         }
 

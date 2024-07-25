@@ -54,6 +54,7 @@ import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 import static io.trino.hive.thrift.metastore.hive_metastoreConstants.FILE_INPUT_FORMAT;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
 import static io.trino.plugin.hive.HiveColumnHandle.createBaseColumn;
 import static io.trino.plugin.hive.HivePageSourceProvider.ColumnMapping.buildColumnMappings;
@@ -188,7 +189,8 @@ class TestOrcPredicates
                         Optional.empty(),
                         false,
                         NO_ACID_TRANSACTION,
-                        columnMappings)
+                        columnMappings,
+                        NO_OP_CACHE_MANAGER)
                 .orElseThrow();
     }
 

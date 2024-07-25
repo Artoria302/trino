@@ -43,6 +43,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.metastore.HiveType.HIVE_INT;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
@@ -159,7 +160,8 @@ class TestNodeLocalDynamicSplitPruning
         HivePageSourceProvider provider = new HivePageSourceProvider(
                 TESTING_TYPE_MANAGER,
                 hiveConfig,
-                getDefaultHivePageSourceFactories(fileSystemFactory, hiveConfig));
+                getDefaultHivePageSourceFactories(fileSystemFactory, hiveConfig),
+                NO_OP_CACHE_MANAGER);
 
         return provider.createPageSource(
                 transaction,

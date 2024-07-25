@@ -171,6 +171,8 @@ public class HiveConfig
     private boolean sizeBasedSplitWeightsEnabled = true;
     private double minimumAssignedSplitWeight = 0.05;
     private boolean autoPurge;
+    private boolean localCacheEnabled = true;
+    private int cacheNodeCount = 1;
 
     private boolean partitionProjectionEnabled;
 
@@ -1281,6 +1283,31 @@ public class HiveConfig
     public HiveConfig setS3StorageClassFilter(S3StorageClassFilter s3StorageClassFilter)
     {
         this.s3StorageClassFilter = s3StorageClassFilter;
+        return this;
+    }
+
+    public boolean isLocalCacheEnabled()
+    {
+        return localCacheEnabled;
+    }
+
+    @Config("hive.local-cache-enabled")
+    public HiveConfig setLocalCacheEnabled(boolean localCacheEnabled)
+    {
+        this.localCacheEnabled = localCacheEnabled;
+        return this;
+    }
+
+    @Min(1)
+    public int getCacheNodeCount()
+    {
+        return cacheNodeCount;
+    }
+
+    @Config("hive.cache-node-count")
+    public HiveConfig setCacheNodeCount(int count)
+    {
+        this.cacheNodeCount = count;
         return this;
     }
 }

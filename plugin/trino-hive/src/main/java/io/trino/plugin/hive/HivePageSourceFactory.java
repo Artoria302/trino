@@ -16,6 +16,7 @@ package io.trino.plugin.hive;
 import io.trino.filesystem.Location;
 import io.trino.plugin.hive.acid.AcidTransaction;
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.TupleDomain;
 
 import java.util.List;
@@ -37,5 +38,6 @@ public interface HivePageSourceFactory
             Optional<AcidInfo> acidInfo,
             OptionalInt bucketNumber,
             boolean originalFile,
-            AcidTransaction transaction);
+            AcidTransaction transaction,
+            CacheManager cacheManager);
 }

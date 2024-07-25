@@ -132,6 +132,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.slice.Slices.utf8Slice;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.plugin.base.type.TrinoTimestampEncoderFactory.createTimestampEncoder;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
@@ -1012,7 +1013,8 @@ public final class TestHiveFileFormats
                 Optional.empty(),
                 false,
                 NO_ACID_TRANSACTION,
-                columnMappings)
+                        columnMappings,
+                        NO_OP_CACHE_MANAGER)
                 .orElseThrow();
 
         checkPageSource(pageSource, testReadColumns, rowCount);

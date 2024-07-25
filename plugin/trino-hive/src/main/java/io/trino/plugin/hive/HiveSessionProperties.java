@@ -127,6 +127,8 @@ public final class HiveSessionProperties
     public static final String SIZE_BASED_SPLIT_WEIGHTS_ENABLED = "size_based_split_weights_enabled";
     public static final String MINIMUM_ASSIGNED_SPLIT_WEIGHT = "minimum_assigned_split_weight";
     public static final String NON_TRANSACTIONAL_OPTIMIZE_ENABLED = "non_transactional_optimize_enabled";
+    private static final String LOCAL_CACHE_ENABLED = "local_cache_enabled";
+    private static final String CACHE_NODE_COUNT = "cache_node_count";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -507,6 +509,15 @@ public final class HiveSessionProperties
                         "Precision for timestamp columns in Hive tables",
                         HiveTimestampPrecision.class,
                         hiveConfig.getTimestampPrecision(),
+                        false),
+                booleanProperty(
+                        LOCAL_CACHE_ENABLED,
+                        "Is local file cache enabled",
+                        hiveConfig.isLocalCacheEnabled(),
+                        false),
+                integerProperty(CACHE_NODE_COUNT,
+                        "Cache node count when select nodes",
+                        hiveConfig.getCacheNodeCount(),
                         false),
                 durationProperty(
                         DYNAMIC_FILTERING_WAIT_TIMEOUT,
@@ -906,5 +917,15 @@ public final class HiveSessionProperties
     public static Optional<String> getHudiCatalogName(ConnectorSession session)
     {
         return Optional.ofNullable(session.getProperty(HUDI_CATALOG_NAME, String.class));
+    }
+
+    public static boolean isLocalCacheEnabled(ConnectorSession session)
+    {
+        return session.getProperty(LOCAL_CACHE_ENABLED, Boolean.class);
+    }
+
+    public static int getCacheNodeCount(ConnectorSession session)
+    {
+        return session.getProperty(CACHE_NODE_COUNT, Integer.class);
     }
 }

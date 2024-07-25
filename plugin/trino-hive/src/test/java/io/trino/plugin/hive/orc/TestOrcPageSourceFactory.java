@@ -52,6 +52,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.Resources.getResource;
 import static io.trino.hive.thrift.metastore.hive_metastoreConstants.FILE_INPUT_FORMAT;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
 import static io.trino.plugin.hive.HiveColumnHandle.createBaseColumn;
 import static io.trino.plugin.hive.HiveStorageFormat.ORC;
@@ -262,7 +263,8 @@ public class TestOrcPageSourceFactory
                 acidInfo,
                 OptionalInt.empty(),
                 false,
-                NO_ACID_TRANSACTION);
+                NO_ACID_TRANSACTION,
+                NO_OP_CACHE_MANAGER);
 
         checkArgument(pageSourceWithProjections.isPresent());
         checkArgument(pageSourceWithProjections.get().getReaderColumns().isEmpty(),

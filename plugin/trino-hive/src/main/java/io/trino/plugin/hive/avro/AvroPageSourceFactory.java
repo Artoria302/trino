@@ -34,6 +34,7 @@ import io.trino.plugin.hive.acid.AcidTransaction;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.EmptyPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.TupleDomain;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
@@ -58,6 +59,7 @@ import static io.trino.hive.formats.HiveClassNames.AVRO_SERDE_CLASS;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_CANNOT_OPEN_SPLIT;
 import static io.trino.plugin.hive.HivePageSourceProvider.projectBaseColumns;
 import static io.trino.plugin.hive.HiveSessionProperties.getTimestampPrecision;
+import static io.trino.plugin.hive.HiveSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.hive.ReaderPageSource.noProjectionAdaptation;
 import static io.trino.plugin.hive.avro.AvroHiveFileUtils.getCanonicalToGivenFieldName;
 import static io.trino.plugin.hive.avro.AvroHiveFileUtils.wrapInUnionWithNull;
@@ -93,7 +95,8 @@ public class AvroPageSourceFactory
             Optional<AcidInfo> acidInfo,
             OptionalInt bucketNumber,
             boolean originalFile,
-            AcidTransaction transaction)
+            AcidTransaction transaction,
+            CacheManager cacheManager)
     {
         if (!AVRO_SERDE_CLASS.equals(getDeserializerClassName(schema))) {
             return Optional.empty();
@@ -109,7 +112,10 @@ public class AvroPageSourceFactory
                     .collect(toImmutableList());
         }
 
-        TrinoFileSystem trinoFileSystem = trinoFileSystemFactory.create(session);
+        boolean localCacheEnabled = isLocalCacheEnabled(session);
+        TrinoFileSystem trinoFileSystem = localCacheEnabled && cacheManager.isValid()
+                ? trinoFileSystemFactory.create(session, cacheManager)
+                : trinoFileSystemFactory.create(session);
         TrinoInputFile inputFile = trinoFileSystem.newInputFile(path);
         HiveTimestampPrecision hiveTimestampPrecision = getTimestampPrecision(session);
 

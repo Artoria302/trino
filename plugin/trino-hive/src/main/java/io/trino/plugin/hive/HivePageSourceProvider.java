@@ -38,6 +38,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.EmptyPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.predicate.TupleDomain;
@@ -86,15 +87,17 @@ public class HivePageSourceProvider
     private static final Pattern ORIGINAL_FILE_PATH_MATCHER = Pattern.compile("(?s)(?<rootDir>.*)/(?<filename>(?<bucketNumber>\\d+)_(?<rest>.*)?)$");
 
     private final TypeManager typeManager;
+    private final CacheManager cacheManager;
     private final int domainCompactionThreshold;
     private final Set<HivePageSourceFactory> pageSourceFactories;
 
     @Inject
-    public HivePageSourceProvider(TypeManager typeManager, HiveConfig hiveConfig, Set<HivePageSourceFactory> pageSourceFactories)
+    public HivePageSourceProvider(TypeManager typeManager, HiveConfig hiveConfig, Set<HivePageSourceFactory> pageSourceFactories, CacheManager cacheManager)
     {
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.domainCompactionThreshold = hiveConfig.getDomainCompactionThreshold();
         this.pageSourceFactories = ImmutableSet.copyOf(requireNonNull(pageSourceFactories, "pageSourceFactories is null"));
+        this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
     }
 
     @Override
@@ -154,7 +157,8 @@ public class HivePageSourceProvider
                 hiveSplit.getAcidInfo(),
                 originalFile,
                 hiveTable.getTransaction(),
-                columnMappings);
+                columnMappings,
+                cacheManager);
 
         if (pageSource.isPresent()) {
             return pageSource.get();
@@ -183,7 +187,8 @@ public class HivePageSourceProvider
             Optional<AcidInfo> acidInfo,
             boolean originalFile,
             AcidTransaction transaction,
-            List<ColumnMapping> columnMappings)
+            List<ColumnMapping> columnMappings,
+            CacheManager cacheManager)
     {
         if (effectivePredicate.isNone()) {
             return Optional.of(new EmptyPageSource());
@@ -211,7 +216,8 @@ public class HivePageSourceProvider
                     acidInfo,
                     tableBucketNumber,
                     originalFile,
-                    transaction);
+                    transaction,
+                    cacheManager);
 
             if (readerWithProjections.isPresent()) {
                 ConnectorPageSource pageSource = readerWithProjections.get().get();

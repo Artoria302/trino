@@ -38,6 +38,7 @@ import java.util.stream.IntStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
 import static io.trino.plugin.hive.HiveColumnHandle.createBaseColumn;
 import static io.trino.plugin.hive.acid.AcidTransaction.NO_ACID_TRANSACTION;
@@ -82,7 +83,8 @@ final class ParquetUtil
                         Optional.empty(),
                         OptionalInt.empty(),
                         false,
-                        NO_ACID_TRANSACTION)
+                        NO_ACID_TRANSACTION,
+                        NO_OP_CACHE_MANAGER)
                 .orElseThrow()
                 .get();
     }

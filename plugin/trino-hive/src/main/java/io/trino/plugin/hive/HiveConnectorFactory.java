@@ -57,6 +57,7 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.MetadataProvider;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.function.FunctionProvider;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.procedure.Procedure;
 import org.weakref.jmx.guice.MBeanModule;
 
@@ -118,6 +119,7 @@ public class HiveConnectorFactory
                         binder.bind(MetadataProvider.class).toInstance(context.getMetadataProvider());
                         binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                         binder.bind(PageSorter.class).toInstance(context.getPageSorter());
+                        binder.bind(CacheManager.class).toInstance(context.getCacheManager());
                         binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
                     },
                     binder -> newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(HiveSessionProperties.class).in(Scopes.SINGLETON),

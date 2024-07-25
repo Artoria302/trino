@@ -49,6 +49,7 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.EmptyPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.Type;
@@ -88,6 +89,7 @@ import static io.trino.plugin.hive.HiveSessionProperties.getOrcMaxMergeDistance;
 import static io.trino.plugin.hive.HiveSessionProperties.getOrcMaxReadBlockSize;
 import static io.trino.plugin.hive.HiveSessionProperties.getOrcStreamBufferSize;
 import static io.trino.plugin.hive.HiveSessionProperties.getOrcTinyStripeThreshold;
+import static io.trino.plugin.hive.HiveSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isOrcBloomFiltersEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isOrcNestedLazy;
 import static io.trino.plugin.hive.HiveSessionProperties.isUseOrcColumnNames;
@@ -179,7 +181,8 @@ public class OrcPageSourceFactory
             Optional<AcidInfo> acidInfo,
             OptionalInt bucketNumber,
             boolean originalFile,
-            AcidTransaction transaction)
+            AcidTransaction transaction,
+            CacheManager cacheManager)
     {
         if (!ORC_SERDE_CLASS.equals(getDeserializerClassName(schema))) {
             return Optional.empty();
@@ -219,6 +222,7 @@ public class OrcPageSourceFactory
                 bucketNumber,
                 originalFile,
                 transaction,
+                cacheManager,
                 stats);
 
         return Optional.of(new ReaderPageSource(orcPageSource, readerColumns));
@@ -241,6 +245,7 @@ public class OrcPageSourceFactory
             OptionalInt bucketNumber,
             boolean originalFile,
             AcidTransaction transaction,
+            CacheManager cacheManager,
             FileFormatDataSourceStats stats)
     {
         for (HiveColumnHandle column : columns) {
@@ -252,7 +257,10 @@ public class OrcPageSourceFactory
 
         boolean originalFilesPresent = acidInfo.isPresent() && !acidInfo.get().getOriginalFiles().isEmpty();
         try {
-            TrinoFileSystem fileSystem = fileSystemFactory.create(session);
+            boolean localCacheEnabled = isLocalCacheEnabled(session);
+            TrinoFileSystem fileSystem = localCacheEnabled && cacheManager.isValid()
+                    ? fileSystemFactory.create(session, cacheManager)
+                    : fileSystemFactory.create(session);
             TrinoInputFile inputFile = fileSystem.newInputFile(path, estimatedFileSize);
             orcDataSource = new HdfsOrcDataSource(
                     new OrcDataSourceId(path.toString()),

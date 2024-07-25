@@ -49,6 +49,7 @@ import io.trino.plugin.hive.coercions.TypeCoercer;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -89,6 +90,7 @@ import static io.trino.plugin.hive.HivePageSourceProvider.projectSufficientColum
 import static io.trino.plugin.hive.HiveSessionProperties.getParquetMaxReadBlockRowCount;
 import static io.trino.plugin.hive.HiveSessionProperties.getParquetMaxReadBlockSize;
 import static io.trino.plugin.hive.HiveSessionProperties.getParquetSmallFileThreshold;
+import static io.trino.plugin.hive.HiveSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isParquetIgnoreStatistics;
 import static io.trino.plugin.hive.HiveSessionProperties.isParquetUseColumnIndex;
 import static io.trino.plugin.hive.HiveSessionProperties.isParquetVectorizedDecodingEnabled;
@@ -166,7 +168,8 @@ public class ParquetPageSourceFactory
             Optional<AcidInfo> acidInfo,
             OptionalInt bucketNumber,
             boolean originalFile,
-            AcidTransaction transaction)
+            AcidTransaction transaction,
+            CacheManager cacheManager)
     {
         if (!PARQUET_SERDE_CLASS_NAMES.contains(getDeserializerClassName(schema))) {
             return Optional.empty();
@@ -174,7 +177,10 @@ public class ParquetPageSourceFactory
 
         checkArgument(acidInfo.isEmpty(), "Acid is not supported");
 
-        TrinoFileSystem fileSystem = fileSystemFactory.create(session);
+        boolean localCacheEnabled = isLocalCacheEnabled(session);
+        TrinoFileSystem fileSystem = localCacheEnabled && cacheManager.isValid()
+                ? fileSystemFactory.create(session, cacheManager)
+                : fileSystemFactory.create(session);
         TrinoInputFile inputFile = fileSystem.newInputFile(path, estimatedFileSize);
 
         return Optional.of(createPageSource(

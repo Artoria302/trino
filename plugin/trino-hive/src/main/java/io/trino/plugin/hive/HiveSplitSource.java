@@ -25,6 +25,7 @@ import io.trino.plugin.hive.util.AsyncQueue;
 import io.trino.plugin.hive.util.AsyncQueue.BorrowResult;
 import io.trino.plugin.hive.util.SizeBasedSplitWeightProvider;
 import io.trino.plugin.hive.util.ThrottledAsyncQueue;
+import io.trino.spi.HostAddress;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
@@ -50,9 +51,11 @@ import static io.airlift.units.DataSize.succinctBytes;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_EXCEEDED_SPLIT_BUFFERING_LIMIT;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_FILE_NOT_FOUND;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_UNKNOWN_ERROR;
+import static io.trino.plugin.hive.HiveSessionProperties.getCacheNodeCount;
 import static io.trino.plugin.hive.HiveSessionProperties.getMaxInitialSplitSize;
 import static io.trino.plugin.hive.HiveSessionProperties.getMaxSplitSize;
 import static io.trino.plugin.hive.HiveSessionProperties.getMinimumAssignedSplitWeight;
+import static io.trino.plugin.hive.HiveSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.hive.HiveSessionProperties.isSizeBasedSplitWeightsEnabled;
 import static io.trino.plugin.hive.HiveSplitSource.StateKind.CLOSED;
 import static io.trino.plugin.hive.HiveSplitSource.StateKind.FAILED;
@@ -89,6 +92,8 @@ class HiveSplitSource
 
     private final boolean recordScannedFiles;
     private final ImmutableList.Builder<Object> scannedFilePaths = ImmutableList.builder();
+    private final boolean localCacheEnabled;
+    private final int cacheNodeCount;
 
     private HiveSplitSource(
             ConnectorSession session,
@@ -119,6 +124,8 @@ class HiveSplitSource
         this.splitWeightProvider = isSizeBasedSplitWeightsEnabled(session) ? new SizeBasedSplitWeightProvider(getMinimumAssignedSplitWeight(session), maxSplitSize) : HiveSplitWeightProvider.uniformStandardWeightProvider();
         this.cachingHostAddressProvider = requireNonNull(cachingHostAddressProvider, "cachingHostAddressProvider is null");
         this.recordScannedFiles = recordScannedFiles;
+        this.localCacheEnabled = isLocalCacheEnabled(session);
+        this.cacheNodeCount = getCacheNodeCount(session);
     }
 
     public static HiveSplitSource allAtOnce(
@@ -302,6 +309,9 @@ class HiveSplitSource
                     splitBytes = internalSplit.getEnd() - internalSplit.getStart();
                 }
 
+                List<HostAddress> addresses = localCacheEnabled
+                        ? cachingHostAddressProvider.getHosts(internalSplit.getPath(), cacheNodeCount, block.getAddresses())
+                        : ImmutableList.of();
                 resultBuilder.add(new HiveSplit(
                         internalSplit.getPartitionName(),
                         internalSplit.getPath(),
@@ -311,7 +321,7 @@ class HiveSplitSource
                         internalSplit.getFileModifiedTime(),
                         internalSplit.getSchema(),
                         internalSplit.getPartitionKeys(),
-                        cachingHostAddressProvider.getHosts(internalSplit.getPath(), block.getAddresses()),
+                        addresses,
                         internalSplit.getReadBucketNumber(),
                         internalSplit.getTableBucketNumber(),
                         internalSplit.isForceLocalScheduling(),
