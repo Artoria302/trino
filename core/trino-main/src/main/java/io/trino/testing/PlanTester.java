@@ -236,6 +236,7 @@ import static io.trino.connector.CatalogServiceProviderModule.createViewProperty
 import static io.trino.execution.ParameterExtractor.bindParameters;
 import static io.trino.execution.querystats.PlanOptimizersStatsCollector.createPlanOptimizersStatsCollector;
 import static io.trino.execution.warnings.WarningCollector.NOOP;
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.spi.connector.Constraint.alwaysTrue;
 import static io.trino.spi.connector.DynamicFilter.EMPTY;
 import static io.trino.spiller.PartitioningSpillerFactory.unsupportedPartitioningSpillerFactory;
@@ -376,6 +377,7 @@ public class PlanTester
                 OpenTelemetry.noop(),
                 transactionManager,
                 typeManager,
+                NO_OP_CACHE_MANAGER,
                 nodeSchedulerConfig,
                 optimizerConfig,
                 new LocalMemoryManager(new NodeMemoryConfig())));

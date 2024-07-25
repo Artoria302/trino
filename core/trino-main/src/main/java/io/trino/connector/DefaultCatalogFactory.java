@@ -38,6 +38,7 @@ import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.connector.ConnectorName;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.type.TypeManager;
 import io.trino.sql.planner.OptimizerConfig;
 import io.trino.transaction.TransactionManager;
@@ -67,6 +68,7 @@ public class DefaultCatalogFactory
     private final OpenTelemetry openTelemetry;
     private final TransactionManager transactionManager;
     private final TypeManager typeManager;
+    private final CacheManager cacheManager;
 
     private final boolean schedulerIncludeCoordinator;
     private final int maxPrefetchedInformationSchemaPrefixes;
@@ -86,6 +88,7 @@ public class DefaultCatalogFactory
             OpenTelemetry openTelemetry,
             TransactionManager transactionManager,
             TypeManager typeManager,
+            CacheManager cacheManager,
             NodeSchedulerConfig nodeSchedulerConfig,
             OptimizerConfig optimizerConfig,
             LocalMemoryManager localMemoryManager)
@@ -100,6 +103,7 @@ public class DefaultCatalogFactory
         this.openTelemetry = requireNonNull(openTelemetry, "openTelemetry is null");
         this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
@@ -199,6 +203,7 @@ public class DefaultCatalogFactory
                 new ConnectorAwareNodeManager(nodeManager, nodeInfo.getEnvironment(), catalogHandle, schedulerIncludeCoordinator),
                 versionEmbedder,
                 typeManager,
+                cacheManager,
                 new InternalMetadataProvider(metadata, typeManager),
                 pageSorter,
                 pageIndexerFactory);

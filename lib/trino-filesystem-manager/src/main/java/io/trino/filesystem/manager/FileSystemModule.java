@@ -36,6 +36,8 @@ import io.trino.filesystem.gcs.GcsFileSystemModule;
 import io.trino.filesystem.s3.S3FileSystemFactory;
 import io.trino.filesystem.s3.S3FileSystemModule;
 import io.trino.filesystem.tracing.TracingFileSystemFactory;
+import io.trino.localcache.SimpleCachingFileSystemModule;
+import io.trino.localcache.SimpleCachingTrinoFileSystemFactory;
 import io.trino.spi.NodeManager;
 
 import java.util.Map;
@@ -43,6 +45,7 @@ import java.util.Optional;
 
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.Objects.requireNonNull;
 
 public class FileSystemModule
@@ -63,6 +66,7 @@ public class FileSystemModule
     protected void setup(Binder binder)
     {
         FileSystemConfig config = buildConfigObject(FileSystemConfig.class);
+        configBinder(binder).bindConfig(FileSystemConfig.class);
 
         newOptionalBinder(binder, HdfsFileSystemLoader.class);
 
@@ -106,7 +110,10 @@ public class FileSystemModule
         newOptionalBinder(binder, TrinoFileSystemCache.class);
 
         if (config.isCacheEnabled()) {
-            install(new AlluxioFileSystemCacheModule(nodeManager.getCurrentNode().isCoordinator()));
+            switch (config.getCacheType()) {
+                case ALLUXIO -> install(new AlluxioFileSystemCacheModule(nodeManager.getCurrentNode().isCoordinator()));
+                case QIHOO -> install(new SimpleCachingFileSystemModule(nodeManager.getCurrentNode().isCoordinator()));
+            }
         }
     }
 
@@ -118,14 +125,20 @@ public class FileSystemModule
             Map<String, TrinoFileSystemFactory> factories,
             Optional<TrinoFileSystemCache> fileSystemCache,
             Optional<CacheKeyProvider> keyProvider,
+            FileSystemConfig fileSystemConfig,
             Tracer tracer)
     {
         Optional<TrinoFileSystemFactory> hdfsFactory = hdfsFileSystemLoader.map(HdfsFileSystemLoader::create);
         hdfsFactory.ifPresent(lifeCycleManager::addInstance);
 
         TrinoFileSystemFactory delegate = new SwitchingFileSystemFactory(hdfsFactory, factories);
-        if (fileSystemCache.isPresent()) {
-            delegate = new CacheFileSystemFactory(tracer, delegate, fileSystemCache.orElseThrow(), keyProvider.orElseThrow());
+        if (fileSystemConfig.isCacheEnabled()) {
+            if (fileSystemConfig.getCacheType() == CacheType.QIHOO) {
+                delegate = new SimpleCachingTrinoFileSystemFactory(delegate, keyProvider.orElseThrow());
+            }
+            else if (fileSystemCache.isPresent()) {
+                delegate = new CacheFileSystemFactory(tracer, delegate, fileSystemCache.orElseThrow(), keyProvider.orElseThrow());
+            }
         }
         return new TracingFileSystemFactory(tracer, delegate);
     }

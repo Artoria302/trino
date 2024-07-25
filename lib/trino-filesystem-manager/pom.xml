@@ -69,6 +69,11 @@
 
         <dependency>
             <groupId>io.trino</groupId>
+            <artifactId>trino-local-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.trino</groupId>
             <artifactId>trino-spi</artifactId>
         </dependency>
 

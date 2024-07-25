@@ -25,4 +25,10 @@ public class DefaultCachingHostAddressProvider
     {
         return defaultAddresses;
     }
+
+    @Override
+    public List<HostAddress> getHosts(String splitPath, int replicationFactor, List<HostAddress> defaultAddresses)
+    {
+        return defaultAddresses;
+    }
 }

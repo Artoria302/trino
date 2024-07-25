@@ -14,6 +14,7 @@
 package io.trino.filesystem;
 
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.security.ConnectorIdentity;
 
 public interface TrinoFileSystemFactory
@@ -21,6 +22,16 @@ public interface TrinoFileSystemFactory
     TrinoFileSystem create(ConnectorIdentity identity);
 
     default TrinoFileSystem create(ConnectorSession session)
+    {
+        return create(session.getIdentity());
+    }
+
+    default TrinoFileSystem create(ConnectorIdentity identity, CacheManager cacheManager)
+    {
+        return create(identity);
+    }
+
+    default TrinoFileSystem create(ConnectorSession session, CacheManager cacheManager)
     {
         return create(session.getIdentity());
     }

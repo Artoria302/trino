@@ -29,10 +29,12 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.type.TypeOperators;
 import io.trino.util.EmbedVersion;
 
+import static io.trino.localcache.NoOpCacheManager.NO_OP_CACHE_MANAGER;
 import static io.trino.spi.connector.MetadataProvider.NOOP_METADATA_PROVIDER;
 import static io.trino.testing.TestingHandles.TEST_CATALOG_HANDLE;
 import static io.trino.type.InternalTypeManager.TESTING_TYPE_MANAGER;
@@ -85,6 +87,11 @@ public final class TestingConnectorContext
     public TypeManager getTypeManager()
     {
         return TESTING_TYPE_MANAGER;
+    }
+
+    public CacheManager getCacheManager()
+    {
+        return NO_OP_CACHE_MANAGER;
     }
 
     @Override

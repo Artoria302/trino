@@ -19,6 +19,7 @@ import io.trino.spi.NodeManager;
 import io.trino.spi.PageIndexerFactory;
 import io.trino.spi.PageSorter;
 import io.trino.spi.VersionEmbedder;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.type.TypeManager;
 
 public interface ConnectorContext
@@ -60,6 +61,11 @@ public interface ConnectorContext
     }
 
     default TypeManager getTypeManager()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default CacheManager getCacheManager()
     {
         throw new UnsupportedOperationException();
     }

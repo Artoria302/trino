@@ -22,6 +22,7 @@ public class FileSystemConfig
     private boolean nativeS3Enabled;
     private boolean nativeGcsEnabled;
     private boolean cacheEnabled;
+    private CacheType cacheType = CacheType.QIHOO;
 
     public boolean isHadoopEnabled()
     {
@@ -80,6 +81,18 @@ public class FileSystemConfig
     public FileSystemConfig setCacheEnabled(boolean enabled)
     {
         this.cacheEnabled = enabled;
+        return this;
+    }
+
+    public CacheType getCacheType()
+    {
+        return cacheType;
+    }
+
+    @Config("fs.cache.type")
+    public FileSystemConfig setCacheType(CacheType cacheType)
+    {
+        this.cacheType = cacheType;
         return this;
     }
 }

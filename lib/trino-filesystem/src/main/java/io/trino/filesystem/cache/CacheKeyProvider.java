@@ -14,6 +14,7 @@
 package io.trino.filesystem.cache;
 
 import io.trino.filesystem.TrinoInputFile;
+import io.trino.spi.localcache.FileIdentifier;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -25,4 +26,10 @@ public interface CacheKeyProvider
      */
     Optional<String> getCacheKey(TrinoInputFile inputFile)
             throws IOException;
+
+    default Optional<FileIdentifier> getCacheIdentifier(TrinoInputFile inputFile)
+            throws IOException
+    {
+        return Optional.of(new FileIdentifier(inputFile.location().path(), inputFile.lastModified().toEpochMilli()));
+    }
 }

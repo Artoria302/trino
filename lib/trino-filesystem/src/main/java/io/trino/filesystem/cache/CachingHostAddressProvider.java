@@ -23,4 +23,6 @@ public interface CachingHostAddressProvider
      * Returns a lists of hosts which are preferred to cache the split with the given path.
      */
     List<HostAddress> getHosts(String splitPath, List<HostAddress> defaultAddresses);
+
+    List<HostAddress> getHosts(String splitPath, int replicationFactor, List<HostAddress> defaultAddresses);
 }

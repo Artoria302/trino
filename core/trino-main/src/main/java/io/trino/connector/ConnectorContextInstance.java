@@ -22,6 +22,7 @@ import io.trino.spi.VersionEmbedder;
 import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.connector.MetadataProvider;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.type.TypeManager;
 
 import static java.util.Objects.requireNonNull;
@@ -38,6 +39,7 @@ public class ConnectorContextInstance
     private final PageSorter pageSorter;
     private final PageIndexerFactory pageIndexerFactory;
     private final CatalogHandle catalogHandle;
+    private final CacheManager cacheManager;
 
     public ConnectorContextInstance(
             CatalogHandle catalogHandle,
@@ -46,6 +48,7 @@ public class ConnectorContextInstance
             NodeManager nodeManager,
             VersionEmbedder versionEmbedder,
             TypeManager typeManager,
+            CacheManager cacheManager,
             MetadataProvider metadataProvider,
             PageSorter pageSorter,
             PageIndexerFactory pageIndexerFactory)
@@ -55,6 +58,7 @@ public class ConnectorContextInstance
         this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.versionEmbedder = requireNonNull(versionEmbedder, "versionEmbedder is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.cacheManager = requireNonNull(cacheManager, "typeManager is null");
         this.metadataProvider = requireNonNull(metadataProvider, "metadataProvider is null");
         this.pageSorter = requireNonNull(pageSorter, "pageSorter is null");
         this.pageIndexerFactory = requireNonNull(pageIndexerFactory, "pageIndexerFactory is null");
@@ -95,6 +99,12 @@ public class ConnectorContextInstance
     public TypeManager getTypeManager()
     {
         return typeManager;
+    }
+
+    @Override
+    public CacheManager getCacheManager()
+    {
+        return cacheManager;
     }
 
     @Override

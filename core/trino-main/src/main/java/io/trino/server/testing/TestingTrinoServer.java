@@ -61,6 +61,7 @@ import io.trino.execution.SqlQueryManager;
 import io.trino.execution.SqlTaskManager;
 import io.trino.execution.StateMachine.StateChangeListener;
 import io.trino.execution.resourcegroups.InternalResourceGroupManager;
+import io.trino.localcache.CacheManagerModule;
 import io.trino.memory.ClusterMemoryManager;
 import io.trino.memory.LocalMemoryManager;
 import io.trino.metadata.AllNodes;
@@ -302,6 +303,7 @@ public class TestingTrinoServer
                 .add(new CatalogManagerModule())
                 .add(new TransactionManagerModule())
                 .add(new ServerMainModule(VERSION))
+                .add(new CacheManagerModule())
                 .add(new TestingWarningCollectorModule())
                 .add(binder -> {
                     binder.bind(EventListenerConfig.class).in(Scopes.SINGLETON);

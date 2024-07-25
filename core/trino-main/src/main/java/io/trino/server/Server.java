@@ -52,6 +52,7 @@ import io.trino.exchange.ExchangeManagerModule;
 import io.trino.exchange.ExchangeManagerRegistry;
 import io.trino.execution.resourcegroups.ResourceGroupManager;
 import io.trino.execution.warnings.WarningCollectorModule;
+import io.trino.localcache.CacheManagerModule;
 import io.trino.metadata.Catalog;
 import io.trino.metadata.CatalogManager;
 import io.trino.security.AccessControlManager;
@@ -129,6 +130,7 @@ public class Server
                 new CoordinatorDiscoveryModule(),
                 new CatalogManagerModule(),
                 new TransactionManagerModule(),
+                new CacheManagerModule(),
                 new ServerMainModule(trinoVersion),
                 new GracefulShutdownModule(),
                 new WarningCollectorModule());

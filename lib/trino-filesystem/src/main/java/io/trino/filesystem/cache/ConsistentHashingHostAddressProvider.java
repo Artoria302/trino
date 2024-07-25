@@ -70,6 +70,16 @@ public class ConsistentHashingHostAddressProvider
                 .collect(toImmutableList());
     }
 
+    @Override
+    public List<HostAddress> getHosts(String splitPath, int replicationFactor, List<HostAddress> defaultAddresses)
+    {
+        return consistentHashRing.locate(splitPath, replicationFactor)
+                .stream()
+                .map(TrinoNode::getHostAndPort)
+                .sorted(hostAddressComparator)
+                .collect(toImmutableList());
+    }
+
     @PostConstruct
     public void startRefreshingHashRing()
     {

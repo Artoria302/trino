@@ -17,6 +17,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.security.ConnectorIdentity;
 
 import static java.util.Objects.requireNonNull;
@@ -43,5 +44,17 @@ public final class TracingFileSystemFactory
     public TrinoFileSystem create(ConnectorSession session)
     {
         return new TracingFileSystem(tracer, delegate.create(session));
+    }
+
+    @Override
+    public TrinoFileSystem create(ConnectorIdentity identity, CacheManager cacheManager)
+    {
+        return new TracingFileSystem(tracer, delegate.create(identity, cacheManager));
+    }
+
+    @Override
+    public TrinoFileSystem create(ConnectorSession session, CacheManager cacheManager)
+    {
+        return new TracingFileSystem(tracer, delegate.create(session, cacheManager));
     }
 }
