@@ -17,12 +17,14 @@ import io.airlift.slice.Slice;
 import io.trino.filesystem.TrinoInput;
 import io.trino.filesystem.TrinoInputFile;
 import io.trino.hdfs.FSDataInputStreamTail;
+import io.trino.hdfs.HdfsReadRecorder;
 import org.apache.hadoop.fs.FSDataInputStream;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import static io.trino.filesystem.hdfs.HdfsFileSystem.withCause;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 class HdfsInput
@@ -43,7 +45,7 @@ class HdfsInput
             throws IOException
     {
         ensureOpen();
-        try {
+        try (HdfsReadRecorder _ = new HdfsReadRecorder(format("readFully(pos: %s, offset: %s, len: %s)", position, bufferOffset, bufferLength), inputFile.location().toString(), stream, 5000)) {
             stream.readFully(position, buffer, bufferOffset, bufferLength);
         }
         catch (FileNotFoundException e) {

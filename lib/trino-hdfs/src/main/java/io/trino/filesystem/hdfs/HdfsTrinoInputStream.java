@@ -15,12 +15,14 @@ package io.trino.filesystem.hdfs;
 
 import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoInputStream;
+import io.trino.hdfs.HdfsReadRecorder;
 import org.apache.hadoop.fs.FSDataInputStream;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import static io.trino.filesystem.hdfs.HdfsFileSystem.withCause;
+import static java.lang.String.format;
 import static java.util.Objects.checkFromIndexSize;
 import static java.util.Objects.requireNonNull;
 
@@ -68,7 +70,7 @@ class HdfsTrinoInputStream
             throws IOException
     {
         ensureOpen();
-        try {
+        try (HdfsReadRecorder _ = new HdfsReadRecorder("seek(" + position + ")", location.toString(), stream, 2000)) {
             stream.seek(position);
         }
         catch (IOException e) {
@@ -81,7 +83,7 @@ class HdfsTrinoInputStream
             throws IOException
     {
         ensureOpen();
-        try {
+        try (HdfsReadRecorder _ = new HdfsReadRecorder("read()", location.toString(), stream, 5000)) {
             return stream.read();
         }
         catch (FileNotFoundException e) {
@@ -98,7 +100,7 @@ class HdfsTrinoInputStream
     {
         ensureOpen();
         checkFromIndexSize(off, len, b.length);
-        try {
+        try (HdfsReadRecorder _ = new HdfsReadRecorder(format("read(len: %s)", len), location.toString(), stream, 5000)) {
             return stream.read(b, off, len);
         }
         catch (FileNotFoundException e) {

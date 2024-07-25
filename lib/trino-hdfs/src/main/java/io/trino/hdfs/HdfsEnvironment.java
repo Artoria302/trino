@@ -74,9 +74,9 @@ public class HdfsEnvironment
         this.hdfsConfiguration = requireNonNull(hdfsConfiguration, "hdfsConfiguration is null");
         this.newFileInheritOwnership = config.isNewFileInheritOwnership();
         this.verifyChecksum = config.isVerifyChecksum();
+        this.gcsStorageFactory = requireNonNull(gcsStorageFactory, "gcsStorageFactory is null");
         this.hdfsAuthentication = requireNonNull(hdfsAuthentication, "hdfsAuthentication is null");
         this.newDirectoryPermissions = config.getNewDirectoryFsPermissions();
-        this.gcsStorageFactory = requireNonNull(gcsStorageFactory, "gcsStorageFactory is null");
     }
 
     @PreDestroy

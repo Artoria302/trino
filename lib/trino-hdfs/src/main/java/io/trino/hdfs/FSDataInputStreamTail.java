@@ -82,7 +82,9 @@ public final class FSDataInputStreamTail
             inputStream.seek(position);
             int c;
             while (position < maxEOFAt) {
-                c = inputStream.read();
+                try (HdfsReadRecorder _ = new HdfsReadRecorder("readTail read()", path, inputStream, 5000)) {
+                    c = inputStream.read();
+                }
                 if (c < 0) {
                     return position;
                 }
