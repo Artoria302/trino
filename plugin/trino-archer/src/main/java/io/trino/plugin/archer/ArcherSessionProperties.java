@@ -56,7 +56,7 @@ public final class ArcherSessionProperties
     public static final String REMOVE_ORPHAN_FILES_MIN_RETENTION = "remove_orphan_files_min_retention";
     private static final String INCREMENTAL_REFRESH_ENABLED = "incremental_refresh_enabled";
     private static final String LOCAL_CACHE_ENABLED = "local_cache_enabled";
-    private static final String PREFERRED_NODE_COUNT = "preferred_node_count";
+    private static final String CACHE_NODE_COUNT = "cache_node_count";
     public static final String DELETE_DATA_AFTER_DROP_TABLE_ENABLED = "delete_data_after_drop_table_enabled";
     public static final String PARTITIONED_BUCKETS_PER_NODE = "partitioned_buckets_per_node";
     public static final String OPTIMIZE_FORCE_REPARTITIONING = "optimize_force_repartitioning";
@@ -102,9 +102,9 @@ public final class ArcherSessionProperties
                         archerConfig.isLocalCacheEnabled(),
                         false))
                 .add(integerProperty(
-                        PREFERRED_NODE_COUNT,
-                        "preferred node count when select nodes",
-                        archerConfig.getPreferredNodeCount(),
+                        CACHE_NODE_COUNT,
+                        "Cache node count when select nodes",
+                        archerConfig.getCacheNodeCount(),
                         false))
                 .add(dataSizeProperty(
                         PARQUET_MAX_READ_BLOCK_SIZE,
@@ -287,9 +287,9 @@ public final class ArcherSessionProperties
         return session.getProperty(LOCAL_CACHE_ENABLED, Boolean.class);
     }
 
-    public static int getPreferredNodeCount(ConnectorSession session)
+    public static int getCacheNodeCount(ConnectorSession session)
     {
-        return session.getProperty(PREFERRED_NODE_COUNT, Integer.class);
+        return session.getProperty(CACHE_NODE_COUNT, Integer.class);
     }
 
     public static SplitMode getSplitMode(ConnectorSession session)

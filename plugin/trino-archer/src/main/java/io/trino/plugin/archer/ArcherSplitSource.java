@@ -101,8 +101,8 @@ import static io.trino.plugin.archer.ArcherColumnHandle.fileModifiedTimeColumnHa
 import static io.trino.plugin.archer.ArcherColumnHandle.pathColumnHandle;
 import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_FILESYSTEM_ERROR;
 import static io.trino.plugin.archer.ArcherMetadataColumn.isMetadataColumnId;
+import static io.trino.plugin.archer.ArcherSessionProperties.getCacheNodeCount;
 import static io.trino.plugin.archer.ArcherSessionProperties.getMinimumAssignedSplitWeight;
-import static io.trino.plugin.archer.ArcherSessionProperties.getPreferredNodeCount;
 import static io.trino.plugin.archer.ArcherSessionProperties.getSplitMode;
 import static io.trino.plugin.archer.ArcherSessionProperties.getSplitSize;
 import static io.trino.plugin.archer.ArcherSessionProperties.isLocalCacheEnabled;
@@ -168,7 +168,7 @@ public class ArcherSplitSource
     private final CachingHostAddressProvider cachingHostAddressProvider;
 
     private final boolean localCacheEnabled;
-    private final int preferredNodeCount;
+    private final int cacheNodeCount;
 
     private final Map<Integer, Optional<String>> invertedIndexIdToQuery;
 
@@ -220,7 +220,7 @@ public class ArcherSplitSource
         this.invertedIndexIdToQuery = new HashMap<>();
         this.cachingHostAddressProvider = requireNonNull(cachingHostAddressProvider, "cachingHostAddressProvider is null");
         this.localCacheEnabled = isLocalCacheEnabled(session);
-        this.preferredNodeCount = getPreferredNodeCount(session);
+        this.cacheNodeCount = getCacheNodeCount(session);
     }
 
     @Override
@@ -592,7 +592,7 @@ public class ArcherSplitSource
         DeltaStoreType deltaStoreType = file.deltaStoreType();
         Optional<Deletion> deletion;
         List<HostAddress> addresses = localCacheEnabled
-                ? cachingHostAddressProvider.getHosts(task.file().path().toString(), preferredNodeCount, ImmutableList.of())
+                ? cachingHostAddressProvider.getHosts(task.file().path().toString(), cacheNodeCount, ImmutableList.of())
                 : ImmutableList.of();
         deletion = switch (deltaStoreType) {
             case NONE -> Optional.empty();

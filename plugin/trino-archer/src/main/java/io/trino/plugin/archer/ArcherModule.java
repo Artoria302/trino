@@ -20,6 +20,8 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import io.trino.filesystem.cache.CacheKeyProvider;
+import io.trino.plugin.archer.cache.ArcherCacheKeyProvider;
 import io.trino.plugin.archer.procedure.ExpireSnapshotsTableProcedure;
 import io.trino.plugin.archer.procedure.OptimizeTableProcedure;
 import io.trino.plugin.archer.procedure.RemoveFilesTableProcedure;
@@ -94,6 +96,8 @@ public class ArcherModule
         tableProcedures.addBinding().toProvider(RemoveFilesTableProcedure.class).in(Scopes.SINGLETON);
 
         binder.bind(ArcherRuntimeManager.class).to(DefaultArcherRuntimeManager.class).in(Scopes.SINGLETON);
+
+        newOptionalBinder(binder, CacheKeyProvider.class).setBinding().to(ArcherCacheKeyProvider.class).in(Scopes.SINGLETON);
 
         closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForArcherSplitManager.class));
     }

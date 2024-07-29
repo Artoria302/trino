@@ -21,6 +21,7 @@ import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorPageSourceProviderFactory;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.type.TypeManager;
 
 import static java.util.Objects.requireNonNull;
@@ -33,6 +34,7 @@ public class ArcherPageSourceProviderFactory
     private final FileFormatDataSourceStats fileFormatDataSourceStats;
     private final ParquetReaderOptions parquetReaderOptions;
     private final TypeManager typeManager;
+    private final CacheManager cacheManager;
 
     @Inject
     public ArcherPageSourceProviderFactory(
@@ -40,18 +42,20 @@ public class ArcherPageSourceProviderFactory
             ArcherRuntimeManager archerRuntimeManager,
             FileFormatDataSourceStats fileFormatDataSourceStats,
             ParquetReaderConfig parquetReaderConfig,
-            TypeManager typeManager)
+            TypeManager typeManager,
+            CacheManager cacheManager)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.archerRuntimeManager = requireNonNull(archerRuntimeManager, "archerRuntimeManager is null");
         this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
         this.parquetReaderOptions = parquetReaderConfig.toParquetReaderOptions();
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
     }
 
     @Override
     public ConnectorPageSourceProvider createPageSourceProvider()
     {
-        return new ArcherPageSourceProvider(fileSystemFactory, archerRuntimeManager, fileFormatDataSourceStats, parquetReaderOptions, typeManager);
+        return new ArcherPageSourceProvider(fileSystemFactory, archerRuntimeManager, fileFormatDataSourceStats, parquetReaderOptions, typeManager, cacheManager);
     }
 }

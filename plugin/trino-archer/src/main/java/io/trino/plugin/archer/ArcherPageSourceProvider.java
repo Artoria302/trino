@@ -41,6 +41,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.EmptyPageSource;
+import io.trino.spi.localcache.CacheManager;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.StandardTypes;
@@ -95,6 +96,7 @@ import static io.trino.plugin.archer.ArcherMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.archer.ArcherMetadataColumn.FILE_PATH;
 import static io.trino.plugin.archer.ArcherMetadataColumn.ROW_POS;
 import static io.trino.plugin.archer.ArcherSessionProperties.getParquetMaxReadBlockSize;
+import static io.trino.plugin.archer.ArcherSessionProperties.isLocalCacheEnabled;
 import static io.trino.plugin.archer.ArcherSessionProperties.isUseFileSizeFromMetadata;
 import static io.trino.plugin.archer.ArcherSplitManager.ARCHER_DOMAIN_COMPACTION_THRESHOLD;
 import static io.trino.plugin.archer.ArcherUtil.deserializePartitionValue;
@@ -126,19 +128,22 @@ public class ArcherPageSourceProvider
     private final FileFormatDataSourceStats fileFormatDataSourceStats;
     private final ParquetReaderOptions parquetReaderOptions;
     private final TypeManager typeManager;
+    private final CacheManager cacheManager;
 
     public ArcherPageSourceProvider(
             TrinoFileSystemFactory fileSystemFactory,
             ArcherRuntimeManager archerRuntimeManager,
             FileFormatDataSourceStats fileFormatDataSourceStats,
             ParquetReaderOptions parquetReaderOptions,
-            TypeManager typeManager)
+            TypeManager typeManager,
+            CacheManager cacheManager)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
         this.archerRuntimeManager = requireNonNull(archerRuntimeManager, "archerRuntimeManager is null");
         this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
         this.parquetReaderOptions = requireNonNull(parquetReaderOptions, "parquetReaderOptions is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
     }
 
     @Override
@@ -213,7 +218,10 @@ public class ArcherPageSourceProvider
             return new EmptyPageSource();
         }
 
-        TrinoFileSystem fileSystem = fileSystemFactory.create(session);
+        boolean localCacheEnabled = isLocalCacheEnabled(session);
+        TrinoFileSystem fileSystem = localCacheEnabled && cacheManager.isValid()
+                ? fileSystemFactory.create(session.getIdentity(), cacheManager)
+                : fileSystemFactory.create(session.getIdentity());
         Location dataFilePath = Location.of(format("%s/%s", split.getSegmentPath(), split.getFileName()));
         TrinoInputFile inputFile = isUseFileSizeFromMetadata(session)
                 ? fileSystem.newInputFile(dataFilePath, split.getFileSize())

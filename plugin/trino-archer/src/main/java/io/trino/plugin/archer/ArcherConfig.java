@@ -73,7 +73,7 @@ public class ArcherConfig
     private int maxMetadataVersions = 5;
     private boolean enableDeleteMetadataAfterCommit = true;
     private boolean localCacheEnabled = true;
-    private int preferredNodeCount = 1;
+    private int cacheNodeCount = 1;
     private ArcherFileFormat fileFormat = PARQUET;
     private SplitMode splitMode = AUTO;
     private boolean deleteDataAfterDropTableEnabled = true;
@@ -404,15 +404,15 @@ public class ArcherConfig
     }
 
     @Min(1)
-    public int getPreferredNodeCount()
+    public int getCacheNodeCount()
     {
-        return preferredNodeCount;
+        return cacheNodeCount;
     }
 
-    @Config("archer.preferred-node-count")
-    public ArcherConfig setPreferredNodeCount(int count)
+    @Config("archer.cache-node-count")
+    public ArcherConfig setCacheNodeCount(int count)
     {
-        this.preferredNodeCount = count;
+        this.cacheNodeCount = count;
         return this;
     }
 
