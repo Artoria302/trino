@@ -47,6 +47,7 @@ import io.trino.hive.thrift.metastore.HiveObjectRef;
 import io.trino.hive.thrift.metastore.LockRequest;
 import io.trino.hive.thrift.metastore.LockResponse;
 import io.trino.hive.thrift.metastore.MetaException;
+import io.trino.hive.thrift.metastore.Metadata;
 import io.trino.hive.thrift.metastore.NoSuchObjectException;
 import io.trino.hive.thrift.metastore.OpenTxnRequest;
 import io.trino.hive.thrift.metastore.Partition;
@@ -55,6 +56,7 @@ import io.trino.hive.thrift.metastore.PrincipalType;
 import io.trino.hive.thrift.metastore.PrivilegeBag;
 import io.trino.hive.thrift.metastore.Role;
 import io.trino.hive.thrift.metastore.RolePrincipalGrant;
+import io.trino.hive.thrift.metastore.Snapshot;
 import io.trino.hive.thrift.metastore.Table;
 import io.trino.hive.thrift.metastore.TableMeta;
 import io.trino.hive.thrift.metastore.TableStatsRequest;
@@ -62,6 +64,7 @@ import io.trino.hive.thrift.metastore.TableValidWriteIds;
 import io.trino.hive.thrift.metastore.ThriftHiveMetastore;
 import io.trino.hive.thrift.metastore.TxnToWriteId;
 import io.trino.hive.thrift.metastore.UnlockRequest;
+import io.trino.metastore.YunZhouSnapshot;
 import io.trino.plugin.base.util.LoggingInvocationHandler;
 import io.trino.plugin.hive.metastore.thrift.MetastoreSupportsDateStatistics.DateStatisticsSupport;
 import io.trino.spi.connector.RelationType;
@@ -164,6 +167,55 @@ public class ThriftHiveMetastoreClient
     private void disconnect()
     {
         transport.close();
+    }
+
+    @Override
+    public void saveMetadata(String metadataId, String content)
+            throws TException
+    {
+        Metadata metadata = new Metadata(metadataId, content);
+        client.saveMetadata(metadata);
+    }
+
+    @Override
+    public String getMetadata(String metadataId)
+            throws TException
+    {
+        Metadata metadata = client.getMetadata(metadataId);
+        return metadata.getContent();
+    }
+
+    @Override
+    public boolean deleteMetadata(String metadataId)
+            throws TException
+    {
+        return client.deleteMetadata(metadataId);
+    }
+
+    @Override
+    public void saveSnapshots(List<YunZhouSnapshot> snapshots)
+            throws TException
+    {
+        ImmutableList.Builder<Snapshot> list = ImmutableList.builder();
+        snapshots.forEach(snap -> {
+            Snapshot snapshot = new Snapshot(snap.metadataId(), snap.snapshotId(), snap.content());
+            list.add(snapshot);
+        });
+        client.saveSnapshots(list.build());
+    }
+
+    @Override
+    public String getAllSnapshots(String metadataId)
+            throws TException
+    {
+        return client.getAllSnapshots(metadataId).toString();
+    }
+
+    @Override
+    public long deleteAllSnapshots(String metadataId)
+            throws TException
+    {
+        return client.deleteAllSnapshots(metadataId);
     }
 
     @Override

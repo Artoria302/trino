@@ -32,6 +32,7 @@ import io.trino.hive.thrift.metastore.RolePrincipalGrant;
 import io.trino.hive.thrift.metastore.Table;
 import io.trino.hive.thrift.metastore.TableMeta;
 import io.trino.hive.thrift.metastore.TxnToWriteId;
+import io.trino.metastore.YunZhouSnapshot;
 import org.apache.thrift.TException;
 
 import java.util.Collection;
@@ -69,6 +70,48 @@ public class FailureAwareThriftMetastoreClient
     public void close()
     {
         delegate.close();
+    }
+
+    @Override
+    public void saveMetadata(String metadataId, String content)
+            throws TException
+    {
+        runWithHandle(() -> delegate.saveMetadata(metadataId, content));
+    }
+
+    @Override
+    public String getMetadata(String metadataId)
+            throws TException
+    {
+        return runWithHandle(() -> delegate.getMetadata(metadataId));
+    }
+
+    @Override
+    public boolean deleteMetadata(String metadataId)
+            throws TException
+    {
+        return runWithHandle(() -> delegate.deleteMetadata(metadataId));
+    }
+
+    @Override
+    public void saveSnapshots(List<YunZhouSnapshot> snapshots)
+            throws TException
+    {
+        runWithHandle(() -> delegate.saveSnapshots(snapshots));
+    }
+
+    @Override
+    public String getAllSnapshots(String metadataId)
+            throws TException
+    {
+        return runWithHandle(() -> delegate.getAllSnapshots(metadataId));
+    }
+
+    @Override
+    public long deleteAllSnapshots(String metadataId)
+            throws TException
+    {
+        return runWithHandle(() -> delegate.deleteAllSnapshots(metadataId));
     }
 
     @Override

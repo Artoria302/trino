@@ -70,9 +70,11 @@ import io.trino.metastore.HiveType;
 import io.trino.metastore.PartitionStatistics;
 import io.trino.metastore.PartitionWithStatistics;
 import io.trino.metastore.StatisticsUpdateMode;
+import io.trino.metastore.YunZhouSnapshot;
 import io.trino.plugin.hive.PartitionNotFoundException;
 import io.trino.plugin.hive.SchemaAlreadyExistsException;
 import io.trino.plugin.hive.TableAlreadyExistsException;
+import io.trino.plugin.hive.metastore.MetadataIdNotFound;
 import io.trino.plugin.hive.util.RetryDriver;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.SchemaNotFoundException;
@@ -198,6 +200,152 @@ public final class ThriftHiveMetastore
     public ThriftMetastoreStats getStats()
     {
         return stats;
+    }
+
+    @Override
+    public String getMetadata(String metadataId)
+    {
+        try {
+            return retry()
+                    .stopOn(InvalidObjectException.class, MetaException.class, NoSuchObjectException.class)
+                    .stopOnIllegalExceptions()
+                    .run("getMetadata", stats.getGetMetadata().wrap(() -> {
+                        try (ThriftMetastoreClient client = createMetastoreClient()) {
+                            return client.getMetadata(metadataId);
+                        }
+                    }));
+        }
+        catch (NoSuchObjectException e) {
+            throw new MetadataIdNotFound(metadataId);
+        }
+        catch (TException e) {
+            throw new TrinoException(HIVE_METASTORE_ERROR, e);
+        }
+        catch (Exception e) {
+            throw propagate(e);
+        }
+    }
+
+    @Override
+    public boolean deleteMetadata(String metadataId)
+    {
+        try {
+            return retry()
+                    .stopOn(InvalidObjectException.class, MetaException.class, NoSuchObjectException.class)
+                    .stopOnIllegalExceptions()
+                    .run("deleteMetadata", stats.getDeleteMetadata().wrap(() -> {
+                        try (ThriftMetastoreClient client = createMetastoreClient()) {
+                            return client.deleteMetadata(metadataId);
+                        }
+                    }));
+        }
+        catch (NoSuchObjectException e) {
+            throw new MetadataIdNotFound(metadataId);
+        }
+        catch (TException e) {
+            throw new TrinoException(HIVE_METASTORE_ERROR, e);
+        }
+        catch (Exception e) {
+            throw propagate(e);
+        }
+    }
+
+    @Override
+    public void saveMetadata(String metadataId, String content)
+    {
+        try {
+            retry()
+                    .stopOn(InvalidObjectException.class, MetaException.class, NoSuchObjectException.class)
+                    .stopOnIllegalExceptions()
+                    .run("saveMetadata", stats.getSaveMetadata().wrap(() -> {
+                        try (ThriftMetastoreClient client = createMetastoreClient()) {
+                            client.saveMetadata(metadataId, content);
+                        }
+                        return null;
+                    }));
+        }
+        catch (NoSuchObjectException e) {
+            throw new MetadataIdNotFound(metadataId);
+        }
+        catch (TException e) {
+            throw new TrinoException(HIVE_METASTORE_ERROR, e);
+        }
+        catch (Exception e) {
+            throw propagate(e);
+        }
+    }
+
+    @Override
+    public String getAllSnapshots(String metaKey)
+    {
+        try {
+            return retry()
+                    .stopOn(InvalidObjectException.class, MetaException.class, NoSuchObjectException.class)
+                    .stopOnIllegalExceptions()
+                    .run("getAllSnapshots", stats.getGetAllSnapshots().wrap(() -> {
+                        try (ThriftMetastoreClient client = createMetastoreClient()) {
+                            return client.getAllSnapshots(metaKey);
+                        }
+                    }));
+        }
+        catch (NoSuchObjectException e) {
+            throw new MetadataIdNotFound(e.getMessage());
+        }
+        catch (TException e) {
+            throw new TrinoException(HIVE_METASTORE_ERROR, e);
+        }
+        catch (Exception e) {
+            throw propagate(e);
+        }
+    }
+
+    @Override
+    public long deleteAllSnapshots(String metaKey)
+    {
+        try {
+            return retry()
+                    .stopOn(InvalidObjectException.class, MetaException.class, NoSuchObjectException.class)
+                    .stopOnIllegalExceptions()
+                    .run("deleteAllSnapshots", stats.getDeleteAllSnapshots().wrap(() -> {
+                        try (ThriftMetastoreClient client = createMetastoreClient()) {
+                            return client.deleteAllSnapshots(metaKey);
+                        }
+                    }));
+        }
+        catch (NoSuchObjectException e) {
+            throw new MetadataIdNotFound(e.getMessage());
+        }
+        catch (TException e) {
+            throw new TrinoException(HIVE_METASTORE_ERROR, e);
+        }
+        catch (Exception e) {
+            throw propagate(e);
+        }
+    }
+
+    @Override
+    public void saveSnapshots(List<YunZhouSnapshot> snapshots)
+    {
+        try {
+            retry()
+                    .stopOn(InvalidObjectException.class, MetaException.class, NoSuchObjectException.class)
+                    .stopOnIllegalExceptions()
+                    .run("saveSnapshots", stats.getSaveSnapshots().wrap(() -> {
+                        try (ThriftMetastoreClient client = createMetastoreClient()) {
+                            client.saveSnapshots(snapshots);
+                        }
+                        return null;
+                    }));
+        }
+        catch (NoSuchObjectException e) {
+            throw new MetadataIdNotFound(e.getMessage());
+        }
+        catch (TException e) {
+            throw new TrinoException(HIVE_METASTORE_ERROR, e);
+        }
+        catch (Exception e) {
+            throw propagate(e);
+        }
     }
 
     @Override

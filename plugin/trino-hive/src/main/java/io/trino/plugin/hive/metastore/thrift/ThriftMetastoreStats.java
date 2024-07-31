@@ -18,6 +18,12 @@ import org.weakref.jmx.Nested;
 
 public class ThriftMetastoreStats
 {
+    private final ThriftMetastoreApiStats getMetadata = new ThriftMetastoreApiStats();
+    private final ThriftMetastoreApiStats saveMetadata = new ThriftMetastoreApiStats();
+    private final ThriftMetastoreApiStats deleteMetadata = new ThriftMetastoreApiStats();
+    private final ThriftMetastoreApiStats getAllSnapshots = new ThriftMetastoreApiStats();
+    private final ThriftMetastoreApiStats saveSnapshots = new ThriftMetastoreApiStats();
+    private final ThriftMetastoreApiStats deleteAllSnapshots = new ThriftMetastoreApiStats();
     private final ThriftMetastoreApiStats getAllDatabases = new ThriftMetastoreApiStats();
     private final ThriftMetastoreApiStats getDatabase = new ThriftMetastoreApiStats();
     private final ThriftMetastoreApiStats getAllTables = new ThriftMetastoreApiStats();
@@ -69,6 +75,48 @@ public class ThriftMetastoreStats
     private final ThriftMetastoreApiStats createFunction = new ThriftMetastoreApiStats();
     private final ThriftMetastoreApiStats alterFunction = new ThriftMetastoreApiStats();
     private final ThriftMetastoreApiStats dropFunction = new ThriftMetastoreApiStats();
+
+    @Managed
+    @Nested
+    public ThriftMetastoreApiStats getGetMetadata()
+    {
+        return getMetadata;
+    }
+
+    @Managed
+    @Nested
+    public ThriftMetastoreApiStats getSaveMetadata()
+    {
+        return saveMetadata;
+    }
+
+    @Managed
+    @Nested
+    public ThriftMetastoreApiStats getDeleteMetadata()
+    {
+        return deleteMetadata;
+    }
+
+    @Managed
+    @Nested
+    public ThriftMetastoreApiStats getGetAllSnapshots()
+    {
+        return getAllSnapshots;
+    }
+
+    @Managed
+    @Nested
+    public ThriftMetastoreApiStats getSaveSnapshots()
+    {
+        return saveSnapshots;
+    }
+
+    @Managed
+    @Nested
+    public ThriftMetastoreApiStats getDeleteAllSnapshots()
+    {
+        return deleteAllSnapshots;
+    }
 
     @Managed
     @Nested

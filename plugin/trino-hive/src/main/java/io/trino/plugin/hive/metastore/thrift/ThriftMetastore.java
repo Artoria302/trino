@@ -28,6 +28,7 @@ import io.trino.metastore.HivePrivilegeInfo.HivePrivilege;
 import io.trino.metastore.PartitionStatistics;
 import io.trino.metastore.PartitionWithStatistics;
 import io.trino.metastore.StatisticsUpdateMode;
+import io.trino.metastore.YunZhouSnapshot;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.TableNotFoundException;
@@ -47,6 +48,18 @@ import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 public sealed interface ThriftMetastore
         permits ThriftHiveMetastore
 {
+    void saveMetadata(String metadataId, String content);
+
+    String getMetadata(String metadataId);
+
+    boolean deleteMetadata(String metadataId);
+
+    void saveSnapshots(List<YunZhouSnapshot> snapshots);
+
+    String getAllSnapshots(String metadataId);
+
+    long deleteAllSnapshots(String metadataId);
+
     void createDatabase(Database database);
 
     void dropDatabase(String databaseName, boolean deleteData);

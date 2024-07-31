@@ -33,6 +33,7 @@ import io.trino.metastore.PrincipalPrivileges;
 import io.trino.metastore.StatisticsUpdateMode;
 import io.trino.metastore.Table;
 import io.trino.metastore.TableInfo;
+import io.trino.metastore.YunZhouSnapshot;
 import io.trino.plugin.hive.SchemaAlreadyExistsException;
 import io.trino.plugin.hive.TableAlreadyExistsException;
 import io.trino.spi.TrinoException;
@@ -81,6 +82,42 @@ public class BridgingHiveMetastore
     public BridgingHiveMetastore(ThriftMetastore delegate)
     {
         this.delegate = requireNonNull(delegate, "delegate is null");
+    }
+
+    @Override
+    public void saveMetadata(String metadataId, String content)
+    {
+        delegate.saveMetadata(metadataId, content);
+    }
+
+    @Override
+    public String getMetadata(String metadataId)
+    {
+        return delegate.getMetadata(metadataId);
+    }
+
+    @Override
+    public boolean deleteMetadata(String metadataId)
+    {
+        return delegate.deleteMetadata(metadataId);
+    }
+
+    @Override
+    public void saveSnapshots(List<YunZhouSnapshot> snapshots)
+    {
+        delegate.saveSnapshots(snapshots);
+    }
+
+    @Override
+    public String getAllSnapshots(String metadataId)
+    {
+        return delegate.getAllSnapshots(metadataId);
+    }
+
+    @Override
+    public long deleteAllSnapshots(String metadataId)
+    {
+        return delegate.deleteAllSnapshots(metadataId);
     }
 
     @Override

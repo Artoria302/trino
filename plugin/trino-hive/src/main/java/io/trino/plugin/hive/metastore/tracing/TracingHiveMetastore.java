@@ -31,6 +31,7 @@ import io.trino.metastore.PrincipalPrivileges;
 import io.trino.metastore.StatisticsUpdateMode;
 import io.trino.metastore.Table;
 import io.trino.metastore.TableInfo;
+import io.trino.metastore.YunZhouSnapshot;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.function.LanguageFunction;
 import io.trino.spi.predicate.TupleDomain;
@@ -66,6 +67,54 @@ public class TracingHiveMetastore
     {
         this.tracer = requireNonNull(tracer, "tracer is null");
         this.delegate = requireNonNull(delegate, "delegate is null");
+    }
+
+    @Override
+    public void saveMetadata(String metadataId, String content)
+    {
+        Span span = tracer.spanBuilder("HiveMetastore.saveMetadata")
+                .startSpan();
+        withTracing(span, () -> delegate.saveMetadata(metadataId, content));
+    }
+
+    @Override
+    public String getMetadata(String metadataId)
+    {
+        Span span = tracer.spanBuilder("HiveMetastore.getMetadata")
+                .startSpan();
+        return withTracing(span, () -> delegate.getMetadata(metadataId));
+    }
+
+    @Override
+    public boolean deleteMetadata(String metadataId)
+    {
+        Span span = tracer.spanBuilder("HiveMetastore.deleteMetadata")
+                .startSpan();
+        return withTracing(span, () -> delegate.deleteMetadata(metadataId));
+    }
+
+    @Override
+    public void saveSnapshots(List<YunZhouSnapshot> snapshots)
+    {
+        Span span = tracer.spanBuilder("HiveMetastore.saveSnapshots")
+                .startSpan();
+        withTracing(span, () -> delegate.saveSnapshots(snapshots));
+    }
+
+    @Override
+    public String getAllSnapshots(String metadataId)
+    {
+        Span span = tracer.spanBuilder("HiveMetastore.getAllSnapshots")
+                .startSpan();
+        return withTracing(span, () -> delegate.getAllSnapshots(metadataId));
+    }
+
+    @Override
+    public long deleteAllSnapshots(String metadataId)
+    {
+        Span span = tracer.spanBuilder("HiveMetastore.deleteAllSnapshots")
+                .startSpan();
+        return withTracing(span, () -> delegate.deleteAllSnapshots(metadataId));
     }
 
     @Override

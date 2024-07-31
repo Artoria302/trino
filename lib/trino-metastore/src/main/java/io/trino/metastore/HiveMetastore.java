@@ -31,6 +31,36 @@ import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 
 public interface HiveMetastore
 {
+    default void saveMetadata(String metadataId, String content)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default String getMetadata(String metadataId)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default boolean deleteMetadata(String metadataId)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default void saveSnapshots(List<YunZhouSnapshot> snapshots)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default String getAllSnapshots(String metadataId)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default long deleteAllSnapshots(String metadataId)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     Optional<Database> getDatabase(String databaseName);
 
     List<String> getAllDatabases();

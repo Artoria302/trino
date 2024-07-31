@@ -31,6 +31,7 @@ import io.trino.hive.thrift.metastore.RolePrincipalGrant;
 import io.trino.hive.thrift.metastore.Table;
 import io.trino.hive.thrift.metastore.TableMeta;
 import io.trino.hive.thrift.metastore.TxnToWriteId;
+import io.trino.metastore.YunZhouSnapshot;
 import org.apache.thrift.TException;
 
 import java.io.Closeable;
@@ -43,6 +44,42 @@ public interface ThriftMetastoreClient
 {
     @Override
     void close();
+
+    default void saveMetadata(String metadataId, String content)
+            throws TException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default String getMetadata(String metadataId)
+            throws TException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default boolean deleteMetadata(String metadataId)
+            throws TException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default void saveSnapshots(List<YunZhouSnapshot> snapshots)
+            throws TException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default String getAllSnapshots(String metadataId)
+            throws TException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    default long deleteAllSnapshots(String metadataId)
+            throws TException
+    {
+        throw new UnsupportedOperationException();
+    }
 
     List<String> getAllDatabases()
             throws TException;
