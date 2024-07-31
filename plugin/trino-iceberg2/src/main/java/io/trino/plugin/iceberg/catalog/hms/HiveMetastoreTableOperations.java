@@ -1,0 +1,199 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.trino.plugin.iceberg.catalog.hms;
+
+import io.airlift.log.Logger;
+import io.trino.annotation.NotThreadSafe;
+import io.trino.metastore.AcidTransactionOwner;
+import io.trino.metastore.PrincipalPrivileges;
+import io.trino.metastore.Table;
+import io.trino.plugin.hive.metastore.MetastoreUtil;
+import io.trino.plugin.hive.metastore.cache.CachingHiveMetastore;
+import io.trino.plugin.hive.metastore.thrift.ThriftMetastore;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.TableNotFoundException;
+import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.CommitStateUnknownException;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.util.Tasks;
+
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+
+import static com.google.common.base.Preconditions.checkState;
+import static io.trino.metastore.PrincipalPrivileges.NO_PRIVILEGES;
+import static io.trino.plugin.hive.metastore.thrift.ThriftMetastoreUtil.fromMetastoreApiTable;
+import static io.trino.plugin.iceberg.IcebergTableName.tableNameFrom;
+import static io.trino.plugin.iceberg.IcebergUtil.fixBrokenMetadataLocation;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
+import static org.apache.iceberg.BaseMetastoreTableOperations.PREVIOUS_METADATA_LOCATION_PROP;
+import static org.apache.iceberg.TableProperties.COMMIT_NUM_STATUS_CHECKS;
+import static org.apache.iceberg.TableProperties.COMMIT_NUM_STATUS_CHECKS_DEFAULT;
+import static org.apache.iceberg.TableProperties.COMMIT_STATUS_CHECKS_MAX_WAIT_MS;
+import static org.apache.iceberg.TableProperties.COMMIT_STATUS_CHECKS_MAX_WAIT_MS_DEFAULT;
+import static org.apache.iceberg.TableProperties.COMMIT_STATUS_CHECKS_MIN_WAIT_MS;
+import static org.apache.iceberg.TableProperties.COMMIT_STATUS_CHECKS_MIN_WAIT_MS_DEFAULT;
+import static org.apache.iceberg.TableProperties.COMMIT_STATUS_CHECKS_TOTAL_WAIT_MS;
+import static org.apache.iceberg.TableProperties.COMMIT_STATUS_CHECKS_TOTAL_WAIT_MS_DEFAULT;
+
+@NotThreadSafe
+public class HiveMetastoreTableOperations
+        extends AbstractMetastoreTableOperations
+{
+    enum CommitStatus
+    {
+        FAILURE,
+        SUCCESS,
+        UNKNOWN
+    }
+
+    private static final Logger log = Logger.get(HiveMetastoreTableOperations.class);
+    private final ThriftMetastore thriftMetastore;
+
+    public HiveMetastoreTableOperations(
+            FileIO fileIo,
+            CachingHiveMetastore metastore,
+            ThriftMetastore thriftMetastore,
+            ConnectorSession session,
+            String database,
+            String table,
+            Optional<String> owner,
+            Optional<String> location)
+    {
+        super(fileIo, metastore, session, database, table, owner, location);
+        this.thriftMetastore = requireNonNull(thriftMetastore, "thriftMetastore is null");
+    }
+
+    @Override
+    protected void commitToExistingTable(TableMetadata base, TableMetadata metadata)
+    {
+        Table currentTable = getTable();
+        commitTableUpdate(currentTable, metadata, (table, newMetadataLocation) -> Table.builder(table)
+                .apply(builder -> updateMetastoreTable(builder, metadata, newMetadataLocation, Optional.of(currentMetadataLocation)))
+                .build());
+    }
+
+    @Override
+    protected final void commitMaterializedViewRefresh(TableMetadata base, TableMetadata metadata)
+    {
+        Table materializedView = getTable(database, tableNameFrom(tableName));
+        commitTableUpdate(materializedView, metadata, (table, newMetadataLocation) -> Table.builder(table)
+                .apply(builder -> builder
+                        .setParameter(METADATA_LOCATION_PROP, newMetadataLocation)
+                        .setParameter(PREVIOUS_METADATA_LOCATION_PROP, currentMetadataLocation))
+                .build());
+    }
+
+    private void commitTableUpdate(Table table, TableMetadata metadata, BiFunction<Table, String, Table> tableUpdateFunction)
+    {
+        String newMetadataLocation = writeNewMetadata(metadata, version.orElseThrow() + 1);
+        long lockId = thriftMetastore.acquireTableExclusiveLock(
+                new AcidTransactionOwner(session.getUser()),
+                session.getQueryId(),
+                table.getDatabaseName(),
+                table.getTableName());
+        try {
+            Table currentTable = fromMetastoreApiTable(thriftMetastore.getTable(database, table.getTableName())
+                    .orElseThrow(() -> new TableNotFoundException(getSchemaTableName())));
+
+            checkState(currentMetadataLocation != null, "No current metadata location for existing table");
+            String metadataLocation = fixBrokenMetadataLocation(currentTable.getParameters().get(METADATA_LOCATION_PROP));
+            if (!currentMetadataLocation.equals(metadataLocation)) {
+                throw new CommitFailedException("Metadata location [%s] is not same as table metadata location [%s] for %s",
+                        currentMetadataLocation, metadataLocation, getSchemaTableName());
+            }
+
+            Table updatedTable = tableUpdateFunction.apply(table, newMetadataLocation);
+
+            // todo privileges should not be replaced for an alter
+            PrincipalPrivileges privileges = table.getOwner().map(MetastoreUtil::buildInitialPrivilegeSet).orElse(NO_PRIVILEGES);
+            try {
+                metastore.replaceTable(table.getDatabaseName(), table.getTableName(), updatedTable, privileges);
+            }
+            catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().contains("Table/View 'HIVE_LOCKS' does not exist")) {
+                    throw new RuntimeException("Failed to acquire locks from metastore because the underlying metastore table 'HIVE_LOCKS' does not exist. This can occur when using an embedded metastore which does not support transactions. To fix this use an alternative metastore.", e);
+                }
+                CommitStatus commitStatus = checkCommitStatus(newMetadataLocation, metadata);
+                // CommitFailedException is handled as a special case in the Iceberg library. This commit will automatically retry
+                switch (commitStatus) {
+                    case FAILURE:
+                        throw e;
+                    case UNKNOWN:
+                        throw new CommitStateUnknownException(e);
+                    default:
+                        break;
+                }
+            }
+        }
+        finally {
+            try {
+                thriftMetastore.releaseTableLock(lockId);
+            }
+            catch (RuntimeException e) {
+                // Release lock step has failed. Not throwing this exception, after commit has already succeeded.
+                // So, that underlying iceberg API will not do the metadata cleanup, otherwise table will be in unusable state.
+                // If configured and supported, the unreleased lock will be automatically released by the metastore after not hearing a heartbeat for a while,
+                // or otherwise it might need to be manually deleted from the metastore backend storage.
+                log.error(e, "Failed to release lock %s when committing to table %s", lockId, table.getTableName());
+            }
+        }
+
+        shouldRefresh = true;
+    }
+
+    private CommitStatus checkCommitStatus(String newMetadataLocation, TableMetadata config)
+    {
+        int maxAttempts = PropertyUtil.propertyAsInt(config.properties(), COMMIT_NUM_STATUS_CHECKS,
+                COMMIT_NUM_STATUS_CHECKS_DEFAULT);
+        long minWaitMs = PropertyUtil.propertyAsLong(config.properties(), COMMIT_STATUS_CHECKS_MIN_WAIT_MS,
+                COMMIT_STATUS_CHECKS_MIN_WAIT_MS_DEFAULT);
+        long maxWaitMs = PropertyUtil.propertyAsLong(config.properties(), COMMIT_STATUS_CHECKS_MAX_WAIT_MS,
+                COMMIT_STATUS_CHECKS_MAX_WAIT_MS_DEFAULT);
+        long totalRetryMs = PropertyUtil.propertyAsLong(config.properties(), COMMIT_STATUS_CHECKS_TOTAL_WAIT_MS,
+                COMMIT_STATUS_CHECKS_TOTAL_WAIT_MS_DEFAULT);
+
+        AtomicReference<CommitStatus> status = new AtomicReference<>(CommitStatus.UNKNOWN);
+
+        Tasks.foreach(newMetadataLocation)
+                .retry(maxAttempts)
+                .suppressFailureWhenFinished()
+                .exponentialBackoff(minWaitMs, maxWaitMs, totalRetryMs, 2.0)
+                .onFailure((location, checkException) ->
+                        log.error(checkException, "Cannot check if commit to %s, location: %s.", tableName, location))
+                .run(location -> {
+                    TableMetadata metadata = refresh();
+                    String currentMetadataLocation = metadata.metadataFileLocation();
+                    boolean commitSuccess = currentMetadataLocation.equals(newMetadataLocation) ||
+                            metadata.previousFiles().stream().anyMatch(log -> log.file().equals(newMetadataLocation));
+                    if (commitSuccess) {
+                        log.info("Commit status check: Commit to %s of %s succeeded", tableName, newMetadataLocation);
+                        status.set(CommitStatus.SUCCESS);
+                    }
+                    else {
+                        log.warn("Commit status check: Commit to %s of %s unknown, new metadata location is not current " +
+                                "or in history", tableName, newMetadataLocation);
+                    }
+                });
+        if (status.get() == CommitStatus.UNKNOWN) {
+            log.error("Cannot determine commit state to %s. Failed during checking %s times. " +
+                    "Treating commit state as unknown.", tableName, maxAttempts);
+        }
+        return status.get();
+    }
+}

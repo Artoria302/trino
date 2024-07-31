@@ -44,6 +44,15 @@
         </artifact>
     </artifactSet>
 
+    <artifactSet to="plugin/iceberg2">
+        <artifact id="${project.groupId}:trino-iceberg2:zip:${project.version}">
+            <unpack />
+        </artifact>
+        <artifact id="${project.groupId}:trino-hdfs:zip:${project.version}">
+            <unpack useRoot="true" />
+        </artifact>
+    </artifactSet>
+
     <artifactSet to="plugin/archer">
         <artifact id="${project.groupId}:trino-archer:zip:${project.version}">
             <unpack />
