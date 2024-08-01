@@ -85,10 +85,13 @@ public class IcebergConfig
     private Set<String> queryPartitionFilterRequiredSchemas = ImmutableSet.of();
     private int splitManagerThreads = Runtime.getRuntime().availableProcessors() * 2;
     private boolean incrementalRefreshEnabled = true;
+
     private boolean localCacheEnabled = true;
     private int cacheNodeCount = 1;
+    private int maxMetadataVersions = 10;
+    private boolean enableDeleteMetadataAfterCommit = true;
     private boolean deleteDataAfterDropTableEnabled = true;
-    private int partitionedBucketsPerNode = 32;
+    private int partitionedBucketsPerNode;
     private boolean optimizeForceRepartitioning = true;
     private boolean forceEngineRepartitioning;
 
@@ -501,6 +504,31 @@ public class IcebergConfig
         return this;
     }
 
+    public int getMaxMetadataVersions()
+    {
+        return maxMetadataVersions;
+    }
+
+    @Config("iceberg.metadata.previous-versions-max")
+    @ConfigDescription("Maximum number of previous version for metadata")
+    public IcebergConfig setMaxMetadataVersions(int maxMetadataVersions)
+    {
+        this.maxMetadataVersions = maxMetadataVersions;
+        return this;
+    }
+
+    public boolean isEnableDeleteMetadataAfterCommit()
+    {
+        return enableDeleteMetadataAfterCommit;
+    }
+
+    @Config("iceberg.metadata.delete-after-commit.enabled")
+    public IcebergConfig setEnableDeleteMetadataAfterCommit(boolean enableDeleteMetadataAfterCommit)
+    {
+        this.enableDeleteMetadataAfterCommit = enableDeleteMetadataAfterCommit;
+        return this;
+    }
+
     public boolean isDeleteDataAfterDropTableEnabled()
     {
         return deleteDataAfterDropTableEnabled;
@@ -513,7 +541,7 @@ public class IcebergConfig
         return this;
     }
 
-    @Min(1)
+    @Min(0)
     @Max(128)
     public int getPartitionedBucketsPerNode()
     {
@@ -521,6 +549,7 @@ public class IcebergConfig
     }
 
     @Config("iceberg.partitioned-buckets-per-node")
+    @ConfigDescription("Should keep zero in merge query")
     public IcebergConfig setPartitionedBucketsPerNode(int partitionedBucketsPerNode)
     {
         this.partitionedBucketsPerNode = partitionedBucketsPerNode;

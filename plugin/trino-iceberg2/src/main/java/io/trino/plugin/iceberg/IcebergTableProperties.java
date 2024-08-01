@@ -28,6 +28,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.plugin.iceberg.IcebergConfig.FORMAT_VERSION_SUPPORT_MAX;
 import static io.trino.plugin.iceberg.IcebergConfig.FORMAT_VERSION_SUPPORT_MIN;
 import static io.trino.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
+import static io.trino.spi.session.PropertyMetadata.booleanProperty;
 import static io.trino.spi.session.PropertyMetadata.doubleProperty;
 import static io.trino.spi.session.PropertyMetadata.enumProperty;
 import static io.trino.spi.session.PropertyMetadata.integerProperty;
@@ -46,6 +47,9 @@ public class IcebergTableProperties
     public static final String ORC_BLOOM_FILTER_COLUMNS_PROPERTY = "orc_bloom_filter_columns";
     public static final String ORC_BLOOM_FILTER_FPP_PROPERTY = "orc_bloom_filter_fpp";
     public static final String PARQUET_BLOOM_FILTER_COLUMNS_PROPERTY = "parquet_bloom_filter_columns";
+
+    public static final String ENABLE_DELETE_METADATA_AFTER_COMMIT = "enable_delete_metadata_after_commit";
+    public static final String MAX_PREVIOUS_METADATA_VERSIONS = "max_previous_metadata_versions";
 
     private final List<PropertyMetadata<?>> tableProperties;
 
@@ -120,6 +124,16 @@ public class IcebergTableProperties
                                 .map(name -> name.toLowerCase(ENGLISH))
                                 .collect(toImmutableList()),
                         value -> value))
+                .add(booleanProperty(
+                        ENABLE_DELETE_METADATA_AFTER_COMMIT,
+                        "Delete metadata after commit",
+                        icebergConfig.isEnableDeleteMetadataAfterCommit(),
+                        false))
+                .add(integerProperty(
+                        MAX_PREVIOUS_METADATA_VERSIONS,
+                        "Maximum number of previous version for metadata",
+                        icebergConfig.getMaxMetadataVersions(),
+                        false))
                 .build();
     }
 
@@ -181,6 +195,16 @@ public class IcebergTableProperties
         if (fpp < 0.0 || fpp > 1.0) {
             throw new TrinoException(INVALID_TABLE_PROPERTY, "Bloom filter fpp value must be between 0.0 and 1.0");
         }
+    }
+
+    public static boolean isEnableDeleteMetadataAfterCommit(Map<String, Object> tableProperties)
+    {
+        return (Boolean) tableProperties.get(ENABLE_DELETE_METADATA_AFTER_COMMIT);
+    }
+
+    public static int getMaxMetadataVersions(Map<String, Object> tableProperties)
+    {
+        return (Integer) tableProperties.get(MAX_PREVIOUS_METADATA_VERSIONS);
     }
 
     public static List<String> getParquetBloomFilterColumns(Map<String, Object> tableProperties)

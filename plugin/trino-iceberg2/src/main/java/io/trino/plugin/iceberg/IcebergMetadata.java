@@ -225,8 +225,10 @@ import static io.trino.plugin.iceberg.IcebergSessionProperties.getQueryPartition
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getRemoveOrphanFilesMinRetention;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isCollectExtendedStatisticsOnWrite;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isForceEngineRepartitioning;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isIncrementalRefreshEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isMergeManifestsOnWrite;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isOptimizeForceRepartitioning;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isProjectionPushdownEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isQueryPartitionFilterRequired;
 import static io.trino.plugin.iceberg.IcebergTableName.isDataTable;
@@ -856,7 +858,8 @@ public class IcebergMetadata
     {
         Schema schema = schemaFromMetadata(tableMetadata.getColumns());
         PartitionSpec partitionSpec = parsePartitionFields(schema, getPartitioning(tableMetadata.getProperties()));
-        return getWriteLayout(schema, partitionSpec, false);
+        boolean forceEngineRepartitioning = isForceEngineRepartitioning(session);
+        return getWriteLayout(schema, partitionSpec, false, forceEngineRepartitioning);
     }
 
     @Override
@@ -971,10 +974,11 @@ public class IcebergMetadata
         PartitionSpec partitionSpec = PartitionSpecParser.fromJson(
                 schema,
                 table.getPartitionSpecJson().orElseThrow(() -> new VerifyException("Partition spec missing in the table handle")));
-        return getWriteLayout(schema, partitionSpec, false);
+        boolean forceEngineRepartitioning = isForceEngineRepartitioning(session);
+        return getWriteLayout(schema, partitionSpec, false, forceEngineRepartitioning);
     }
 
-    private Optional<ConnectorTableLayout> getWriteLayout(Schema tableSchema, PartitionSpec partitionSpec, boolean forceRepartitioning)
+    private Optional<ConnectorTableLayout> getWriteLayout(Schema tableSchema, PartitionSpec partitionSpec, boolean forceRepartitioning, boolean forceEngineRepartitioning)
     {
         if (partitionSpec.isUnpartitioned()) {
             return Optional.empty();
@@ -1350,7 +1354,11 @@ public class IcebergMetadata
         Table icebergTable = catalog.loadTable(session, executeHandle.schemaTableName());
         // from performance perspective it is better to have lower number of bigger files than other way around
         // thus we force repartitioning for optimize to achieve this
-        return getWriteLayout(icebergTable.schema(), icebergTable.spec(), true);
+
+        // Adds session property to control this behavior
+        boolean forceRepartitioning = isOptimizeForceRepartitioning(session);
+        boolean forceEngineRepartitioning = isForceEngineRepartitioning(session);
+        return getWriteLayout(icebergTable.schema(), icebergTable.spec(), forceRepartitioning, forceEngineRepartitioning);
     }
 
     @Override

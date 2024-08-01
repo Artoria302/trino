@@ -123,8 +123,10 @@ import static io.trino.plugin.iceberg.IcebergTableProperties.ORC_BLOOM_FILTER_FP
 import static io.trino.plugin.iceberg.IcebergTableProperties.PARQUET_BLOOM_FILTER_COLUMNS_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.PARTITIONING_PROPERTY;
 import static io.trino.plugin.iceberg.IcebergTableProperties.SORTED_BY_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.getMaxMetadataVersions;
 import static io.trino.plugin.iceberg.IcebergTableProperties.getPartitioning;
 import static io.trino.plugin.iceberg.IcebergTableProperties.getSortOrder;
+import static io.trino.plugin.iceberg.IcebergTableProperties.isEnableDeleteMetadataAfterCommit;
 import static io.trino.plugin.iceberg.PartitionFields.parsePartitionFields;
 import static io.trino.plugin.iceberg.PartitionFields.toPartitionFields;
 import static io.trino.plugin.iceberg.SortFieldUtils.parseSortFields;
@@ -163,7 +165,10 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+import static org.apache.iceberg.TableProperties.ENGINE_HIVE_ENABLED;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
+import static org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED;
+import static org.apache.iceberg.TableProperties.METADATA_PREVIOUS_VERSIONS_MAX;
 import static org.apache.iceberg.TableProperties.OBJECT_STORE_ENABLED;
 import static org.apache.iceberg.TableProperties.OBJECT_STORE_ENABLED_DEFAULT;
 import static org.apache.iceberg.TableProperties.OBJECT_STORE_PATH;
@@ -814,6 +819,13 @@ public final class IcebergUtil
                 propertiesBuilder.put(PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX + column, "true");
             }
         }
+
+        boolean enableDeleteMetadataAfterCommit = isEnableDeleteMetadataAfterCommit(tableMetadata.getProperties());
+        propertiesBuilder.put(METADATA_DELETE_AFTER_COMMIT_ENABLED, String.valueOf(enableDeleteMetadataAfterCommit));
+        int maxMetadataVersions = getMaxMetadataVersions(tableMetadata.getProperties());
+        propertiesBuilder.put(METADATA_PREVIOUS_VERSIONS_MAX, String.valueOf(maxMetadataVersions));
+
+        propertiesBuilder.put(ENGINE_HIVE_ENABLED, "true");
 
         if (tableMetadata.getComment().isPresent()) {
             propertiesBuilder.put(TABLE_COMMENT, tableMetadata.getComment().get());

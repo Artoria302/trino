@@ -409,7 +409,7 @@ public final class IcebergSessionProperties
                         false))
                 .add(integerProperty(
                         PARTITIONED_BUCKETS_PER_NODE,
-                        "Partitioned buckets per node",
+                        "Partitioned buckets per node, should keep zero in merge query",
                         icebergConfig.getPartitionedBucketsPerNode(),
                         false))
                 .add(booleanProperty(

@@ -14,7 +14,9 @@
 package io.trino.plugin.iceberg;
 
 import com.google.inject.Inject;
+import io.trino.spi.NodeManager;
 import io.trino.spi.connector.BucketFunction;
+import io.trino.spi.connector.ConnectorBucketNodeMap;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
 import io.trino.spi.connector.ConnectorSession;
@@ -25,18 +27,24 @@ import io.trino.spi.type.TypeOperators;
 import org.apache.iceberg.Schema;
 
 import java.util.List;
+import java.util.Optional;
 
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getPartitionedBucketsPerNode;
 import static io.trino.plugin.iceberg.IcebergUtil.schemaFromHandles;
 import static io.trino.plugin.iceberg.PartitionFields.parsePartitionFields;
+import static io.trino.spi.connector.ConnectorBucketNodeMap.createBucketNodeMap;
+import static java.util.Objects.requireNonNull;
 
 public class IcebergNodePartitioningProvider
         implements ConnectorNodePartitioningProvider
 {
+    private final NodeManager nodeManager;
     private final TypeOperators typeOperators;
 
     @Inject
-    public IcebergNodePartitioningProvider(TypeManager typeManager)
+    public IcebergNodePartitioningProvider(NodeManager nodeManager, TypeManager typeManager)
     {
+        this.nodeManager = requireNonNull(nodeManager, "nodeManager is null");
         this.typeOperators = typeManager.getTypeOperators();
     }
 
@@ -59,5 +67,17 @@ public class IcebergNodePartitioningProvider
                 parsePartitionFields(schema, handle.partitioning()),
                 handle.partitioningColumns(),
                 bucketCount);
+    }
+
+    @Override
+    public Optional<ConnectorBucketNodeMap> getBucketNodeMapping(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorPartitioningHandle partitioningHandle)
+    {
+        int partitionedBucketsPerNode = getPartitionedBucketsPerNode(session);
+        if (partitionedBucketsPerNode > 0) {
+            return Optional.of(createBucketNodeMap(nodeManager.getRequiredWorkerNodes().size() * partitionedBucketsPerNode));
+        }
+        else {
+            return Optional.empty();
+        }
     }
 }
