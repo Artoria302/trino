@@ -20,10 +20,12 @@ import io.trino.plugin.iceberg.CatalogType;
 import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.catalog.file.IcebergFileMetastoreCatalogModule;
 import io.trino.plugin.iceberg.catalog.hms.IcebergHiveMetastoreCatalogModule;
+import io.trino.plugin.iceberg.catalog.yunzhou.IcebergYunZhouMetastoreCatalogModule;
 
 import static io.airlift.configuration.ConditionalModule.conditionalModule;
 import static io.trino.plugin.iceberg.CatalogType.HIVE_METASTORE;
 import static io.trino.plugin.iceberg.CatalogType.TESTING_FILE_METASTORE;
+import static io.trino.plugin.iceberg.CatalogType.YUNZHOU_METASTORE;
 
 public class IcebergCatalogModule
         extends AbstractConfigurationAwareModule
@@ -32,6 +34,7 @@ public class IcebergCatalogModule
     protected void setup(Binder binder)
     {
         bindCatalogModule(HIVE_METASTORE, new IcebergHiveMetastoreCatalogModule());
+        bindCatalogModule(YUNZHOU_METASTORE, new IcebergYunZhouMetastoreCatalogModule());
         bindCatalogModule(TESTING_FILE_METASTORE, new IcebergFileMetastoreCatalogModule());
     }
 
