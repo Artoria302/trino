@@ -141,7 +141,9 @@ public class TrinoFileSystemCache
         catch (RuntimeException | IOException e) {
             stats.newGetCallFailed();
             throwIfInstanceOf(e, IOException.class);
-            throwIfInstanceOf(e.getCause(), IOException.class);
+            if (e.getCause() != null) {
+                throwIfInstanceOf(e.getCause(), IOException.class);
+            }
             throw e;
         }
 
@@ -262,7 +264,7 @@ public class TrinoFileSystemCache
     private static boolean isHdfs(URI uri)
     {
         String scheme = uri.getScheme();
-        return "hdfs".equals(scheme) || "viewfs".equals(scheme);
+        return "hdfs".equals(scheme) || "hdfsold".equals(scheme) || "viewfs".equals(scheme);
     }
 
     private record FileSystemKey(String scheme, String authority, long unique, String realUser, String proxyUser)

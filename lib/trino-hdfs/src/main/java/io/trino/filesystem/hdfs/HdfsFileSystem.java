@@ -63,6 +63,7 @@ class HdfsFileSystem
             .put("s3a", false)
             .put("s3n", false)
             .put("hdfs", true)
+            .put("hdfsold", true)
             .buildOrThrow();
 
     private final HdfsEnvironment environment;
