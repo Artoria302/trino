@@ -380,7 +380,8 @@ public class PlanTester
                 NO_OP_CACHE_MANAGER,
                 nodeSchedulerConfig,
                 optimizerConfig,
-                new LocalMemoryManager(new NodeMemoryConfig())));
+                new LocalMemoryManager(new NodeMemoryConfig()),
+                globalFunctionCatalog));
         this.splitManager = new SplitManager(createSplitManagerProvider(catalogManager), tracer, new QueryManagerConfig());
         this.pageSourceManager = new PageSourceManager(createPageSourceProviderFactory(catalogManager));
         this.pageSinkManager = new PageSinkManager(createPageSinkProvider(catalogManager));

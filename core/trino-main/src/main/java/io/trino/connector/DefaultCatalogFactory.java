@@ -25,6 +25,8 @@ import io.trino.connector.system.SystemConnector;
 import io.trino.connector.system.SystemTablesProvider;
 import io.trino.execution.scheduler.NodeSchedulerConfig;
 import io.trino.memory.LocalMemoryManager;
+import io.trino.metadata.GlobalFunctionCatalog;
+import io.trino.metadata.InternalFunctionBundle;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.Metadata;
 import io.trino.security.AccessControl;
@@ -45,6 +47,7 @@ import io.trino.transaction.TransactionManager;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -75,6 +78,7 @@ public class DefaultCatalogFactory
 
     private final ConcurrentMap<ConnectorName, ConnectorFactory> connectorFactories = new ConcurrentHashMap<>();
     private final LocalMemoryManager localMemoryManager;
+    private final GlobalFunctionCatalog globalFunctionCatalog;
 
     @Inject
     public DefaultCatalogFactory(
@@ -91,7 +95,8 @@ public class DefaultCatalogFactory
             CacheManager cacheManager,
             NodeSchedulerConfig nodeSchedulerConfig,
             OptimizerConfig optimizerConfig,
-            LocalMemoryManager localMemoryManager)
+            LocalMemoryManager localMemoryManager,
+            GlobalFunctionCatalog globalFunctionCatalog)
     {
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
@@ -107,6 +112,7 @@ public class DefaultCatalogFactory
         this.schedulerIncludeCoordinator = nodeSchedulerConfig.isIncludeCoordinator();
         this.maxPrefetchedInformationSchemaPrefixes = optimizerConfig.getMaxPrefetchedInformationSchemaPrefixes();
         this.localMemoryManager = requireNonNull(localMemoryManager, "localMemoryManager is null");
+        this.globalFunctionCatalog = requireNonNull(globalFunctionCatalog, "globalFunctionCatalog is null");
     }
 
     @Override
@@ -179,6 +185,13 @@ public class DefaultCatalogFactory
                         nodeManager,
                         systemTablesProvider,
                         transactionId -> transactionManager.getConnectorTransaction(transactionId, catalogHandle)));
+
+        Set<Class<?>> functions = connector.getFunctions();
+        if (!functions.isEmpty()) {
+            InternalFunctionBundle.InternalFunctionBundleBuilder builder = InternalFunctionBundle.builder();
+            functions.forEach(builder::functions);
+            globalFunctionCatalog.addFunctions(builder.build());
+        }
 
         return new CatalogConnector(
                 catalogHandle,

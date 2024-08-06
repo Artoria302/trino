@@ -62,6 +62,15 @@
         </artifact>
     </artifactSet>
 
+    <artifactSet to="plugin/trino-udf-provider">
+        <artifact id="${project.groupId}:trino-udf-provider:zip:${project.version}">
+            <unpack />
+        </artifact>
+        <artifact id="${project.groupId}:trino-hdfs:zip:${project.version}">
+            <unpack useRoot="true" />
+        </artifact>
+    </artifactSet>
+
     <artifactSet to="plugin/jmx">
         <artifact id="${project.groupId}:trino-jmx:zip:${project.version}">
             <unpack />

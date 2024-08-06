@@ -275,4 +275,12 @@ public interface Connector
     {
         return emptySet();
     }
+
+    /**
+     *
+     */
+    default Set<Class<?>> getFunctions()
+    {
+        return emptySet();
+    }
 }
