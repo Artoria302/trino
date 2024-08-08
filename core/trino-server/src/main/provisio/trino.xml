@@ -71,6 +71,15 @@
         </artifact>
     </artifactSet>
 
+    <artifactSet to="plugin/trino-paimon">
+        <artifact id="${project.groupId}:trino-paimon:zip:${project.version}">
+            <unpack />
+        </artifact>
+        <artifact id="${project.groupId}:trino-hdfs:zip:${project.version}">
+            <unpack useRoot="true" />
+        </artifact>
+    </artifactSet>
+
     <artifactSet to="plugin/jmx">
         <artifact id="${project.groupId}:trino-jmx:zip:${project.version}">
             <unpack />
