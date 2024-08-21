@@ -77,6 +77,11 @@ public abstract class AbstractIcebergTableOperations
             FILE_INPUT_FORMAT_CLASS,
             FILE_OUTPUT_FORMAT_CLASS);
 
+    public static final StorageFormat HIVE_ICEBERG_METASTORE_STORAGE_FORMAT = StorageFormat.create(
+            "org.apache.iceberg.mr.hive.HiveIcebergSerDe",
+            "org.apache.iceberg.mr.hive.HiveIcebergInputFormat",
+            "org.apache.iceberg.mr.hive.HiveIcebergOutputFormat");
+
     protected final ConnectorSession session;
     protected final String database;
     protected final String tableName;

@@ -164,6 +164,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+import static org.apache.iceberg.TableProperties.ENGINE_HIVE_ENABLED;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 import static org.apache.iceberg.TableProperties.OBJECT_STORE_ENABLED;
 import static org.apache.iceberg.TableProperties.OBJECT_STORE_ENABLED_DEFAULT;
@@ -812,6 +813,8 @@ public final class IcebergUtil
                 propertiesBuilder.put(PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX + column, "true");
             }
         }
+
+        propertiesBuilder.put(ENGINE_HIVE_ENABLED, "true");
 
         if (tableMetadata.getComment().isPresent()) {
             propertiesBuilder.put(TABLE_COMMENT, tableMetadata.getComment().get());

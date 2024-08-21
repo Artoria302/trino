@@ -31,6 +31,7 @@ import org.apache.iceberg.io.FileIO;
 import java.util.Optional;
 
 import static com.google.common.base.Verify.verify;
+import static io.trino.hive.thrift.metastore.hive_metastoreConstants.META_TABLE_STORAGE;
 import static io.trino.metastore.PrincipalPrivileges.NO_PRIVILEGES;
 import static io.trino.metastore.Table.TABLE_COMMENT;
 import static io.trino.plugin.hive.TableType.EXTERNAL_TABLE;
@@ -113,10 +114,11 @@ public abstract class AbstractMetastoreTableOperations
                 .setOwner(owner)
                 // Table needs to be EXTERNAL, otherwise table rename in HMS would rename table directory and break table contents.
                 .setTableType(EXTERNAL_TABLE.name())
-                .withStorage(storage -> storage.setStorageFormat(ICEBERG_METASTORE_STORAGE_FORMAT))
+                .withStorage(storage -> storage.setStorageFormat(HIVE_ICEBERG_METASTORE_STORAGE_FORMAT))
                 // This is a must-have property for the EXTERNAL_TABLE table type
                 .setParameter("EXTERNAL", "TRUE")
                 .setParameter(TABLE_TYPE_PROP, ICEBERG_TABLE_TYPE_VALUE.toUpperCase(ENGLISH))
+                .setParameter(META_TABLE_STORAGE, "org.apache.iceberg.mr.hive.HiveIcebergStorageHandler")
                 .apply(builder -> updateMetastoreTable(builder, metadata, newMetadataLocation, Optional.empty()))
                 .build();
 
