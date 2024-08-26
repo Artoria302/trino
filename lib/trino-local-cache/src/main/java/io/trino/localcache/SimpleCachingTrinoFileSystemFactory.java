@@ -13,6 +13,7 @@
  */
 package io.trino.localcache;
 
+import io.airlift.units.DataSize;
 import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.cache.CacheKeyProvider;
@@ -27,11 +28,13 @@ public class SimpleCachingTrinoFileSystemFactory
 {
     private final TrinoFileSystemFactory delegate;
     private final CacheKeyProvider cacheKeyProvider;
+    private final DataSize ioBufferSize;
 
-    public SimpleCachingTrinoFileSystemFactory(TrinoFileSystemFactory delegate, CacheKeyProvider cacheKeyProvider)
+    public SimpleCachingTrinoFileSystemFactory(TrinoFileSystemFactory delegate, CacheKeyProvider cacheKeyProvider, DataSize ioBufferSize)
     {
         this.delegate = requireNonNull(delegate, "delegate is null");
         this.cacheKeyProvider = requireNonNull(cacheKeyProvider, "cacheKeyProvider is null");
+        this.ioBufferSize = requireNonNull(ioBufferSize, "ioBufferSize is null");
     }
 
     @Override
@@ -43,12 +46,12 @@ public class SimpleCachingTrinoFileSystemFactory
     @Override
     public TrinoFileSystem create(ConnectorIdentity identity, CacheManager cacheManager)
     {
-        return new SimpleCachingTrinoFileSystem(delegate.create(identity), cacheKeyProvider, cacheManager);
+        return new SimpleCachingTrinoFileSystem(delegate.create(identity), cacheKeyProvider, cacheManager, ioBufferSize);
     }
 
     @Override
     public TrinoFileSystem create(ConnectorSession session, CacheManager cacheManager)
     {
-        return new SimpleCachingTrinoFileSystem(delegate.create(session), cacheKeyProvider, cacheManager);
+        return new SimpleCachingTrinoFileSystem(delegate.create(session), cacheKeyProvider, cacheManager, ioBufferSize);
     }
 }

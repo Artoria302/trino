@@ -13,6 +13,7 @@
  */
 package io.trino.localcache;
 
+import io.airlift.units.DataSize;
 import io.trino.filesystem.FileIterator;
 import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoFileSystem;
@@ -31,27 +32,35 @@ import static java.util.Objects.requireNonNull;
 public class SimpleCachingTrinoFileSystem
         implements TrinoFileSystem
 {
+    private static final DataSize EMPTY = DataSize.ofBytes(0);
     private final TrinoFileSystem delegate;
     private final CacheKeyProvider cacheKeyProvider;
     private final CacheManager cacheManager;
+    private final DataSize ioBufferSize;
 
-    public SimpleCachingTrinoFileSystem(TrinoFileSystem delegate, CacheKeyProvider cacheKeyProvider, CacheManager cacheManager)
+    public SimpleCachingTrinoFileSystem(TrinoFileSystem delegate, CacheKeyProvider cacheKeyProvider, CacheManager cacheManager, DataSize ioBufferSize)
     {
         this.delegate = requireNonNull(delegate, "delegate is null");
         this.cacheKeyProvider = requireNonNull(cacheKeyProvider, "cacheKeyProvider is null");
         this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
+        this.ioBufferSize = requireNonNull(ioBufferSize, "ioBufferSize is null");
+    }
+
+    public SimpleCachingTrinoFileSystem(TrinoFileSystem delegate, CacheKeyProvider cacheKeyProvider, CacheManager cacheManager)
+    {
+        this(delegate, cacheKeyProvider, cacheManager, EMPTY);
     }
 
     @Override
     public TrinoInputFile newInputFile(Location location)
     {
-        return new SimpleCachingTrinoInputFile(delegate.newInputFile(location), cacheKeyProvider, cacheManager);
+        return new SimpleCachingTrinoInputFile(delegate.newInputFile(location), cacheKeyProvider, cacheManager, ioBufferSize);
     }
 
     @Override
     public TrinoInputFile newInputFile(Location location, long length)
     {
-        return new SimpleCachingTrinoInputFile(delegate.newInputFile(location, length), cacheKeyProvider, cacheManager);
+        return new SimpleCachingTrinoInputFile(delegate.newInputFile(location, length), cacheKeyProvider, cacheManager, ioBufferSize);
     }
 
     @Override

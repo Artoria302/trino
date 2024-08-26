@@ -14,6 +14,8 @@
 package io.trino.filesystem.manager;
 
 import io.airlift.configuration.Config;
+import io.airlift.units.DataSize;
+import io.airlift.units.DataSize.Unit;
 
 public class FileSystemConfig
 {
@@ -23,6 +25,7 @@ public class FileSystemConfig
     private boolean nativeGcsEnabled;
     private boolean cacheEnabled;
     private CacheType cacheType = CacheType.QIHOO;
+    private DataSize ioBufferSize = DataSize.of(32, Unit.KILOBYTE);
 
     public boolean isHadoopEnabled()
     {
@@ -93,6 +96,18 @@ public class FileSystemConfig
     public FileSystemConfig setCacheType(CacheType cacheType)
     {
         this.cacheType = cacheType;
+        return this;
+    }
+
+    public DataSize getIoBufferSize()
+    {
+        return ioBufferSize;
+    }
+
+    @Config("fs.io.buffer-size")
+    public FileSystemConfig setIoBufferSize(DataSize ioBufferSize)
+    {
+        this.ioBufferSize = ioBufferSize;
         return this;
     }
 }

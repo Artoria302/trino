@@ -134,7 +134,7 @@ public class FileSystemModule
         TrinoFileSystemFactory delegate = new SwitchingFileSystemFactory(hdfsFactory, factories);
         if (fileSystemConfig.isCacheEnabled()) {
             if (fileSystemConfig.getCacheType() == CacheType.QIHOO) {
-                delegate = new SimpleCachingTrinoFileSystemFactory(delegate, keyProvider.orElseThrow());
+                delegate = new SimpleCachingTrinoFileSystemFactory(delegate, keyProvider.orElseThrow(), fileSystemConfig.getIoBufferSize());
             }
             else if (fileSystemCache.isPresent()) {
                 delegate = new CacheFileSystemFactory(tracer, delegate, fileSystemCache.orElseThrow(), keyProvider.orElseThrow());

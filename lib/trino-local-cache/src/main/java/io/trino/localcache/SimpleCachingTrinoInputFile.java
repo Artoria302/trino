@@ -13,6 +13,7 @@
  */
 package io.trino.localcache;
 
+import io.airlift.units.DataSize;
 import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoInput;
 import io.trino.filesystem.TrinoInputFile;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
+import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
 
 public class SimpleCachingTrinoInputFile
@@ -33,12 +35,14 @@ public class SimpleCachingTrinoInputFile
     private final TrinoInputFile delegate;
     private final CacheKeyProvider cacheKeyProvider;
     private final CacheManager cacheManager;
+    private final DataSize ioBufferSize;
 
-    public SimpleCachingTrinoInputFile(TrinoInputFile delegate, CacheKeyProvider cacheKeyProvider, CacheManager cacheManager)
+    public SimpleCachingTrinoInputFile(TrinoInputFile delegate, CacheKeyProvider cacheKeyProvider, CacheManager cacheManager, DataSize ioBufferSize)
     {
         this.delegate = requireNonNull(delegate, "delegate is null");
         this.cacheKeyProvider = requireNonNull(cacheKeyProvider, "cacheKeyProvider is null");
         this.cacheManager = requireNonNull(cacheManager, "cacheManager is null");
+        this.ioBufferSize = requireNonNull(ioBufferSize, "ioBufferSize is null");
     }
 
     @Override
@@ -60,7 +64,14 @@ public class SimpleCachingTrinoInputFile
         if (fileIdentifier.isEmpty()) {
             return delegate.newStream();
         }
-        return new SimpleCachingTrinoInputStream(delegate, fileIdentifier.get(), delegate.length(), cacheManager);
+        int bufferSize = toIntExact(this.ioBufferSize.toBytes());
+        TrinoInputStream in = new SimpleCachingTrinoInputStream(delegate, fileIdentifier.get(), delegate.length(), cacheManager);
+        if (bufferSize > 0) {
+            return new BufferedTrinoInputStream(in, bufferSize);
+        }
+        else {
+            return in;
+        }
     }
 
     @Override
