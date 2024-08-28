@@ -15,10 +15,12 @@ package io.trino.filesystem.s3;
 
 import io.trino.filesystem.Location;
 import io.trino.filesystem.TrinoInput;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.exception.AbortedException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.io.EOFException;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 
+import static java.lang.String.format;
 import static java.util.Objects.checkFromIndexSize;
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +64,10 @@ final class S3Input
         String range = "bytes=%s-%s".formatted(position, (position + length) - 1);
         GetObjectRequest rangeRequest = request.toBuilder().range(range).build();
 
-        try (InputStream in = getObject(rangeRequest)) {
+        S3ReadWriteRecorder.S3ResponseMetadataWrapper wrapper = new S3ReadWriteRecorder.S3ResponseMetadataWrapper();
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(format("readFully(off=%s, len=%s)", offset, length), request.bucket(), request.key(), wrapper::getResponseMetadata, 3000);
+                ResponseInputStream<GetObjectResponse> in = getObject(rangeRequest)) {
+            wrapper.setResponseMetadata(in.response().responseMetadata());
             int n = readNBytes(in, buffer, offset, length);
             if (n < length) {
                 throw new EOFException("Read %s of %s requested bytes: %s".formatted(n, length, location));
@@ -82,7 +88,10 @@ final class S3Input
         String range = "bytes=-%s".formatted(length);
         GetObjectRequest rangeRequest = request.toBuilder().range(range).build();
 
-        try (InputStream in = getObject(rangeRequest)) {
+        S3ReadWriteRecorder.S3ResponseMetadataWrapper wrapper = new S3ReadWriteRecorder.S3ResponseMetadataWrapper();
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(format("readTail(len=%s)", length), request.bucket(), request.key(), wrapper::getResponseMetadata, 3000);
+                ResponseInputStream<GetObjectResponse> in = getObject(rangeRequest)) {
+            wrapper.setResponseMetadata(in.response().responseMetadata());
             return readNBytes(in, buffer, offset, length);
         }
     }
@@ -101,7 +110,7 @@ final class S3Input
         }
     }
 
-    private InputStream getObject(GetObjectRequest request)
+    private ResponseInputStream<GetObjectResponse> getObject(GetObjectRequest request)
             throws IOException
     {
         try {

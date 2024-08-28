@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 
 import static java.lang.Math.max;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 final class S3InputStream
@@ -253,7 +254,7 @@ final class S3InputStream
     private int doRead()
             throws IOException
     {
-        try {
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(format("streamRead(off=%s, len=1)", nextReadPosition), request.bucket(), request.key(), () -> in.response().responseMetadata(), 1000)) {
             return in.read();
         }
         catch (AbortedException e) {
@@ -264,7 +265,7 @@ final class S3InputStream
     private int doRead(byte[] bytes, int offset, int length)
             throws IOException
     {
-        try {
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(format("streamRead(off=%s, len=%s)", nextReadPosition, length), request.bucket(), request.key(), () -> in.response().responseMetadata(), 3000)) {
             return in.read(bytes, offset, length);
         }
         catch (AbortedException e) {

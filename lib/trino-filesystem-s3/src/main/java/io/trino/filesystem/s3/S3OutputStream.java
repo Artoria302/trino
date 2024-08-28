@@ -45,6 +45,7 @@ import static io.trino.filesystem.s3.S3FileSystemConfig.ObjectCannedAcl.getCanne
 import static java.lang.Math.clamp;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -218,8 +219,14 @@ final class S3OutputStream
 
             ByteBuffer bytes = ByteBuffer.wrap(buffer, 0, bufferSize);
 
-            try {
-                client.putObject(request, RequestBody.fromByteBuffer(bytes));
+            S3ReadWriteRecorder.S3ResponseMetadataWrapper wrapper = new S3ReadWriteRecorder.S3ResponseMetadataWrapper();
+            try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(
+                    format("putObject(len=%s)", bufferSize),
+                    location.bucket(),
+                    location.key(),
+                    wrapper::getResponseMetadata,
+                    3000)) {
+                wrapper.setResponseMetadata(client.putObject(request, RequestBody.fromByteBuffer(bytes)).responseMetadata());
                 return;
             }
             catch (SdkException e) {
@@ -309,7 +316,17 @@ final class S3OutputStream
 
         ByteBuffer bytes = ByteBuffer.wrap(data, 0, length);
 
-        UploadPartResponse response = client.uploadPart(request, RequestBody.fromByteBuffer(bytes));
+        S3ReadWriteRecorder.S3ResponseMetadataWrapper wrapper = new S3ReadWriteRecorder.S3ResponseMetadataWrapper();
+        UploadPartResponse response;
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(
+                format("uploadPart(uploadId=%s, part=%s, len=%s)", uploadId.get(), currentPartNumber, length),
+                location.bucket(),
+                location.key(),
+                wrapper::getResponseMetadata,
+                3000)) {
+            response = client.uploadPart(request, RequestBody.fromByteBuffer(bytes));
+            wrapper.setResponseMetadata(response.responseMetadata());
+        }
 
         CompletedPart part = CompletedPart.builder()
                 .partNumber(currentPartNumber)
@@ -331,7 +348,15 @@ final class S3OutputStream
                 .multipartUpload(x -> x.parts(parts))
                 .build();
 
-        client.completeMultipartUpload(request);
+        S3ReadWriteRecorder.S3ResponseMetadataWrapper wrapper = new S3ReadWriteRecorder.S3ResponseMetadataWrapper();
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder(
+                format("finishMultipartUpload(uploadId=%s)", uploadId),
+                location.bucket(),
+                location.key(),
+                wrapper::getResponseMetadata,
+                3000)) {
+            wrapper.setResponseMetadata(client.completeMultipartUpload(request).responseMetadata());
+        }
     }
 
     private void abortUpload()

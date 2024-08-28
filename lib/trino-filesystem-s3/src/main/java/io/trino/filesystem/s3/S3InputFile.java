@@ -116,8 +116,10 @@ final class S3InputFile
                 .key(location.key())
                 .build();
 
-        try {
+        S3ReadWriteRecorder.S3ResponseMetadataWrapper wrapper = new S3ReadWriteRecorder.S3ResponseMetadataWrapper();
+        try (S3ReadWriteRecorder _ = new S3ReadWriteRecorder("head", location.bucket(), location.key(), wrapper::getResponseMetadata, 500)) {
             HeadObjectResponse response = client.headObject(request);
+            wrapper.setResponseMetadata(response.responseMetadata());
             if (length == null) {
                 length = response.contentLength();
             }
