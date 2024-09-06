@@ -106,7 +106,7 @@ public class PaimonPageSource
         for (ColumnHandle handle : projectedColumns) {
             PaimonColumnHandle paimonColumnHandle = (PaimonColumnHandle) handle;
             columnTypes.add(paimonColumnHandle.getTrinoType());
-            logicalTypes.add(paimonColumnHandle.logicalType());
+            logicalTypes.add(paimonColumnHandle.getPaimonType());
         }
 
         this.pageBuilder = new PageBuilder(columnTypes);

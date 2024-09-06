@@ -30,7 +30,7 @@ public final class PaimonColumnHandle
         implements ColumnHandle
 {
     private final String columnName;
-    private final String typeString;
+    private final DataType paimonType;
     private final Type trinoType;
 
     @JsonCreator
@@ -40,16 +40,22 @@ public final class PaimonColumnHandle
             @JsonProperty("trinoType") Type trinoType)
     {
         this.columnName = requireNonNull(columnName, "columnName is null");
-        this.typeString = requireNonNull(typeString, "columnType is null");
+        this.paimonType = JsonSerdeUtil.fromJson(typeString, DataType.class);
         this.trinoType = requireNonNull(trinoType, "columnType is null");
+    }
+
+    public PaimonColumnHandle(
+            String columnName,
+            DataType paimonType)
+    {
+        this.columnName = requireNonNull(columnName, "columnName is null");
+        this.paimonType = requireNonNull(paimonType, "paimonType is null");
+        this.trinoType = PaimonTypeUtils.fromPaimonType(paimonType);
     }
 
     public static PaimonColumnHandle of(String columnName, DataType columnType)
     {
-        return new PaimonColumnHandle(
-                columnName,
-                JsonSerdeUtil.toJson(columnType),
-                PaimonTypeUtils.fromPaimonType(columnType));
+        return new PaimonColumnHandle(columnName, columnType);
     }
 
     @JsonProperty
@@ -61,7 +67,7 @@ public final class PaimonColumnHandle
     @JsonProperty
     public String getTypeString()
     {
-        return typeString;
+        return JsonSerdeUtil.toFlatJson(paimonType);
     }
 
     @JsonProperty
@@ -70,9 +76,9 @@ public final class PaimonColumnHandle
         return trinoType;
     }
 
-    public DataType logicalType()
+    public DataType getPaimonType()
     {
-        return JsonSerdeUtil.fromJson(typeString, DataType.class);
+        return paimonType;
     }
 
     public ColumnMetadata getColumnMetadata()
@@ -108,7 +114,7 @@ public final class PaimonColumnHandle
                 + columnName
                 + '\''
                 + ", typeString='"
-                + typeString
+                + paimonType
                 + '\''
                 + ", trinoType="
                 + trinoType

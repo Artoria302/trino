@@ -25,6 +25,7 @@ public class PaimonConfig
     private CatalogType catalogType;
     private boolean localCacheEnabled = true;
     private int cacheNodeCount = 1;
+    private boolean preferNativeReader = true;
 
     @Nullable
     public String getWarehouse()
@@ -86,6 +87,18 @@ public class PaimonConfig
     public PaimonConfig setCacheNodeCount(int count)
     {
         this.cacheNodeCount = count;
+        return this;
+    }
+
+    public boolean getPreferNativeReader()
+    {
+        return preferNativeReader;
+    }
+
+    @Config("paimon.prefer-native-reader")
+    public PaimonConfig setPreferNativeReader(boolean preferNativeReader)
+    {
+        this.preferNativeReader = preferNativeReader;
         return this;
     }
 }

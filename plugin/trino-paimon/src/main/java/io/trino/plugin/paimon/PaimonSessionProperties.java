@@ -37,6 +37,7 @@ public class PaimonSessionProperties
     public static final String MINIMUM_SPLIT_WEIGHT = "minimum_split_weight";
     private static final String LOCAL_CACHE_ENABLED = "local_cache_enabled";
     private static final String CACHE_NODE_COUNT = "cache_node_count";
+    private static final String PREFER_NATIVE_READER = "prefer_native_reader";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -66,6 +67,11 @@ public class PaimonSessionProperties
                                 CACHE_NODE_COUNT,
                                 "Cache node count",
                                 paimonConfig.getCacheNodeCount(),
+                                false))
+                        .add(booleanProperty(
+                                PREFER_NATIVE_READER,
+                                "Prefer trino page reader",
+                                paimonConfig.getPreferNativeReader(),
                                 false))
                         .build();
     }
@@ -98,5 +104,10 @@ public class PaimonSessionProperties
     public static int getCacheNodeCount(ConnectorSession session)
     {
         return session.getProperty(CACHE_NODE_COUNT, Integer.class);
+    }
+
+    public static boolean isPreferNativeReader(ConnectorSession session)
+    {
+        return session.getProperty(PREFER_NATIVE_READER, Boolean.class);
     }
 }
