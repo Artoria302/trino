@@ -45,6 +45,10 @@ import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
@@ -53,7 +57,6 @@ import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
 import static io.trino.plugin.base.ClosingBinder.closingBinder;
-import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
 public class IcebergModule
@@ -108,6 +111,7 @@ public class IcebergModule
         newOptionalBinder(binder, CacheKeyProvider.class).setBinding().to(IcebergCacheKeyProvider.class).in(Scopes.SINGLETON);
 
         closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForIcebergSplitManager.class));
+        closingBinder(binder).registerExecutor(Key.get(ExecutorService.class, ForIcebergMetadata.class));
     }
 
     @Provides
@@ -118,8 +122,33 @@ public class IcebergModule
         if (config.getSplitManagerThreads() == 0) {
             return newDirectExecutorService();
         }
-        return newFixedThreadPool(
+        return newThreadPool(
                 config.getSplitManagerThreads(),
-                daemonThreadsNamed("iceberg-split-manager-" + catalogName + "-%s"));
+                daemonThreadsNamed("yunzhou-split-manager-" + catalogName + "-%s"));
+    }
+
+    @Provides
+    @Singleton
+    @ForIcebergMetadata
+    public ExecutorService createMetadataExecutor(CatalogName catalogName, IcebergConfig config)
+    {
+        if (config.getMetadataThreads() == 0) {
+            return newDirectExecutorService();
+        }
+        return newThreadPool(
+                config.getMetadataThreads(),
+                daemonThreadsNamed("yunzhou-metadata-" + catalogName + "-%s"));
+    }
+
+    public static ExecutorService newThreadPool(int nThreads, ThreadFactory threadFactory)
+    {
+        return new ThreadPoolExecutor(
+                nThreads,
+                nThreads,
+                0L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(nThreads),
+                threadFactory,
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 }

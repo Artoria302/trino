@@ -123,6 +123,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
+import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.IsolationLevel;
@@ -159,6 +160,7 @@ import org.apache.iceberg.types.Types.IntegerType;
 import org.apache.iceberg.types.Types.NestedField;
 import org.apache.iceberg.types.Types.StringType;
 import org.apache.iceberg.types.Types.StructType;
+import org.apache.iceberg.util.Tasks;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -178,6 +180,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -335,6 +338,8 @@ public class IcebergMetadata
     private final TrinoCatalog catalog;
     private final IcebergFileSystemFactory fileSystemFactory;
 
+    private final ExecutorService metadataExecutorService;
+
     private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache = new ConcurrentHashMap<>();
 
     private Transaction transaction;
@@ -345,13 +350,15 @@ public class IcebergMetadata
             CatalogHandle trinoCatalogHandle,
             JsonCodec<CommitTaskData> commitTaskCodec,
             TrinoCatalog catalog,
-            IcebergFileSystemFactory fileSystemFactory)
+            IcebergFileSystemFactory fileSystemFactory,
+            ExecutorService metadataExecutorService)
     {
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.trinoCatalogHandle = requireNonNull(trinoCatalogHandle, "trinoCatalogHandle is null");
         this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
         this.catalog = requireNonNull(catalog, "catalog is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.metadataExecutorService = metadataExecutorService;
     }
 
     @Override
@@ -1552,11 +1559,17 @@ public class IcebergMetadata
         List<Location> pathsToDelete = new ArrayList<>();
         // deleteFunction is not accessed from multiple threads unless .executeDeleteWith() is used
         Consumer<String> deleteFunction = path -> {
-            pathsToDelete.add(Location.of(path));
-            if (pathsToDelete.size() == DELETE_BATCH_SIZE) {
-                try {
-                    fileSystem.deleteFiles(pathsToDelete);
+            List<Location> tmp = null;
+            synchronized (pathsToDelete) {
+                pathsToDelete.add(Location.of(path));
+                if (pathsToDelete.size() == DELETE_BATCH_SIZE) {
+                    tmp = List.copyOf(pathsToDelete);
                     pathsToDelete.clear();
+                }
+            }
+            if (tmp != null) {
+                try {
+                    fileSystem.deleteFiles(tmp);
                 }
                 catch (IOException e) {
                     throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
@@ -1565,12 +1578,20 @@ public class IcebergMetadata
         };
 
         try {
-            table.expireSnapshots()
+            ExpireSnapshots expire = table.expireSnapshots()
                     .expireOlderThan(expireTimestampMillis)
-                    .deleteWith(deleteFunction)
-                    .commit();
+                    .deleteWith(deleteFunction);
+            if (metadataExecutorService != null) {
+                expire.executeDeleteWith(metadataExecutorService).planWith(metadataExecutorService);
+            }
+            expire.commit();
 
-            fileSystem.deleteFiles(pathsToDelete);
+            synchronized (pathsToDelete) {
+                if (!pathsToDelete.isEmpty()) {
+                    fileSystem.deleteFiles(pathsToDelete);
+                    pathsToDelete.clear();
+                }
+            }
         }
         catch (IOException e) {
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
@@ -1640,35 +1661,38 @@ public class IcebergMetadata
 
     private void removeOrphanFiles(Table table, ConnectorSession session, SchemaTableName schemaTableName, Instant expiration, Map<String, String> fileIoProperties)
     {
-        Set<String> processedManifestFilePaths = new HashSet<>();
+        Set<String> processedManifestFilePaths = ConcurrentHashMap.newKeySet();
         // Similarly to issues like https://github.com/trinodb/trino/issues/13759, equivalent paths may have different String
         // representations due to things like double slashes. Using file names may result in retaining files which could be removed.
         // However, in practice Iceberg metadata and data files have UUIDs in their names which makes this unlikely.
-        ImmutableSet.Builder<String> validMetadataFileNames = ImmutableSet.builder();
-        ImmutableSet.Builder<String> validDataFileNames = ImmutableSet.builder();
+        Set<String> validMetadataFileNames = ConcurrentHashMap.newKeySet();
+        Set<String> validDataFileNames = ConcurrentHashMap.newKeySet();
 
-        for (Snapshot snapshot : table.snapshots()) {
-            if (snapshot.manifestListLocation() != null) {
-                validMetadataFileNames.add(fileName(snapshot.manifestListLocation()));
-            }
-
-            for (ManifestFile manifest : snapshot.allManifests(table.io())) {
-                if (!processedManifestFilePaths.add(manifest.path())) {
-                    // Already read this manifest
-                    continue;
-                }
-
-                validMetadataFileNames.add(fileName(manifest.path()));
-                try (ManifestReader<? extends ContentFile<?>> manifestReader = readerForManifest(table, manifest)) {
-                    for (ContentFile<?> contentFile : manifestReader) {
-                        validDataFileNames.add(fileName(contentFile.path().toString()));
+        Tasks.foreach(table.snapshots())
+                .executeWith(metadataExecutorService)
+                .stopOnFailure()
+                .throwFailureWhenFinished()
+                .run(snapshot -> {
+                    if (snapshot.manifestListLocation() != null) {
+                        validMetadataFileNames.add(fileName(snapshot.manifestListLocation()));
                     }
-                }
-                catch (IOException e) {
-                    throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
-                }
-            }
-        }
+                    for (ManifestFile manifest : snapshot.allManifests(table.io())) {
+                        if (!processedManifestFilePaths.add(manifest.path())) {
+                            // Already read this manifest
+                            continue;
+                        }
+
+                        validMetadataFileNames.add(fileName(manifest.path()));
+                        try (ManifestReader<? extends ContentFile<?>> manifestReader = readerForManifest(table, manifest)) {
+                            for (ContentFile<?> contentFile : manifestReader) {
+                                validDataFileNames.add(fileName(contentFile.path().toString()));
+                            }
+                        }
+                        catch (IOException e) {
+                            throw new UncheckedIOException(format("Failed to read manifest file: %s", manifest), e);
+                        }
+                    }
+                });
 
         metadataFileLocations(table, false).stream()
                 .filter(java.util.Objects::nonNull)
@@ -1677,8 +1701,8 @@ public class IcebergMetadata
 
         validMetadataFileNames.add("version-hint.text");
 
-        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validDataFileNames.build(), "data", fileIoProperties);
-        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validMetadataFileNames.build(), "metadata", fileIoProperties);
+        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validDataFileNames, "data", fileIoProperties);
+        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validMetadataFileNames, "metadata", fileIoProperties);
     }
 
     private static ManifestReader<? extends ContentFile<?>> readerForManifest(Table table, ManifestFile manifest)
@@ -1695,26 +1719,69 @@ public class IcebergMetadata
             List<Location> filesToDelete = new ArrayList<>();
             TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity(), fileIoProperties);
             FileIterator allFiles = fileSystem.listFiles(Location.of(table.location()).appendPath(subfolder));
-            while (allFiles.hasNext()) {
-                FileEntry entry = allFiles.next();
-                if (entry.lastModified().isBefore(expiration) && !validFiles.contains(entry.location().fileName())) {
-                    filesToDelete.add(entry.location());
-                    if (filesToDelete.size() >= DELETE_BATCH_SIZE) {
-                        log.debug("Deleting files while removing orphan files for table %s [%s]", schemaTableName, filesToDelete);
-                        fileSystem.deleteFiles(filesToDelete);
-                        filesToDelete.clear();
+            Iterator<FileEntry> iterator = new Iterator<>()
+            {
+                @Override
+                public boolean hasNext()
+                {
+                    try {
+                        return allFiles.hasNext();
+                    }
+                    catch (IOException e) {
+                        throw new UncheckedIOException(e);
                     }
                 }
-                else {
-                    log.debug("%s file retained while removing orphan files %s", entry.location(), schemaTableName.getTableName());
+
+                @Override
+                public FileEntry next()
+                {
+                    try {
+                        return allFiles.next();
+                    }
+                    catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            };
+            Tasks.foreach(iterator)
+                    .executeWith(metadataExecutorService)
+                    .stopOnFailure()
+                    .throwFailureWhenFinished()
+                    .run(file -> {
+                        List<Location> tmp = null;
+                        if (file.lastModified().isBefore(expiration) && !validFiles.contains(file.location().fileName())) {
+                            synchronized (filesToDelete) {
+                                filesToDelete.add(file.location());
+                                if (filesToDelete.size() >= DELETE_BATCH_SIZE) {
+                                    tmp = List.copyOf(filesToDelete);
+                                    filesToDelete.clear();
+                                }
+                            }
+                        }
+                        else {
+                            log.debug("%s file retained while removing orphan files %s", file.location(), schemaTableName.getTableName());
+                        }
+
+                        if (tmp != null) {
+                            log.debug("Deleting files while removing orphan files for table %s [%s]", schemaTableName, tmp);
+                            try {
+                                fileSystem.deleteFiles(tmp);
+                            }
+                            catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        }
+                    });
+
+            synchronized (filesToDelete) {
+                if (!filesToDelete.isEmpty()) {
+                    log.debug("Deleting files while removing orphan files for table %s %s", schemaTableName, filesToDelete);
+                    fileSystem.deleteFiles(filesToDelete);
+                    filesToDelete.clear();
                 }
             }
-            if (!filesToDelete.isEmpty()) {
-                log.debug("Deleting files while removing orphan files for table %s %s", schemaTableName, filesToDelete);
-                fileSystem.deleteFiles(filesToDelete);
-            }
         }
-        catch (IOException e) {
+        catch (IOException | UncheckedIOException e) {
             throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed accessing data for table: " + schemaTableName, e);
         }
     }

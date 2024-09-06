@@ -94,6 +94,7 @@ public class IcebergConfig
     private int partitionedBucketsPerNode;
     private boolean optimizeForceRepartitioning = true;
     private boolean forceEngineRepartitioning;
+    private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors(), 8);
 
     public CatalogType getCatalogType()
     {
@@ -577,6 +578,20 @@ public class IcebergConfig
     public IcebergConfig setForceEngineRepartitioning(boolean forceEngineRepartitioning)
     {
         this.forceEngineRepartitioning = forceEngineRepartitioning;
+        return this;
+    }
+
+    @Min(0)
+    public int getMetadataThreads()
+    {
+        return metadataThreads;
+    }
+
+    @Config("iceberg.metadata-threads")
+    @ConfigDescription("Number of threads to expire snapshots and remove orphan files")
+    public IcebergConfig setMetadataThreads(int metadataThreads)
+    {
+        this.metadataThreads = metadataThreads;
         return this;
     }
 }

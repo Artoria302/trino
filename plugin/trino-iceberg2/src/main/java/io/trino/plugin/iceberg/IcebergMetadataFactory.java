@@ -20,6 +20,8 @@ import io.trino.spi.connector.CatalogHandle;
 import io.trino.spi.security.ConnectorIdentity;
 import io.trino.spi.type.TypeManager;
 
+import java.util.concurrent.ExecutorService;
+
 import static java.util.Objects.requireNonNull;
 
 public class IcebergMetadataFactory
@@ -29,6 +31,7 @@ public class IcebergMetadataFactory
     private final JsonCodec<CommitTaskData> commitTaskCodec;
     private final TrinoCatalogFactory catalogFactory;
     private final IcebergFileSystemFactory fileSystemFactory;
+    private final ExecutorService metadataExecutorService;
 
     @Inject
     public IcebergMetadataFactory(
@@ -36,13 +39,15 @@ public class IcebergMetadataFactory
             CatalogHandle trinoCatalogHandle,
             JsonCodec<CommitTaskData> commitTaskCodec,
             TrinoCatalogFactory catalogFactory,
-            IcebergFileSystemFactory fileSystemFactory)
+            IcebergFileSystemFactory fileSystemFactory,
+            @ForIcebergMetadata ExecutorService metadataExecutorService)
     {
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.trinoCatalogHandle = requireNonNull(trinoCatalogHandle, "trinoCatalogHandle is null");
         this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
         this.catalogFactory = requireNonNull(catalogFactory, "catalogFactory is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.metadataExecutorService = requireNonNull(metadataExecutorService, "deleteExecutorService is null");
     }
 
     public IcebergMetadata create(ConnectorIdentity identity)
@@ -52,6 +57,7 @@ public class IcebergMetadataFactory
                 trinoCatalogHandle,
                 commitTaskCodec,
                 catalogFactory.create(identity),
-                fileSystemFactory);
+                fileSystemFactory,
+                metadataExecutorService);
     }
 }
