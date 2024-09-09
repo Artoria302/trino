@@ -20,13 +20,13 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.trino.spi.QueryId;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static java.lang.String.format;
-import static java.time.ZoneOffset.UTC;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -45,7 +45,7 @@ public class QueryIdGenerator
         checkState(ImmutableSet.copyOf(Chars.asList(BASE_32)).size() == 32);
     }
 
-    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(UTC);
+    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
     private static final long BASE_SYSTEM_TIME_MILLIS = System.currentTimeMillis();
     private static final long BASE_NANO_TIME = System.nanoTime();
 
