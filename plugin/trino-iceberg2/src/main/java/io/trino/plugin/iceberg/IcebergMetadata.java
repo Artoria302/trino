@@ -46,6 +46,7 @@ import io.trino.plugin.iceberg.procedure.IcebergDropExtendedStatsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergExpireSnapshotsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergOptimizeHandle;
 import io.trino.plugin.iceberg.procedure.IcebergRemoveFilesHandle;
+import io.trino.plugin.iceberg.procedure.IcebergRemoveManifestsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergRemoveOrphanFilesHandle;
 import io.trino.plugin.iceberg.procedure.IcebergTableExecuteHandle;
 import io.trino.plugin.iceberg.procedure.IcebergTableProcedureId;
@@ -123,6 +124,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
+import org.apache.iceberg.DeleteManifests;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.FileScanTask;
@@ -188,6 +190,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -250,6 +253,7 @@ import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
 import static io.trino.plugin.iceberg.IcebergUtil.fileName;
 import static io.trino.plugin.iceberg.IcebergUtil.firstSnapshot;
 import static io.trino.plugin.iceberg.IcebergUtil.firstSnapshotAfter;
+import static io.trino.plugin.iceberg.IcebergUtil.fixBrokenMetadataLocation;
 import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
 import static io.trino.plugin.iceberg.IcebergUtil.getColumnMetadatas;
 import static io.trino.plugin.iceberg.IcebergUtil.getFileFormat;
@@ -276,8 +280,10 @@ import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.DROP_EXT
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.EXPIRE_SNAPSHOTS;
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.OPTIMIZE;
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_FILES;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_MANIFESTS;
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_ORPHAN_FILES;
 import static io.trino.spi.StandardErrorCode.COLUMN_ALREADY_EXISTS;
+import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
 import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
 import static io.trino.spi.StandardErrorCode.INVALID_ARGUMENTS;
 import static io.trino.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
@@ -322,6 +328,7 @@ public class IcebergMetadata
     private static final int CLEANING_UP_PROCEDURES_MAX_SUPPORTED_TABLE_VERSION = 2;
     private static final String RETENTION_THRESHOLD = "retention_threshold";
     private static final String FILES = "files";
+    private static final String MANIFESTS = "manifests";
     private static final String UNKNOWN_SNAPSHOT_TOKEN = "UNKNOWN";
     public static final Set<String> UPDATABLE_TABLE_PROPERTIES = ImmutableSet.of(FILE_FORMAT_PROPERTY, FORMAT_VERSION_PROPERTY, PARTITIONING_PROPERTY, SORTED_BY_PROPERTY);
 
@@ -1259,6 +1266,7 @@ public class IcebergMetadata
             case EXPIRE_SNAPSHOTS -> getTableHandleForExpireSnapshots(session, tableHandle, executeProperties);
             case REMOVE_ORPHAN_FILES -> getTableHandleForRemoveOrphanFiles(session, tableHandle, executeProperties);
             case REMOVE_FILES -> getTableHandleForRemoveFiles(session, tableHandle, executeProperties);
+            case REMOVE_MANIFESTS -> getTableHandleForRemoveManifests(session, tableHandle, executeProperties);
         };
     }
 
@@ -1340,6 +1348,19 @@ public class IcebergMetadata
                 icebergTable.io().properties()));
     }
 
+    private Optional<ConnectorTableExecuteHandle> getTableHandleForRemoveManifests(ConnectorSession session, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
+    {
+        List<String> files = (List<String>) executeProperties.get(MANIFESTS);
+        Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+
+        return Optional.of(new IcebergTableExecuteHandle(
+                tableHandle.getSchemaTableName(),
+                REMOVE_MANIFESTS,
+                new IcebergRemoveManifestsHandle(files),
+                icebergTable.location(),
+                icebergTable.io().properties()));
+    }
+
     @Override
     public Optional<ConnectorTableLayout> getLayoutForTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle)
     {
@@ -1351,6 +1372,7 @@ public class IcebergMetadata
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1383,6 +1405,7 @@ public class IcebergMetadata
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1427,6 +1450,7 @@ public class IcebergMetadata
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1516,6 +1540,9 @@ public class IcebergMetadata
                 return;
             case REMOVE_FILES:
                 executeRemoveFiles(session, executeHandle);
+                return;
+            case REMOVE_MANIFESTS:
+                executeRemoveManifests(session, executeHandle);
                 return;
             default:
                 throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1807,6 +1834,39 @@ public class IcebergMetadata
             deleteFiles.deleteFile(file);
         }
         deleteFiles.commit();
+    }
+
+    public void executeRemoveManifests(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
+    {
+        IcebergRemoveManifestsHandle removeManifestsHandle = (IcebergRemoveManifestsHandle) executeHandle.procedureHandle();
+
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        List<String> files = requireNonNull(removeManifestsHandle.files(), "files is null");
+
+        if (table.currentSnapshot() == null) {
+            log.debug("Skipping remove_manifests procedure for empty table " + table);
+            return;
+        }
+
+        if (files.isEmpty()) {
+            return;
+        }
+
+        Set<String> manifestsToDelete = files.stream().map(IcebergUtil::fixBrokenMetadataLocation).collect(Collectors.toSet());
+
+        DeleteManifests deleteManifests = new DeleteManifests(((BaseTable) table).operations());
+        List<ManifestFile> manifestFiles = table.currentSnapshot().allManifests(table.io());
+        for (ManifestFile manifestFile : manifestFiles) {
+            String fixedLocation = fixBrokenMetadataLocation(manifestFile.path());
+            if (manifestsToDelete.contains(fixedLocation)) {
+                deleteManifests.deleteManifest(manifestFile);
+                manifestsToDelete.remove(fixedLocation);
+            }
+        }
+        if (!manifestsToDelete.isEmpty()) {
+            throw new TrinoException(GENERIC_USER_ERROR, "Not found manifests " + manifestsToDelete + " in current snapshot");
+        }
+        deleteManifests.commit();
     }
 
     @Override

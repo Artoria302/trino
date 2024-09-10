@@ -25,5 +25,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = IcebergOptimizeHandle.class, name = "optimize"),
         @JsonSubTypes.Type(value = IcebergRemoveOrphanFilesHandle.class, name = "remove_orphan_files"),
         @JsonSubTypes.Type(value = IcebergRemoveFilesHandle.class, name = "remove_files"),
+        @JsonSubTypes.Type(value = IcebergRemoveManifestsHandle.class, name = "remove_manifests"),
 })
 public interface IcebergProcedureHandle {}
