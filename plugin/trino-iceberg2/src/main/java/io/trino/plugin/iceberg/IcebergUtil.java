@@ -107,6 +107,7 @@ import static io.trino.metastore.Table.TABLE_COMMENT;
 import static io.trino.parquet.writer.ParquetWriter.SUPPORTED_BLOOM_FILTER_TYPES;
 import static io.trino.plugin.base.io.ByteBuffers.getWrappedBytes;
 import static io.trino.plugin.iceberg.ColumnIdentity.createColumnIdentity;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.dynamicRepartitioningValueColumnMetadata;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnMetadata;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
@@ -373,6 +374,7 @@ public final class IcebergUtil
                 .forEach(columns::add);
         columns.add(pathColumnMetadata());
         columns.add(fileModifiedTimeColumnMetadata());
+        columns.add(dynamicRepartitioningValueColumnMetadata());
         return columns.build();
     }
 

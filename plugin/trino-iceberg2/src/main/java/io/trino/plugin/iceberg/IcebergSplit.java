@@ -28,6 +28,7 @@ import io.trino.spi.predicate.TupleDomain;
 
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.airlift.slice.SizeOf.estimatedSizeOf;
@@ -47,6 +48,7 @@ public class IcebergSplit
     private final IcebergFileFormat fileFormat;
     private final String partitionSpecJson;
     private final String partitionDataJson;
+    private final OptionalInt dynamicRepartitioningBound;
     private final List<DeleteFile> deletes;
     private final SplitWeight splitWeight;
     private final TupleDomain<IcebergColumnHandle> fileStatisticsDomain;
@@ -63,6 +65,7 @@ public class IcebergSplit
             @JsonProperty("fileFormat") IcebergFileFormat fileFormat,
             @JsonProperty("partitionSpecJson") String partitionSpecJson,
             @JsonProperty("partitionDataJson") String partitionDataJson,
+            @JsonProperty("dynamicRepartitioningBound") OptionalInt dynamicRepartitioningBound,
             @JsonProperty("deletes") List<DeleteFile> deletes,
             @JsonProperty("splitWeight") SplitWeight splitWeight,
             @JsonProperty("fileStatisticsDomain") TupleDomain<IcebergColumnHandle> fileStatisticsDomain,
@@ -77,6 +80,7 @@ public class IcebergSplit
                 fileFormat,
                 partitionSpecJson,
                 partitionDataJson,
+                dynamicRepartitioningBound,
                 deletes,
                 splitWeight,
                 fileStatisticsDomain,
@@ -93,6 +97,7 @@ public class IcebergSplit
             IcebergFileFormat fileFormat,
             String partitionSpecJson,
             String partitionDataJson,
+            OptionalInt dynamicRepartitioningBound,
             List<DeleteFile> deletes,
             SplitWeight splitWeight,
             TupleDomain<IcebergColumnHandle> fileStatisticsDomain,
@@ -107,6 +112,7 @@ public class IcebergSplit
         this.fileFormat = requireNonNull(fileFormat, "fileFormat is null");
         this.partitionSpecJson = requireNonNull(partitionSpecJson, "partitionSpecJson is null");
         this.partitionDataJson = requireNonNull(partitionDataJson, "partitionDataJson is null");
+        this.dynamicRepartitioningBound = requireNonNull(dynamicRepartitioningBound, "dynamicRepartitioningBound is null");
         this.deletes = ImmutableList.copyOf(requireNonNull(deletes, "deletes is null"));
         this.splitWeight = requireNonNull(splitWeight, "splitWeight is null");
         this.fileStatisticsDomain = requireNonNull(fileStatisticsDomain, "fileStatisticsDomain is null");
@@ -167,6 +173,12 @@ public class IcebergSplit
     public String getPartitionDataJson()
     {
         return partitionDataJson;
+    }
+
+    @JsonProperty
+    public OptionalInt getDynamicRepartitioningBound()
+    {
+        return dynamicRepartitioningBound;
     }
 
     @JsonProperty

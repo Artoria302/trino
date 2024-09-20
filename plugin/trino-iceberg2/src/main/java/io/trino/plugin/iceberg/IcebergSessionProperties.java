@@ -112,7 +112,7 @@ public final class IcebergSessionProperties
     private static final String CACHE_NODE_COUNT = "cache_node_count";
     private static final String DELETE_DATA_AFTER_DROP_TABLE_ENABLED = "delete_data_after_drop_table_enabled";
     public static final String PARTITIONED_BUCKETS_PER_NODE = "partitioned_buckets_per_node";
-    public static final String OPTIMIZE_FORCE_REPARTITIONING = "optimize_force_repartitioning";
+    public static final String OPTIMIZE_DYNAMIC_REPARTITIONING = "optimize_dynamic_repartitioning";
     public static final String FORCE_ENGINE_REPARTITIONING = "force_engine_repartitioning";
 
     private final List<PropertyMetadata<?>> sessionProperties;
@@ -413,9 +413,9 @@ public final class IcebergSessionProperties
                         icebergConfig.getPartitionedBucketsPerNode(),
                         false))
                 .add(booleanProperty(
-                        OPTIMIZE_FORCE_REPARTITIONING,
-                        "Force repartitioning when optimize table",
-                        icebergConfig.getOptimizeForceRepartitioning(),
+                        OPTIMIZE_DYNAMIC_REPARTITIONING,
+                        "Dynamic repartitioning when optimize table",
+                        icebergConfig.getOptimizeDynamicRepartitioning(),
                         false))
                 .add(booleanProperty(
                         FORCE_ENGINE_REPARTITIONING,
@@ -681,9 +681,9 @@ public final class IcebergSessionProperties
         return session.getProperty(PARTITIONED_BUCKETS_PER_NODE, Integer.class);
     }
 
-    public static boolean isOptimizeForceRepartitioning(ConnectorSession session)
+    public static boolean isOptimizeDynamicRepartitioning(ConnectorSession session)
     {
-        return session.getProperty(OPTIMIZE_FORCE_REPARTITIONING, Boolean.class);
+        return session.getProperty(OPTIMIZE_DYNAMIC_REPARTITIONING, Boolean.class);
     }
 
     public static boolean isForceEngineRepartitioning(ConnectorSession session)

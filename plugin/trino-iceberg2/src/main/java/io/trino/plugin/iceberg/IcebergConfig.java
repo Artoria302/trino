@@ -92,7 +92,7 @@ public class IcebergConfig
     private boolean enableDeleteMetadataAfterCommit = true;
     private boolean deleteDataAfterDropTableEnabled = true;
     private int partitionedBucketsPerNode;
-    private boolean optimizeForceRepartitioning = true;
+    private boolean optimizeDynamicRepartitioning;
     private boolean forceEngineRepartitioning;
     private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors(), 8);
 
@@ -557,15 +557,15 @@ public class IcebergConfig
         return this;
     }
 
-    public boolean getOptimizeForceRepartitioning()
+    public boolean getOptimizeDynamicRepartitioning()
     {
-        return optimizeForceRepartitioning;
+        return optimizeDynamicRepartitioning;
     }
 
-    @Config("iceberg.optimize-force-repartitioning")
-    public IcebergConfig setOptimizeForceRepartitioning(boolean optimizeForceRepartitioning)
+    @Config("iceberg.optimize-dynamic-repartitioning")
+    public IcebergConfig setOptimizeDynamicRepartitioning(boolean optimizeDynamicRepartitioning)
     {
-        this.optimizeForceRepartitioning = optimizeForceRepartitioning;
+        this.optimizeDynamicRepartitioning = optimizeDynamicRepartitioning;
         return this;
     }
 

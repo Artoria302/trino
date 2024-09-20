@@ -30,6 +30,7 @@ import java.util.Optional;
 import static io.airlift.slice.SizeOf.estimatedSizeOf;
 import static io.airlift.slice.SizeOf.instanceSize;
 import static io.airlift.slice.SizeOf.sizeOf;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.DYNAMIC_REPARTITIONING_VALUE;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
 import static java.util.Objects.requireNonNull;
@@ -48,6 +49,9 @@ public class IcebergColumnHandle
 
     public static final int TRINO_MERGE_PARTITION_SPEC_ID = Integer.MIN_VALUE + 2;
     public static final int TRINO_MERGE_PARTITION_DATA = Integer.MIN_VALUE + 3;
+
+    public static final String TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME = "_dynamic_repartitioning_value";
+    public static final int TRINO_DYNAMIC_REPARTITIONING_VALUE_ID = Integer.MIN_VALUE + 360;
 
     public static final String DATA_CHANGE_TYPE_NAME = "_change_type";
     public static final int DATA_CHANGE_TYPE_ID = Integer.MIN_VALUE + 5;
@@ -286,6 +290,26 @@ public class IcebergColumnHandle
         return ColumnMetadata.builder()
                 .setName(FILE_MODIFIED_TIME.getColumnName())
                 .setType(FILE_MODIFIED_TIME.getType())
+                .setHidden(true)
+                .build();
+    }
+
+    public static IcebergColumnHandle dynamicRepartitioningValueColumnHandle()
+    {
+        return new IcebergColumnHandle(
+                columnIdentity(DYNAMIC_REPARTITIONING_VALUE),
+                DYNAMIC_REPARTITIONING_VALUE.getType(),
+                ImmutableList.of(),
+                DYNAMIC_REPARTITIONING_VALUE.getType(),
+                false,
+                Optional.empty());
+    }
+
+    public static ColumnMetadata dynamicRepartitioningValueColumnMetadata()
+    {
+        return ColumnMetadata.builder()
+                .setName(DYNAMIC_REPARTITIONING_VALUE.getColumnName())
+                .setType(DYNAMIC_REPARTITIONING_VALUE.getType())
                 .setHidden(true)
                 .build();
     }
