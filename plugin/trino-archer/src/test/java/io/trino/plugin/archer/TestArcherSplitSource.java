@@ -61,6 +61,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -191,6 +192,10 @@ public class TestArcherSplitSource
                 new Duration(2, SECONDS),
                 alwaysTrue(),
                 new TestingTypeManager(),
+                false,
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
                 false,
                 new DefaultCachingHostAddressProvider())) {
             ImmutableList.Builder<ArcherSplit> splits = ImmutableList.builder();
@@ -385,6 +390,10 @@ public class TestArcherSplitSource
                 alwaysTrue(),
                 new TestingTypeManager(),
                 false,
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 new DefaultCachingHostAddressProvider())) {
             ImmutableList.Builder<ArcherSplit> builder = ImmutableList.builder();
             while (!splitSource.isFinished()) {
@@ -429,6 +438,10 @@ public class TestArcherSplitSource
                 ImmutableList.of(),
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
     }
 }

@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 
@@ -77,6 +78,10 @@ public class ArcherTableHandle
     // OPTIMIZE only. Coordinator-only
     private final boolean recordScannedFiles;
     private final Optional<DataSize> maxScannedFileSize;
+    private final OptionalInt partitionSpecId;
+    private final boolean refreshPartition;
+    private final OptionalInt invertedIndexId;
+    private final boolean refreshInvertedIndex;
 
     private transient Schema schema;
     private transient InvertedIndex invertedIndex;
@@ -129,6 +134,10 @@ public class ArcherTableHandle
                 updatedColumns,
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
     }
 
@@ -157,6 +166,10 @@ public class ArcherTableHandle
             List<ArcherColumnHandle> updatedColumns,
             boolean recordScannedFiles,
             Optional<DataSize> maxScannedFileSize,
+            OptionalInt partitionSpecId,
+            boolean refreshPartition,
+            OptionalInt invertedIndexId,
+            boolean refreshInvertedIndex,
             Set<ArcherColumnHandle> constraintColumns)
     {
         this.catalog = requireNonNull(catalog, "catalog is null");
@@ -180,6 +193,10 @@ public class ArcherTableHandle
         this.updatedColumns = ImmutableList.copyOf(requireNonNull(updatedColumns, "updatedColumns is null"));
         this.recordScannedFiles = recordScannedFiles;
         this.maxScannedFileSize = requireNonNull(maxScannedFileSize, "maxScannedFileSize is null");
+        this.partitionSpecId = requireNonNull(partitionSpecId, "partitionSpecId is null");
+        this.refreshPartition = refreshPartition;
+        this.invertedIndexId = requireNonNull(invertedIndexId, "invertedIndexId is null");
+        this.refreshInvertedIndex = refreshInvertedIndex;
         this.schema = schema;
         this.invertedIndex = invertedIndex;
         this.invertedIndexQuery = invertedIndexQuery;
@@ -313,6 +330,30 @@ public class ArcherTableHandle
     }
 
     @JsonIgnore
+    public OptionalInt getPartitionSpecId()
+    {
+        return partitionSpecId;
+    }
+
+    @JsonIgnore
+    public boolean isRefreshPartition()
+    {
+        return refreshPartition;
+    }
+
+    @JsonIgnore
+    public OptionalInt getInvertedIndexId()
+    {
+        return invertedIndexId;
+    }
+
+    @JsonIgnore
+    public boolean isRefreshInvertedIndex()
+    {
+        return refreshInvertedIndex;
+    }
+
+    @JsonIgnore
     public Set<ArcherColumnHandle> getConstraintColumns()
     {
         return constraintColumns;
@@ -385,6 +426,10 @@ public class ArcherTableHandle
                 updatedColumns,
                 recordScannedFiles,
                 maxScannedFileSize,
+                partitionSpecId,
+                refreshPartition,
+                invertedIndexId,
+                refreshInvertedIndex,
                 constraintColumns);
     }
 
@@ -415,6 +460,10 @@ public class ArcherTableHandle
                 updatedColumns,
                 recordScannedFiles,
                 maxScannedFileSize,
+                partitionSpecId,
+                refreshPartition,
+                invertedIndexId,
+                refreshInvertedIndex,
                 constraintColumns);
     }
 
@@ -445,10 +494,20 @@ public class ArcherTableHandle
                 updatedColumns,
                 recordScannedFiles,
                 maxScannedFileSize,
+                partitionSpecId,
+                refreshPartition,
+                invertedIndexId,
+                refreshInvertedIndex,
                 constraintColumns);
     }
 
-    public ArcherTableHandle forOptimize(boolean recordScannedFiles, DataSize maxScannedFileSize)
+    public ArcherTableHandle forOptimize(
+            boolean recordScannedFiles,
+            DataSize maxScannedFileSize,
+            int partitionSpecId,
+            boolean refreshPartition,
+            int invertedIndexId,
+            boolean refreshInvertedIndex)
     {
         return new ArcherTableHandle(
                 catalog,
@@ -475,6 +534,10 @@ public class ArcherTableHandle
                 updatedColumns,
                 recordScannedFiles,
                 Optional.of(maxScannedFileSize),
+                OptionalInt.of(partitionSpecId),
+                refreshPartition,
+                OptionalInt.of(invertedIndexId),
+                refreshInvertedIndex,
                 constraintColumns);
     }
 
@@ -490,6 +553,8 @@ public class ArcherTableHandle
 
         ArcherTableHandle that = (ArcherTableHandle) o;
         return recordScannedFiles == that.recordScannedFiles &&
+                refreshPartition == that.refreshPartition &&
+                refreshInvertedIndex == that.refreshInvertedIndex &&
                 Objects.equals(catalog, that.catalog) &&
                 Objects.equals(schemaName, that.schemaName) &&
                 Objects.equals(tableName, that.tableName) &&
@@ -516,8 +581,31 @@ public class ArcherTableHandle
     @Override
     public int hashCode()
     {
-        return Objects.hash(catalog, schemaName, tableName, tableType, snapshotId, tableSchemaJson, partitionSpecJson, invertedIndexJson, formatVersion, unenforcedPredicate, enforcedPredicate,
-                invertedIndexQueryJson, limit, projectedColumns, nameMappingJson, tableLocation, storageProperties, retryMode, updatedColumns, recordScannedFiles, maxScannedFileSize, constraintColumns);
+        return Objects.hash(
+                catalog,
+                schemaName,
+                tableName,
+                tableType,
+                snapshotId,
+                tableSchemaJson,
+                partitionSpecJson,
+                invertedIndexJson,
+                formatVersion,
+                unenforcedPredicate,
+                enforcedPredicate,
+                invertedIndexQueryJson,
+                limit,
+                projectedColumns,
+                nameMappingJson,
+                tableLocation,
+                storageProperties,
+                retryMode,
+                updatedColumns,
+                recordScannedFiles,
+                maxScannedFileSize,
+                refreshPartition,
+                refreshInvertedIndex,
+                constraintColumns);
     }
 
     @Override

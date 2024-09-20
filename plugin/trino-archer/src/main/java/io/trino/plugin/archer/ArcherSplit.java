@@ -25,6 +25,7 @@ import io.trino.spi.predicate.TupleDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -49,6 +50,7 @@ public class ArcherSplit
     private final ArcherFileFormat fileFormat;
     private final String partitionSpecJson;
     private final String partitionDataJson;
+    private final OptionalInt dynamicRepartitioningBound;
     private final Optional<String> invertedIndexJson;
     private final Optional<String> invertedIndexQueryJson;
     private final Optional<String> invertedIndexFilesJson;
@@ -71,6 +73,7 @@ public class ArcherSplit
             @JsonProperty("fileFormat") ArcherFileFormat fileFormat,
             @JsonProperty("partitionSpecJson") String partitionSpecJson,
             @JsonProperty("partitionDataJson") String partitionDataJson,
+            @JsonProperty("dynamicRepartitioningBound") OptionalInt dynamicRepartitioningBound,
             @JsonProperty("invertedIndexJson") Optional<String> invertedIndexJson,
             @JsonProperty("invertedIndexQueryJson") Optional<String> invertedIndexQueryJson,
             @JsonProperty("invertedIndexFilesJson") Optional<String> invertedIndexFilesJson,
@@ -91,6 +94,7 @@ public class ArcherSplit
         this.fileFormat = requireNonNull(fileFormat, "fileFormat is null");
         this.partitionSpecJson = requireNonNull(partitionSpecJson, "partitionSpecJson is null");
         this.partitionDataJson = requireNonNull(partitionDataJson, "partitionDataJson is null");
+        this.dynamicRepartitioningBound = requireNonNull(dynamicRepartitioningBound, "dynamicRepartitioningBound is null");
         this.invertedIndexJson = requireNonNull(invertedIndexJson, "invertedIndexJson is null");
         this.invertedIndexQueryJson = requireNonNull(invertedIndexQueryJson, "invertedIndexQueryJson is null");
         this.invertedIndexFilesJson = requireNonNull(invertedIndexFilesJson, "invertedIndexFilesJson is null");
@@ -177,6 +181,12 @@ public class ArcherSplit
     public String getPartitionDataJson()
     {
         return partitionDataJson;
+    }
+
+    @JsonProperty
+    public OptionalInt getDynamicRepartitioningBound()
+    {
+        return dynamicRepartitioningBound;
     }
 
     @JsonProperty

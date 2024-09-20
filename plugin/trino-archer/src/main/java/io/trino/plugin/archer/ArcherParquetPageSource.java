@@ -19,13 +19,18 @@ import io.trino.parquet.ParquetDataSourceId;
 import io.trino.spi.Page;
 import io.trino.spi.TrinoException;
 import io.trino.spi.block.Block;
+import io.trino.spi.block.IntArrayBlock;
 import io.trino.spi.block.RunLengthEncodedBlock;
 import io.trino.spi.connector.ConnectorPageSource;
+import io.trino.spi.type.Type;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_BAD_DATA;
 import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_CURSOR_ERROR;
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
@@ -36,18 +41,18 @@ public class ArcherParquetPageSource
         implements ConnectorPageSource
 {
     private final ArcherParquetReader parquetReader;
-    private final List<ParquetReaderColumn> parquetReaderColumns;
-    private final boolean areSyntheticColumnsPresent;
+    private final List<ColumnAdaptation> columnAdaptations;
+    private final boolean isColumnAdaptationRequired;
 
     private boolean closed;
 
     public ArcherParquetPageSource(
             ArcherParquetReader parquetReader,
-            List<ParquetReaderColumn> parquetReaderColumns)
+            List<ColumnAdaptation> columnAdaptations)
     {
         this.parquetReader = requireNonNull(parquetReader, "parquetReader is null");
-        this.parquetReaderColumns = ImmutableList.copyOf(requireNonNull(parquetReaderColumns, "parquetReaderColumns is null"));
-        this.areSyntheticColumnsPresent = parquetReaderColumns.stream().anyMatch(ParquetReaderColumn::miss);
+        this.columnAdaptations = ImmutableList.copyOf(requireNonNull(columnAdaptations, "columnAdaptations is null"));
+        this.isColumnAdaptationRequired = isColumnAdaptationRequired(columnAdaptations);
     }
 
     @Override
@@ -111,27 +116,59 @@ public class ArcherParquetPageSource
         parquetReader.close();
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private final ImmutableList.Builder<ColumnAdaptation> columns = ImmutableList.builder();
+
+        private Builder() {}
+
+        public Builder addConstantColumn(Block value)
+        {
+            columns.add(new ConstantColumn(value));
+            return this;
+        }
+
+        public Builder addSourceColumn(int sourceChannel)
+        {
+            columns.add(new SourceColumn(sourceChannel));
+            return this;
+        }
+
+        public Builder addNullColumn(Type type)
+        {
+            columns.add(new NullColumn(type));
+            return this;
+        }
+
+        public Builder addDynamicRepartitioningValueColumn(int bound)
+        {
+            columns.add(new DynamicRepartitioningValueColumn(bound));
+            return this;
+        }
+
+        public ConnectorPageSource build(ArcherParquetReader parquetReader)
+        {
+            return new ArcherParquetPageSource(parquetReader, this.columns.build());
+        }
+    }
+
     private Page getColumnAdaptationsPage(Page page)
     {
-        if (!areSyntheticColumnsPresent) {
+        if (!isColumnAdaptationRequired) {
             return page;
         }
         if (page == null) {
             return null;
         }
         int batchSize = page.getPositionCount();
-        Block[] blocks = new Block[parquetReaderColumns.size()];
-        int sourceColumn = 0;
-        for (int columnIndex = 0; columnIndex < parquetReaderColumns.size(); columnIndex++) {
-            ParquetReaderColumn column = parquetReaderColumns.get(columnIndex);
-            if (column.miss()) {
-                blocks[columnIndex] = RunLengthEncodedBlock.create(column.type(), null, batchSize);
-            }
-            else {
-                Block block = page.getBlock(sourceColumn);
-                blocks[columnIndex] = block;
-                sourceColumn++;
-            }
+        Block[] blocks = new Block[columnAdaptations.size()];
+        for (int columnChannel = 0; columnChannel < columnAdaptations.size(); columnChannel++) {
+            blocks[columnChannel] = columnAdaptations.get(columnChannel).getBlock(page);
         }
         return new Page(batchSize, blocks);
     }
@@ -145,5 +182,98 @@ public class ArcherParquetPageSource
             return new TrinoException(ARCHER_BAD_DATA, exception);
         }
         return new TrinoException(ARCHER_CURSOR_ERROR, format("Failed to read Parquet file: %s, %s", dataSourceId, exception.getMessage()), exception);
+    }
+
+    private static boolean isColumnAdaptationRequired(List<ColumnAdaptation> columnAdaptations)
+    {
+        // If no synthetic columns are added and the source columns are in order, no adaptations are required
+        for (int columnChannel = 0; columnChannel < columnAdaptations.size(); columnChannel++) {
+            ColumnAdaptation column = columnAdaptations.get(columnChannel);
+            if (column instanceof SourceColumn) {
+                int delegateChannel = ((SourceColumn) column).sourceChannel();
+                if (columnChannel != delegateChannel) {
+                    return true;
+                }
+            }
+            else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private interface ColumnAdaptation
+    {
+        Block getBlock(Page sourcePage);
+    }
+
+    private static class NullColumn
+            implements ColumnAdaptation
+    {
+        private final Block nullBlock;
+
+        private NullColumn(Type type)
+        {
+            this.nullBlock = type.createBlockBuilder(null, 1, 0)
+                    .appendNull()
+                    .build();
+        }
+
+        @Override
+        public Block getBlock(Page sourcePage)
+        {
+            return RunLengthEncodedBlock.create(nullBlock, sourcePage.getPositionCount());
+        }
+    }
+
+    private record SourceColumn(int sourceChannel)
+            implements ColumnAdaptation
+    {
+        private SourceColumn
+        {
+            checkArgument(sourceChannel >= 0, "sourceChannel is negative");
+        }
+
+        @Override
+        public Block getBlock(Page sourcePage)
+        {
+            return sourcePage.getBlock(sourceChannel);
+        }
+    }
+
+    private record ConstantColumn(Block singleValueBlock)
+            implements ColumnAdaptation
+    {
+        private ConstantColumn
+        {
+            checkArgument(singleValueBlock.getPositionCount() == 1, "ConstantColumnAdaptation singleValueBlock may only contain one position");
+        }
+
+        @Override
+        public Block getBlock(Page sourcePage)
+        {
+            return RunLengthEncodedBlock.create(singleValueBlock, sourcePage.getPositionCount());
+        }
+    }
+
+    private record DynamicRepartitioningValueColumn(int bound)
+            implements ColumnAdaptation
+    {
+        @Override
+        public Block getBlock(Page sourcePage)
+        {
+            return createDynamicRepartitioningValueBlock(bound, sourcePage.getPositionCount());
+        }
+    }
+
+    private static Block createDynamicRepartitioningValueBlock(int bound, int size)
+    {
+        int[] values = new int[size];
+        int val = ThreadLocalRandom.current().nextInt(bound);
+        for (int position = 0; position < size; position++) {
+            values[position] = val;
+            val = (val + 1) % bound;
+        }
+        return new IntArrayBlock(size, Optional.empty(), values);
     }
 }

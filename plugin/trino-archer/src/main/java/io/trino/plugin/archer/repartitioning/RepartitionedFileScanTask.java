@@ -11,24 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.plugin.archer;
+package io.trino.plugin.archer.repartitioning;
 
-import io.airlift.slice.Slice;
-import io.trino.spi.type.Type;
+import net.qihoo.archer.FileScanTask;
 
-import java.util.Optional;
+import java.util.OptionalInt;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * @param type Column type
- * @param miss Whether column is missed from parquet file (row position and inverted index query result can be read as a metadata column from native library)
- * @param invertedIndexQuery query string to fill
- */
-public record ParquetReaderColumn(Type type, boolean miss, Optional<Slice> invertedIndexQuery)
+public record RepartitionedFileScanTask(FileScanTask fileScanTask, OptionalInt repartitioningValue)
 {
-    public ParquetReaderColumn
+    public RepartitionedFileScanTask
     {
-        requireNonNull(type, "type is null");
+        requireNonNull(fileScanTask, "fileScanTask is null");
+        requireNonNull(repartitioningValue, "repartitioningValue is null");
     }
 }

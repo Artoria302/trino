@@ -152,6 +152,7 @@ import net.qihoo.archer.index.InvertedIndexQueryParser;
 import net.qihoo.archer.index.UserInputAst;
 import net.qihoo.archer.io.CloseableIterable;
 import net.qihoo.archer.types.Type;
+import net.qihoo.archer.types.Types;
 import net.qihoo.archer.types.Types.IntegerType;
 import net.qihoo.archer.types.Types.LongType;
 import net.qihoo.archer.types.Types.NestedField;
@@ -176,6 +177,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -196,12 +198,16 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.collect.Sets.difference;
+import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_DYNAMIC_REPARTITIONING_VALUE_ID;
+import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_DELETION;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_PARTITION_DATA;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_ROW_ID;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_ROW_ID_NAME;
+import static io.trino.plugin.archer.ArcherColumnHandle.dynamicRepartitioningValueColumnHandle;
+import static io.trino.plugin.archer.ArcherColumnHandle.dynamicRepartitioningValueColumnMetadata;
 import static io.trino.plugin.archer.ArcherColumnHandle.fileModifiedTimeColumnHandle;
 import static io.trino.plugin.archer.ArcherColumnHandle.fileModifiedTimeColumnMetadata;
 import static io.trino.plugin.archer.ArcherColumnHandle.pathColumnHandle;
@@ -213,6 +219,7 @@ import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_FILESYSTEM_ERROR;
 import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_INTERNAL_ERROR;
 import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_INVALID_METADATA;
 import static io.trino.plugin.archer.ArcherErrorCode.ARCHER_MISSING_METADATA;
+import static io.trino.plugin.archer.ArcherMetadataColumn.DYNAMIC_REPARTITIONING_VALUE;
 import static io.trino.plugin.archer.ArcherMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.archer.ArcherMetadataColumn.FILE_PATH;
 import static io.trino.plugin.archer.ArcherMetadataColumn.ROW_POS;
@@ -222,7 +229,7 @@ import static io.trino.plugin.archer.ArcherSessionProperties.getHiveCatalogName;
 import static io.trino.plugin.archer.ArcherSessionProperties.getRemoveOrphanFilesMinRetention;
 import static io.trino.plugin.archer.ArcherSessionProperties.isForceEngineRepartitioning;
 import static io.trino.plugin.archer.ArcherSessionProperties.isIncrementalRefreshEnabled;
-import static io.trino.plugin.archer.ArcherSessionProperties.isOptimizeForceRepartitioning;
+import static io.trino.plugin.archer.ArcherSessionProperties.isOptimizeDynamicRepartitioning;
 import static io.trino.plugin.archer.ArcherSessionProperties.isProjectionPushdownEnabled;
 import static io.trino.plugin.archer.ArcherTableName.isArcherTableName;
 import static io.trino.plugin.archer.ArcherTableName.isDataTable;
@@ -265,6 +272,9 @@ import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.EXPIRE_SNA
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.OPTIMIZE;
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.REMOVE_FILES;
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.REMOVE_ORPHAN_FILES;
+import static io.trino.plugin.archer.procedure.OptimizeTableProcedure.FILE_SIZE_THRESHOLD;
+import static io.trino.plugin.archer.procedure.OptimizeTableProcedure.REFRESH_INVERTED_INDEX;
+import static io.trino.plugin.archer.procedure.OptimizeTableProcedure.REFRESH_PARTITION;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.extractSupportedProjectedColumns;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.replaceWithNewVariables;
 import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
@@ -446,6 +456,8 @@ public class ArcherMetadata
             Optional<PartitionSpec> partitionSpec)
     {
         Map<String, String> tableProperties = table.properties();
+        int partitionSpecId = table.spec().specId();
+        int invertedIndexId = table.invertedIndex().indexId();
         Optional<InvertedIndex> invertedIndex = table.invertedIndex().isIndexed() ? Optional.of(table.invertedIndex()) : Optional.empty();
         String nameMappingJson = tableProperties.get(TableProperties.DEFAULT_NAME_MAPPING);
         return new ArcherTableHandle(
@@ -473,6 +485,10 @@ public class ArcherMetadata
                 ImmutableList.of(),
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
     }
 
@@ -707,6 +723,7 @@ public class ArcherMetadata
         columnHandles.put(FILE_PATH.getColumnName(), pathColumnHandle());
         columnHandles.put(ROW_POS.getColumnName(), posColumnHandle());
         columnHandles.put(FILE_MODIFIED_TIME.getColumnName(), fileModifiedTimeColumnHandle());
+        columnHandles.put(DYNAMIC_REPARTITIONING_VALUE.getColumnName(), dynamicRepartitioningValueColumnHandle());
         return columnHandles.buildOrThrow();
     }
 
@@ -1195,7 +1212,9 @@ public class ArcherMetadata
 
     private Optional<ConnectorTableExecuteHandle> getTableHandleForOptimize(ArcherTableHandle tableHandle, Map<String, Object> executeProperties, RetryMode retryMode)
     {
-        DataSize maxScannedFileSize = (DataSize) executeProperties.get("file_size_threshold");
+        DataSize maxScannedFileSize = (DataSize) executeProperties.get(FILE_SIZE_THRESHOLD);
+        boolean refreshPartition = (boolean) executeProperties.get(REFRESH_PARTITION);
+        boolean refreshInvertedIndex = (boolean) executeProperties.get(REFRESH_INVERTED_INDEX);
 
         return Optional.of(new ArcherTableExecuteHandle(
                 tableHandle.getSchemaTableName(),
@@ -1209,6 +1228,8 @@ public class ArcherMetadata
                         getFileFormat(tableHandle.getStorageProperties()),
                         tableHandle.getStorageProperties(),
                         maxScannedFileSize,
+                        refreshPartition,
+                        refreshInvertedIndex,
                         retryMode != NO_RETRIES),
                 tableHandle.getTableLocation()));
     }
@@ -1270,9 +1291,18 @@ public class ArcherMetadata
         // from performance perspective it is better to have lower number of bigger files than other way around
         // thus we force repartitioning for optimize to achieve this
         // Adds session property to control this behavior
-        boolean forceRepartitioning = isOptimizeForceRepartitioning(session);
-        boolean forceEngineRepartitioning = isForceEngineRepartitioning(session);
-        return getWriteLayout(archerTable.schema(), archerTable.spec(), forceRepartitioning, forceEngineRepartitioning);
+        Schema schema = archerTable.schema();
+        PartitionSpec spec = archerTable.spec();
+        if (isOptimizeDynamicRepartitioning(session)) {
+            List<Types.NestedField> columns = new ArrayList<>(schema.columns());
+            columns.add(NestedField.required(TRINO_DYNAMIC_REPARTITIONING_VALUE_ID, TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME, IntegerType.get()));
+            schema = new Schema(0, columns, schema.getAliases(), schema.primaryKeyFieldIds());
+
+            List<String> fields = new ArrayList<>(toPartitionFields(spec));
+            fields.add(TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME);
+            spec = parsePartitionFields(schema, fields);
+        }
+        return getWriteLayout(schema, spec, true, false);
     }
 
     @Override
@@ -1318,7 +1348,13 @@ public class ArcherMetadata
 
         return new BeginTableExecuteResult<>(
                 executeHandle,
-                table.forOptimize(true, optimizeHandle.maxScannedFileSize()));
+                table.forOptimize(
+                        true,
+                        optimizeHandle.maxScannedFileSize(),
+                        archerTable.spec().specId(),
+                        optimizeHandle.refreshPartition(),
+                        archerTable.invertedIndex().indexId(),
+                        optimizeHandle.refreshInvertedIndex()));
     }
 
     @Override
@@ -1807,6 +1843,7 @@ public class ArcherMetadata
         columns.add(pathColumnMetadata());
         columns.add(posColumnMetadata());
         columns.add(fileModifiedTimeColumnMetadata());
+        columns.add(dynamicRepartitioningValueColumnMetadata());
         return columns.build();
     }
 
@@ -2125,6 +2162,10 @@ public class ArcherMetadata
                 table.getUpdatedColumns(),
                 table.isRecordScannedFiles(),
                 table.getMaxScannedFileSize(),
+                table.getPartitionSpecId(),
+                table.isRefreshPartition(),
+                table.getInvertedIndexId(),
+                table.isRefreshInvertedIndex(),
                 table.getConstraintColumns());
 
         return Optional.of(new LimitApplicationResult<>(table, false, false));
@@ -2248,6 +2289,10 @@ public class ArcherMetadata
                         table.getUpdatedColumns(),
                         table.isRecordScannedFiles(),
                         table.getMaxScannedFileSize(),
+                        table.getPartitionSpecId(),
+                        table.isRefreshPartition(),
+                        table.getInvertedIndexId(),
+                        table.isRefreshInvertedIndex(),
                         newConstraintColumns),
                 remainingConstraint.transformKeys(ColumnHandle.class::cast),
                 extractionResult.remainingExpression(),

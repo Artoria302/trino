@@ -78,7 +78,7 @@ public class ArcherConfig
     private SplitMode splitMode = AUTO;
     private boolean deleteDataAfterDropTableEnabled = true;
     private int partitionedBucketsPerNode;
-    private boolean optimizeForceRepartitioning = true;
+    private boolean optimizeDynamicRepartitioning = true;
     private boolean forceEngineRepartitioning;
     private DataSize invertedIndexWriterBufferSize = DataSize.of(128, MEGABYTE);
 
@@ -455,15 +455,15 @@ public class ArcherConfig
         return this;
     }
 
-    public boolean getOptimizeForceRepartitioning()
+    public boolean getOptimizeDynamicRepartitioning()
     {
-        return optimizeForceRepartitioning;
+        return optimizeDynamicRepartitioning;
     }
 
-    @Config("archer.optimize-force-repartitioning")
-    public ArcherConfig setOptimizeForceRepartitioning(boolean optimizeForceRepartitioning)
+    @Config("archer.optimize-dynamic-repartitioning")
+    public ArcherConfig setOptimizeDynamicRepartitioning(boolean optimizeDynamicRepartitioning)
     {
-        this.optimizeForceRepartitioning = optimizeForceRepartitioning;
+        this.optimizeDynamicRepartitioning = optimizeDynamicRepartitioning;
         return this;
     }
 

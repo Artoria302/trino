@@ -29,6 +29,10 @@ import io.trino.filesystem.TrinoFileSystem;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.filesystem.TrinoInputFile;
 import io.trino.filesystem.cache.CachingHostAddressProvider;
+import io.trino.plugin.archer.repartitioning.DefaultFileScanIterable;
+import io.trino.plugin.archer.repartitioning.RepartitionedFileScanIterable;
+import io.trino.plugin.archer.repartitioning.RepartitionedFileScanTask;
+import io.trino.plugin.archer.repartitioning.RepartitionedFileTaskIterator;
 import io.trino.plugin.archer.util.ScannedDataFiles;
 import io.trino.spi.HostAddress;
 import io.trino.spi.SplitWeight;
@@ -79,6 +83,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -153,16 +158,20 @@ public class ArcherSplitSource
     private final Set<Integer> predicatedColumnIds;
 
     private TupleDomain<ArcherColumnHandle> pushedDownDynamicFilterPredicate;
-    private CloseableIterable<FileScanTask> fileScanIterable;
-    private CloseableIterator<FileScanTask> fileScanIterator;
+    private CloseableIterable<RepartitionedFileScanTask> fileScanIterable;
+    private CloseableIterator<RepartitionedFileScanTask> fileScanIterator;
     private long targetSplitSize;
     private final SplitMode splitMode;
-    private Iterator<FileScanTask> fileTasksIterator = emptyIterator();
+    private Iterator<RepartitionedFileScanTask> fileTasksIterator = emptyIterator();
     private TupleDomain<ArcherColumnHandle> fileStatisticsDomain;
 
     private final Optional<InvertedIndexQuery> invertedIndexQuery;
 
     private final boolean recordScannedFiles;
+    private final OptionalInt partitionSpecId;
+    private final boolean refreshPartition;
+    private final OptionalInt invertedIndexId;
+    private final boolean refreshInvertedIndex;
     private final ImmutableSet.Builder<ScannedDataFiles> scannedFiles = ImmutableSet.builder();
     private long outputRowsLowerBound;
     private final CachingHostAddressProvider cachingHostAddressProvider;
@@ -184,6 +193,10 @@ public class ArcherSplitSource
             Constraint constraint,
             TypeManager typeManager,
             boolean recordScannedFiles,
+            OptionalInt partitionSpecId,
+            boolean refreshPartition,
+            OptionalInt invertedIndexId,
+            boolean refreshInvertedIndex,
             CachingHostAddressProvider cachingHostAddressProvider)
     {
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
@@ -201,6 +214,10 @@ public class ArcherSplitSource
         this.constraint = requireNonNull(constraint, "constraint is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.recordScannedFiles = recordScannedFiles;
+        this.partitionSpecId = requireNonNull(partitionSpecId, "partitionSpecId is null");
+        this.refreshPartition = refreshPartition;
+        this.invertedIndexId = requireNonNull(invertedIndexId, "invertedIndexId is null");
+        this.refreshInvertedIndex = refreshInvertedIndex;
         this.minimumAssignedSplitWeight = getMinimumAssignedSplitWeight(session);
         this.projectedBaseColumns = tableHandle.getProjectedColumns().stream()
                 .map(column -> column.getBaseColumnIdentity().getId())
@@ -263,7 +280,19 @@ public class ArcherSplitSource
                 scan = (Scan) scan.includeColumnStats();
             }
 
-            this.fileScanIterable = closer.register(scan.planFiles());
+            if (maxScannedFileSizeInBytes.isPresent()) {
+                this.fileScanIterable = closer.register(
+                        new RepartitionedFileScanIterable(
+                                scan.planFiles(),
+                                maxScannedFileSizeInBytes.get(),
+                                partitionSpecId,
+                                refreshPartition,
+                                invertedIndexId,
+                                refreshInvertedIndex));
+            }
+            else {
+                this.fileScanIterable = closer.register(new DefaultFileScanIterable(scan.planFiles()));
+            }
             this.targetSplitSize = getSplitSize(session)
                     .map(DataSize::toBytes)
                     .orElseGet(tableScan::targetSplitSize);
@@ -285,12 +314,12 @@ public class ArcherSplitSource
                     finish();
                     break;
                 }
-                FileScanTask wholeFileTask = fileScanIterator.next();
-
-                boolean fileHasNoDeletions = !wholeFileTask.file().hasDelta();
+                RepartitionedFileScanTask repartitionedWholeFileTask = fileScanIterator.next();
+                FileScanTask wholeFileTask = repartitionedWholeFileTask.fileScanTask();
+                OptionalInt repartitioningValue = repartitionedWholeFileTask.repartitioningValue();
 
                 fileStatisticsDomain = createFileStatisticsDomain(wholeFileTask);
-                if (pruneFileScanTask(wholeFileTask, fileHasNoDeletions, dynamicFilterPredicate, fileStatisticsDomain)) {
+                if (pruneFileScanTask(wholeFileTask, dynamicFilterPredicate, fileStatisticsDomain)) {
                     continue;
                 }
 
@@ -324,17 +353,17 @@ public class ArcherSplitSource
                 switch (splitMode) {
                     case AUTO -> {
                         if (invertedIndexQuery.isPresent() || (wholeFileTask.file().deltaRecordCount() == 0 && noDataColumnsProjected(wholeFileTask))) {
-                            fileTasksIterator = List.of(wholeFileTask).iterator();
+                            fileTasksIterator = new RepartitionedFileTaskIterator(List.of(wholeFileTask).iterator(), repartitioningValue);
                         }
                         else {
-                            fileTasksIterator = wholeFileTask.split(targetSplitSize).iterator();
+                            fileTasksIterator = new RepartitionedFileTaskIterator(wholeFileTask.split(targetSplitSize).iterator(), repartitioningValue);
                         }
                     }
                     case ALWAYS -> {
-                        fileTasksIterator = wholeFileTask.split(targetSplitSize).iterator();
+                        fileTasksIterator = new RepartitionedFileTaskIterator(wholeFileTask.split(targetSplitSize).iterator(), repartitioningValue);
                     }
                     case NEVER -> {
-                        fileTasksIterator = List.of(wholeFileTask).iterator();
+                        fileTasksIterator = new RepartitionedFileTaskIterator(List.of(wholeFileTask).iterator(), repartitioningValue);
                     }
                 }
 
@@ -350,18 +379,19 @@ public class ArcherSplitSource
                 continue;
             }
 
-            FileScanTask scanTask = fileTasksIterator.next();
-
+            RepartitionedFileScanTask repartitionedFileTask = fileTasksIterator.next();
+            FileScanTask scanTask = repartitionedFileTask.fileScanTask();
+            OptionalInt repartitioningValue = repartitionedFileTask.repartitioningValue();
             ArcherSplit archerSplit;
             if (invertedIndexQuery.isPresent()) {
                 Integer indexId = scanTask.file().invertedIndexId();
                 checkArgument(indexId != null, "inverted index id is null, should never happen");
                 Optional<String> invertedIndexQueryJson = invertedIndexIdToQuery.get(indexId);
                 checkArgument(invertedIndexQueryJson != null && invertedIndexQueryJson.isPresent(), "inverted index query is null, should never happen");
-                archerSplit = toArcherSplit(scanTask, limit, invertedIndexQueryJson, fileStatisticsDomain);
+                archerSplit = toArcherSplit(scanTask, limit, invertedIndexQueryJson, fileStatisticsDomain, repartitioningValue);
             }
             else {
-                archerSplit = toArcherSplit(scanTask, limit, Optional.empty(), fileStatisticsDomain);
+                archerSplit = toArcherSplit(scanTask, limit, Optional.empty(), fileStatisticsDomain, repartitioningValue);
             }
 
             splits.add(archerSplit);
@@ -369,14 +399,8 @@ public class ArcherSplitSource
         return completedFuture(new ConnectorSplitBatch(splits, isFinished()));
     }
 
-    private boolean pruneFileScanTask(FileScanTask fileScanTask, boolean fileHasNoDeletions, TupleDomain<ArcherColumnHandle> dynamicFilterPredicate, TupleDomain<ArcherColumnHandle> fileStatisticsDomain)
+    private boolean pruneFileScanTask(FileScanTask fileScanTask, TupleDomain<ArcherColumnHandle> dynamicFilterPredicate, TupleDomain<ArcherColumnHandle> fileStatisticsDomain)
     {
-        if (fileHasNoDeletions &&
-                maxScannedFileSizeInBytes.isPresent() &&
-                fileScanTask.file().fileSizeInBytes() > maxScannedFileSizeInBytes.get()) {
-            return true;
-        }
-
         if (!pathDomain.isAll() && !pathDomain.includesNullableValue(utf8Slice(fileScanTask.file().path().toString()))) {
             return true;
         }
@@ -586,7 +610,12 @@ public class ArcherSplitSource
         return true;
     }
 
-    private ArcherSplit toArcherSplit(FileScanTask task, OptionalLong limit, Optional<String> invertedIndexQueryJson, TupleDomain<ArcherColumnHandle> fileStatisticsDomain)
+    private ArcherSplit toArcherSplit(
+            FileScanTask task,
+            OptionalLong limit,
+            Optional<String> invertedIndexQueryJson,
+            TupleDomain<ArcherColumnHandle> fileStatisticsDomain,
+            OptionalInt dynamicRepartitioningBound)
     {
         ContentFile<?> file = task.file();
         DeltaStoreType deltaStoreType = file.deltaStoreType();
@@ -614,6 +643,7 @@ public class ArcherSplitSource
                 ArcherFileFormat.fromArcher(file.format()),
                 PartitionSpecParser.toJson(task.spec()),
                 PartitionData.toJson(task.partition()),
+                dynamicRepartitioningBound,
                 invertedIndexJson,
                 invertedIndexQueryJson,
                 invertedIndexFiles.map(InvertedIndexFilesParser::toJson),

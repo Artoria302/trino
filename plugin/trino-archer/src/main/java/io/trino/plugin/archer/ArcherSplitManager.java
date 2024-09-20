@@ -102,6 +102,10 @@ public class ArcherSplitManager
                 constraint,
                 typeManager,
                 table.isRecordScannedFiles(),
+                table.getPartitionSpecId(),
+                table.isRefreshPartition(),
+                table.getInvertedIndexId(),
+                table.isRefreshInvertedIndex(),
                 cachingHostAddressProvider);
 
         return new ClassLoaderSafeConnectorSplitSource(splitSource, ArcherSplitManager.class.getClassLoader());

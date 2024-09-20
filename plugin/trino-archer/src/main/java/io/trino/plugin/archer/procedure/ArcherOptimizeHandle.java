@@ -34,6 +34,8 @@ public record ArcherOptimizeHandle(
         ArcherFileFormat fileFormat,
         Map<String, String> tableStorageProperties,
         DataSize maxScannedFileSize,
+        boolean refreshPartition,
+        boolean refreshInvertedIndex,
         boolean retriesEnabled)
         implements ArcherProcedureHandle
 {

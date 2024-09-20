@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
@@ -86,6 +87,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.parquet.ParquetTypeUtils.getDescriptors;
+import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_DYNAMIC_REPARTITIONING_VALUE_ID;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_DELETION;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
 import static io.trino.plugin.archer.ArcherColumnHandle.TRINO_MERGE_PARTITION_DATA;
@@ -247,6 +249,7 @@ public class ArcherPageSourceProvider
                 split.getLastModifiedTime(),
                 partitionSpec.specId(),
                 split.getPartitionDataJson(),
+                split.getDynamicRepartitioningBound(),
                 split.getFileFormat(),
                 query,
                 invertedIndexFiles,
@@ -286,6 +289,7 @@ public class ArcherPageSourceProvider
             long lastModifiedTime,
             int partitionSpecId,
             String partitionData,
+            OptionalInt dynamicRepartitioningBound,
             ArcherFileFormat fileFormat,
             Optional<InvertedIndexQuery> invertedIndexQuery,
             Optional<List<FileSummary>> invertedIndexFiles,
@@ -313,6 +317,7 @@ public class ArcherPageSourceProvider
                     partitionData,
                     fileSchema,
                     dataColumns,
+                    dynamicRepartitioningBound,
                     parquetReaderOptions
                             .withMaxReadBlockSize(getParquetMaxReadBlockSize(session)),
                     predicate,
@@ -342,6 +347,7 @@ public class ArcherPageSourceProvider
             String partitionData,
             Schema archerSchema,
             List<ArcherColumnHandle> dataColumns,
+            OptionalInt dynamicRepartitioningBound,
             ParquetReaderOptions options,
             TupleDomain<ArcherColumnHandle> predicate,
             FileFormatDataSourceStats fileFormatDataSourceStats,
@@ -379,77 +385,78 @@ public class ArcherPageSourceProvider
 
             TupleDomain<ArcherColumnHandle> tupleDomain = getValidTupleDomain(descriptorsByPath, predicate);
 
-            ConstantPopulatingPageSource.Builder constantPopulatingPageSourceBuilder = ConstantPopulatingPageSource.builder();
+            ArcherParquetPageSource.Builder pageSourceBuilder = ArcherParquetPageSource.builder();
             int parquetSourceChannel = 0;
 
-            ImmutableList.Builder<ParquetReaderColumn> parquetReaderColumnBuilder = ImmutableList.builder();
             ImmutableList.Builder<Types.NestedField> projectFields = ImmutableList.builder();
 
             for (int columnIndex = 0; columnIndex < readColumns.size(); columnIndex++) {
                 ArcherColumnHandle column = readColumns.get(columnIndex);
                 if (column.isIsDeletedColumn()) {
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(BOOLEAN, false));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(BOOLEAN, false));
                 }
                 else if (partitionKeys.containsKey(column.getId())) {
                     Type trinoType = column.getType();
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(
                             trinoType,
                             deserializePartitionValue(trinoType, partitionKeys.get(column.getId()).orElse(null), column.getName())));
                 }
                 else if (column.isPathColumn()) {
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(FILE_PATH.getType(), utf8Slice(segmentPath)));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(FILE_PATH.getType(), utf8Slice(segmentPath)));
                 }
                 else if (column.isFileModifiedTimeColumn()) {
                     long lastModified = packDateTimeWithZone(lastModifiedTime <= 0 ? inputFile.lastModified().toEpochMilli() : lastModifiedTime, UTC_KEY);
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(FILE_MODIFIED_TIME.getType(), lastModified));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(FILE_MODIFIED_TIME.getType(), lastModified));
                 }
                 else if (column.isRowPositionColumn()) {
-                    parquetReaderColumnBuilder.add(new ParquetReaderColumn(column.getType(), false));
                     projectFields.add(Types.NestedField.required(ROW_POS.getId(), ROW_POS.getColumnName(), Types.LongType.get()));
-                    constantPopulatingPageSourceBuilder.addDelegateColumn(parquetSourceChannel);
+                    pageSourceBuilder.addSourceColumn(parquetSourceChannel);
                     parquetSourceChannel++;
                 }
                 else if (column.isUpdateRowIdColumn() || column.isMergeRowIdColumn()) {
                     // $row_id is a composite of multiple physical columns, it is assembled by the ArcherPageSource
-                    parquetReaderColumnBuilder.add(new ParquetReaderColumn(column.getType(), true));
-                    constantPopulatingPageSourceBuilder.addDelegateColumn(parquetSourceChannel);
-                    parquetSourceChannel++;
+                    pageSourceBuilder.addNullColumn(column.getType());
                 }
                 else if (column.getId() == MetadataColumns.VERSION.fieldId()) {
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), (long) version));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), (long) version));
                 }
                 else if (column.getId() == TRINO_MERGE_FILE_RECORD_COUNT) {
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), fileRecordCount));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), fileRecordCount));
                 }
                 else if (column.getId() == TRINO_MERGE_PARTITION_SPEC_ID) {
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), (long) partitionSpecId));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), (long) partitionSpecId));
                 }
                 else if (column.getId() == TRINO_MERGE_PARTITION_DATA) {
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), utf8Slice(partitionData)));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), utf8Slice(partitionData)));
                 }
                 else if (column.getId() == TRINO_MERGE_DELETION) {
                     String deletionJson = deletion.map(DeletionParser::toJson).orElse(EMPTY_DELETION_JSON);
-                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), utf8Slice(deletionJson)));
+                    pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), utf8Slice(deletionJson)));
+                }
+                else if (column.getId() == TRINO_DYNAMIC_REPARTITIONING_VALUE_ID) {
+                    if (dynamicRepartitioningBound.isPresent()) {
+                        pageSourceBuilder.addDynamicRepartitioningValueColumn(dynamicRepartitioningBound.getAsInt());
+                    }
+                    else {
+                        pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), 0L));
+                    }
                 }
                 else {
                     org.apache.parquet.schema.Type parquetField = parquetFields.get(columnIndex);
                     Type trinoType = column.getBaseType();
 
                     if (parquetField == null) {
-                        parquetReaderColumnBuilder.add(new ParquetReaderColumn(trinoType, true));
-                    }
-                    else {
-                        // The top level columns are already mapped by name/id appropriately.
-                        parquetReaderColumnBuilder.add(new ParquetReaderColumn(trinoType, false));
-                        projectFields.add(archerSchema.findField(column.getId()));
+                        pageSourceBuilder.addNullColumn(trinoType);
+                        continue;
                     }
 
-                    constantPopulatingPageSourceBuilder.addDelegateColumn(parquetSourceChannel);
+                    // The top level columns are already mapped by name/id appropriately.
+                    projectFields.add(archerSchema.findField(column.getId()));
+                    pageSourceBuilder.addSourceColumn(parquetSourceChannel);
                     parquetSourceChannel++;
                 }
             }
 
-            List<ParquetReaderColumn> parquetReaderColumns = parquetReaderColumnBuilder.build();
             Schema projectSchema = new Schema(projectFields.build());
             Expression expression = toArcherExpression(tupleDomain);
 
@@ -472,7 +479,7 @@ public class ArcherPageSourceProvider
                     deletion,
                     dataSource);
             return new ReaderPageSource(
-                    constantPopulatingPageSourceBuilder.build(new ArcherParquetPageSource(parquetReader, parquetReaderColumns)),
+                    pageSourceBuilder.build(parquetReader),
                     columnProjections);
         }
         catch (IOException | RuntimeException e) {

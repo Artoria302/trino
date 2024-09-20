@@ -21,10 +21,15 @@ import io.trino.spi.connector.TableProcedureMetadata;
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.OPTIMIZE;
 import static io.trino.plugin.base.session.PropertyMetadataUtil.dataSizeProperty;
 import static io.trino.spi.connector.TableProcedureExecutionMode.distributedWithFilteringAndRepartitioning;
+import static io.trino.spi.session.PropertyMetadata.booleanProperty;
 
 public class OptimizeTableProcedure
         implements Provider<TableProcedureMetadata>
 {
+    public static final String FILE_SIZE_THRESHOLD = "file_size_threshold";
+    public static final String REFRESH_PARTITION = "refresh_partition";
+    public static final String REFRESH_INVERTED_INDEX = "refresh_inverted_index";
+
     @Override
     public TableProcedureMetadata get()
     {
@@ -33,9 +38,19 @@ public class OptimizeTableProcedure
                 distributedWithFilteringAndRepartitioning(),
                 ImmutableList.of(
                         dataSizeProperty(
-                                "file_size_threshold",
+                                FILE_SIZE_THRESHOLD,
                                 "Only compact files smaller than given threshold in bytes",
                                 DataSize.of(100, DataSize.Unit.MEGABYTE),
+                                false),
+                        booleanProperty(
+                                REFRESH_PARTITION,
+                                "Rewrite this segment if partition spec is expired",
+                                false,
+                                false),
+                        booleanProperty(
+                                REFRESH_INVERTED_INDEX,
+                                "Rewrite this segment if inverted index is expired",
+                                false,
                                 false)));
     }
 }

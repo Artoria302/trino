@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import static com.google.common.io.MoreFiles.deleteRecursively;
@@ -185,6 +186,10 @@ public class TestConnectorPushdownRulesWithArcher
                 ImmutableList.of(),
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
         TableHandle table = new TableHandle(catalogHandle, archerTable, new HiveTransactionHandle(false));
 
@@ -276,6 +281,10 @@ public class TestConnectorPushdownRulesWithArcher
                 ImmutableList.of(),
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
         TableHandle table = new TableHandle(catalogHandle, archerTable, new HiveTransactionHandle(false));
 
@@ -333,6 +342,10 @@ public class TestConnectorPushdownRulesWithArcher
                 ImmutableList.of(),
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
         TableHandle table = new TableHandle(catalogHandle, archerTable, new HiveTransactionHandle(false));
 
@@ -400,6 +413,10 @@ public class TestConnectorPushdownRulesWithArcher
                 ImmutableList.of(),
                 false,
                 Optional.empty(),
+                OptionalInt.empty(),
+                false,
+                OptionalInt.empty(),
+                false,
                 ImmutableSet.of());
         TableHandle table = new TableHandle(catalogHandle, archerTable, new HiveTransactionHandle(false));
 
