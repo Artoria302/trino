@@ -88,6 +88,7 @@ public class IcebergConfig
     private boolean localCacheEnabled = true;
     private int cacheNodeCount = 1;
     private boolean optimizeDynamicRepartitioning;
+    private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
 
     public CatalogType getCatalogType()
     {
@@ -507,6 +508,20 @@ public class IcebergConfig
     public IcebergConfig setOptimizeDynamicRepartitioning(boolean optimizeDynamicRepartitioning)
     {
         this.optimizeDynamicRepartitioning = optimizeDynamicRepartitioning;
+        return this;
+    }
+
+    @Min(0)
+    public int getMetadataThreads()
+    {
+        return metadataThreads;
+    }
+
+    @Config("iceberg.metadata-threads")
+    @ConfigDescription("Number of threads to expire snapshots and remove orphan files")
+    public IcebergConfig setMetadataThreads(int metadataThreads)
+    {
+        this.metadataThreads = metadataThreads;
         return this;
     }
 }

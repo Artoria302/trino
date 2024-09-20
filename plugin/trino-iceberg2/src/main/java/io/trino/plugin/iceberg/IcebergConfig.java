@@ -94,7 +94,7 @@ public class IcebergConfig
     private int partitionedBucketsPerNode;
     private boolean optimizeDynamicRepartitioning;
     private boolean forceEngineRepartitioning;
-    private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors(), 8);
+    private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
 
     public CatalogType getCatalogType()
     {
