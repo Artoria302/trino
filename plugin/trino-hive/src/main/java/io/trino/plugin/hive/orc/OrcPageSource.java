@@ -30,6 +30,7 @@ import io.trino.plugin.hive.orc.OrcDeletedRows.MaskDeletedRowsFunction;
 import io.trino.spi.Page;
 import io.trino.spi.TrinoException;
 import io.trino.spi.block.Block;
+import io.trino.spi.block.IntArrayBlock;
 import io.trino.spi.block.LazyBlock;
 import io.trino.spi.block.LazyBlockLoader;
 import io.trino.spi.block.LongArrayBlock;
@@ -43,6 +44,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -281,6 +283,11 @@ public class OrcPageSource
             return new PositionAdaptation();
         }
 
+        static ColumnAdaptation dynamicRepartitioningValueColumn(int bound)
+        {
+            return new DynamicRepartitioningValueColumn(bound);
+        }
+
         static ColumnAdaptation mergedRowColumns()
         {
             return new MergedRowAdaptation();
@@ -491,5 +498,26 @@ public class OrcPageSource
             translatedRowIds[index] = startingRowId + filePosition + index;
         }
         return new LongArrayBlock(positionCount, Optional.empty(), translatedRowIds);
+    }
+
+    private record DynamicRepartitioningValueColumn(int bound)
+            implements ColumnAdaptation
+    {
+        @Override
+        public Block block(Page sourcePage, MaskDeletedRowsFunction maskDeletedRowsFunction, long filePosition, OptionalLong startRowId)
+        {
+            return createDynamicRepartitioningValueBlock(bound, sourcePage.getPositionCount());
+        }
+    }
+
+    private static Block createDynamicRepartitioningValueBlock(int bound, int size)
+    {
+        int[] values = new int[size];
+        int val = ThreadLocalRandom.current().nextInt(bound);
+        for (int position = 0; position < size; position++) {
+            values[position] = val;
+            val = (val + 1) % bound;
+        }
+        return new IntArrayBlock(size, Optional.empty(), values);
     }
 }

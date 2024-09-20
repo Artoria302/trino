@@ -976,7 +976,7 @@ public class LogicalPlanner
 
         TableMetadata tableMetadata = metadata.getTableMetadata(session, tableHandle);
         List<String> columnNames = tableMetadata.columns().stream()
-                .filter(column -> !column.isHidden()) // todo this filter is redundant
+                .filter(column -> !column.isHidden() || "_dynamic_repartitioning_value".equals(column.getName())) // todo this filter is redundant
                 .map(ColumnMetadata::getName)
                 .collect(toImmutableList());
 
@@ -988,7 +988,13 @@ public class LogicalPlanner
 
         Optional<TableLayout> layout = metadata.getLayoutForTableExecute(session, executeHandle);
 
-        List<Symbol> symbols = visibleFields(tableScanPlan);
+        // List<Symbol> symbols = visibleFields(tableScanPlan);
+        RelationType descriptor = tableScanPlan.getDescriptor();
+        List<Symbol> symbols = descriptor.getAllFields().stream()
+                .filter(field -> !field.isHidden() || (field.getName().isPresent() && "_dynamic_repartitioning_value".equals(field.getName().get())))
+                .map(descriptor::indexOf)
+                .map(tableScanPlan.getFieldMappings()::get)
+                .collect(toImmutableList());
 
         // todo extract common method to be used here and in createTableWriterPlan()
         Optional<PartitioningScheme> partitioningScheme = Optional.empty();
