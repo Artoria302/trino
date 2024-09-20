@@ -87,6 +87,7 @@ public class IcebergConfig
     private boolean incrementalRefreshEnabled = true;
     private boolean localCacheEnabled = true;
     private int cacheNodeCount = 1;
+    private boolean optimizeDynamicRepartitioning;
 
     public CatalogType getCatalogType()
     {
@@ -494,6 +495,18 @@ public class IcebergConfig
     public IcebergConfig setCacheNodeCount(int count)
     {
         this.cacheNodeCount = count;
+        return this;
+    }
+
+    public boolean getOptimizeDynamicRepartitioning()
+    {
+        return optimizeDynamicRepartitioning;
+    }
+
+    @Config("iceberg.optimize-dynamic-repartitioning")
+    public IcebergConfig setOptimizeDynamicRepartitioning(boolean optimizeDynamicRepartitioning)
+    {
+        this.optimizeDynamicRepartitioning = optimizeDynamicRepartitioning;
         return this;
     }
 }

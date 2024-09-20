@@ -64,6 +64,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -147,6 +148,7 @@ public class TestIcebergNodeLocalDynamicSplitPruning
                     ORC,
                     PartitionSpecParser.toJson(PartitionSpec.unpartitioned()),
                     PartitionData.toJson(new PartitionData(new Object[] {})),
+                    OptionalInt.empty(),
                     ImmutableList.of(),
                     SplitWeight.standard(),
                     TupleDomain.all(),
@@ -208,6 +210,7 @@ public class TestIcebergNodeLocalDynamicSplitPruning
                     ORC,
                     PartitionSpecParser.toJson(PartitionSpec.unpartitioned()),
                     PartitionData.toJson(new PartitionData(new Object[] {})),
+                    OptionalInt.empty(),
                     ImmutableList.of(),
                     SplitWeight.standard(),
                     TupleDomain.withColumnDomains(ImmutableMap.of(keyColumnHandle, Domain.singleValue(INTEGER, (long) keyColumnValue))),
@@ -317,6 +320,7 @@ public class TestIcebergNodeLocalDynamicSplitPruning
                     ORC,
                     PartitionSpecParser.toJson(partitionSpec),
                     PartitionData.toJson(new PartitionData(new Object[] {dateColumnValue})),
+                    OptionalInt.empty(),
                     ImmutableList.of(),
                     SplitWeight.standard(),
                     TupleDomain.all(),
@@ -469,6 +473,7 @@ public class TestIcebergNodeLocalDynamicSplitPruning
                     ORC,
                     PartitionSpecParser.toJson(partitionSpec),
                     PartitionData.toJson(new PartitionData(new Object[] {yearColumnValue})),
+                    OptionalInt.empty(),
                     ImmutableList.of(),
                     SplitWeight.standard(),
                     TupleDomain.all(),

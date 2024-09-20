@@ -26,6 +26,10 @@ import io.airlift.units.Duration;
 import io.trino.cache.NonEvictableCache;
 import io.trino.filesystem.cache.CachingHostAddressProvider;
 import io.trino.plugin.iceberg.delete.DeleteFile;
+import io.trino.plugin.iceberg.repartitioning.DefaultFileScanIterable;
+import io.trino.plugin.iceberg.repartitioning.RepartitionedFileScanIterable;
+import io.trino.plugin.iceberg.repartitioning.RepartitionedFileScanTask;
+import io.trino.plugin.iceberg.repartitioning.RepartitionedFileTaskIterator;
 import io.trino.plugin.iceberg.util.DataFileWithDeleteFiles;
 import io.trino.spi.HostAddress;
 import io.trino.spi.SplitWeight;
@@ -62,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -133,10 +138,10 @@ public class IcebergSplitSource
     private final Set<Integer> predicatedColumnIds;
 
     private TupleDomain<IcebergColumnHandle> pushedDownDynamicFilterPredicate;
-    private CloseableIterable<FileScanTask> fileScanIterable;
+    private CloseableIterable<RepartitionedFileScanTask> fileScanIterable;
     private long targetSplitSize;
-    private CloseableIterator<FileScanTask> fileScanIterator;
-    private Iterator<FileScanTask> fileTasksIterator = emptyIterator();
+    private CloseableIterator<RepartitionedFileScanTask> fileScanIterator;
+    private Iterator<RepartitionedFileScanTask> fileTasksIterator = emptyIterator();
     private TupleDomain<IcebergColumnHandle> fileStatisticsDomain;
 
     private final boolean recordScannedFiles;
@@ -242,7 +247,12 @@ public class IcebergSplitSource
                                 .filter(Objects::nonNull)
                                 .collect(toImmutableList()));
             }
-            this.fileScanIterable = closer.register(scan.planFiles());
+            if (recordScannedFiles) {
+                this.fileScanIterable = closer.register(new RepartitionedFileScanIterable(scan.planFiles(), maxScannedFileSizeInBytes));
+            }
+            else {
+                this.fileScanIterable = closer.register(new DefaultFileScanIterable(scan.planFiles()));
+            }
             this.targetSplitSize = getSplitSize(session)
                     .map(DataSize::toBytes)
                     .orElseGet(tableScan::targetSplitSize);
@@ -264,7 +274,9 @@ public class IcebergSplitSource
                     finish();
                     break;
                 }
-                FileScanTask wholeFileTask = fileScanIterator.next();
+                RepartitionedFileScanTask repartitionedWholeFileTask = fileScanIterator.next();
+                FileScanTask wholeFileTask = repartitionedWholeFileTask.fileScanTask();
+                OptionalInt repartitioningValue = repartitionedWholeFileTask.repartitioningValue();
                 boolean fileHasNoDeletions = wholeFileTask.deletes().isEmpty();
 
                 fileStatisticsDomain = createFileStatisticsDomain(wholeFileTask);
@@ -285,15 +297,16 @@ public class IcebergSplitSource
                 }
 
                 if (fileHasNoDeletions && noDataColumnsProjected(wholeFileTask)) {
-                    fileTasksIterator = List.of(wholeFileTask).iterator();
+                    fileTasksIterator = new RepartitionedFileTaskIterator(List.of(wholeFileTask).iterator(), repartitioningValue);
                 }
                 else {
-                    fileTasksIterator = wholeFileTask.split(targetSplitSize).iterator();
+                    fileTasksIterator = new RepartitionedFileTaskIterator(wholeFileTask.split(targetSplitSize).iterator(), repartitioningValue);
                 }
                 // In theory, .split() could produce empty iterator, so let's evaluate the outer loop condition again.
                 continue;
             }
-            splits.add(toIcebergSplit(fileTasksIterator.next(), fileStatisticsDomain));
+            RepartitionedFileScanTask repartitionedFileTask = fileTasksIterator.next();
+            splits.add(toIcebergSplit(repartitionedFileTask.fileScanTask(), fileStatisticsDomain, repartitionedFileTask.repartitioningValue()));
         }
         return completedFuture(new ConnectorSplitBatch(splits, isFinished()));
     }
@@ -515,7 +528,7 @@ public class IcebergSplitSource
         return true;
     }
 
-    private IcebergSplit toIcebergSplit(FileScanTask task, TupleDomain<IcebergColumnHandle> fileStatisticsDomain)
+    private IcebergSplit toIcebergSplit(FileScanTask task, TupleDomain<IcebergColumnHandle> fileStatisticsDomain, OptionalInt dynamicRepartitioningBound)
     {
         List<HostAddress> addresses = localCacheEnabled && !recordScannedFiles
                 ? cachingHostAddressProvider.getHosts(task.file().path().toString(), cacheNodeCount, ImmutableList.of())
@@ -529,6 +542,7 @@ public class IcebergSplitSource
                 IcebergFileFormat.fromIceberg(task.file().format()),
                 PartitionSpecParser.toJson(task.spec()),
                 PartitionData.toJson(task.file().partition()),
+                dynamicRepartitioningBound,
                 task.deletes().stream()
                         .map(DeleteFile::fromIceberg)
                         .collect(toImmutableList()),

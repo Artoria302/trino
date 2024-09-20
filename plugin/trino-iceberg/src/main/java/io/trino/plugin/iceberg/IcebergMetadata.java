@@ -213,10 +213,13 @@ import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
 import static io.trino.plugin.iceberg.ExpressionConverter.isConvertableToIcebergExpression;
 import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 import static io.trino.plugin.iceberg.IcebergAnalyzeProperties.getColumnNames;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_DYNAMIC_REPARTITIONING_VALUE_ID;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.dynamicRepartitioningValueColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
@@ -224,6 +227,7 @@ import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_MISSING_METADATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_UNSUPPORTED_VIEW_DIALECT;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.DYNAMIC_REPARTITIONING_VALUE;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
 import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
@@ -235,6 +239,7 @@ import static io.trino.plugin.iceberg.IcebergSessionProperties.isCollectExtended
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isIncrementalRefreshEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isMergeManifestsOnWrite;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isOptimizeDynamicRepartitioning;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isProjectionPushdownEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isQueryPartitionFilterRequired;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isStatisticsEnabled;
@@ -724,6 +729,7 @@ public class IcebergMetadata
         }
         columnHandles.put(FILE_PATH.getColumnName(), pathColumnHandle());
         columnHandles.put(FILE_MODIFIED_TIME.getColumnName(), fileModifiedTimeColumnHandle());
+        columnHandles.put(DYNAMIC_REPARTITIONING_VALUE.getColumnName(), dynamicRepartitioningValueColumnHandle());
         return columnHandles.buildOrThrow();
     }
 
@@ -1446,7 +1452,18 @@ public class IcebergMetadata
         Table icebergTable = catalog.loadTable(session, executeHandle.schemaTableName());
         // from performance perspective it is better to have lower number of bigger files than other way around
         // thus we force repartitioning for optimize to achieve this
-        return getWriteLayout(icebergTable.schema(), icebergTable.spec(), true);
+        Schema schema = icebergTable.schema();
+        PartitionSpec spec = icebergTable.spec();
+        if (isOptimizeDynamicRepartitioning(session)) {
+            List<Types.NestedField> columns = new ArrayList<>(schema.columns());
+            columns.add(NestedField.required(TRINO_DYNAMIC_REPARTITIONING_VALUE_ID, TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME, IntegerType.get()));
+            schema = new Schema(0, columns, schema.getAliases(), schema.identifierFieldIds());
+
+            List<String> fields = new ArrayList<>(toPartitionFields(spec));
+            fields.add(TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME);
+            spec = parsePartitionFields(schema, fields);
+        }
+        return getWriteLayout(schema, spec, true);
     }
 
     @Override

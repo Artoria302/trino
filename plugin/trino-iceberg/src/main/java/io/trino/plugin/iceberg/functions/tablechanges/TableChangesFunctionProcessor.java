@@ -33,6 +33,7 @@ import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.mapping.NameMappingParser;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.DATA_CHANGE_ORDINAL_ID;
@@ -127,6 +128,7 @@ public class TableChangesFunctionProcessor
                 split.fileSize(),
                 split.fileRecordCount(),
                 split.partitionDataJson(),
+                OptionalInt.empty(),
                 split.fileFormat(),
                 split.fileIoProperties(),
                 0,

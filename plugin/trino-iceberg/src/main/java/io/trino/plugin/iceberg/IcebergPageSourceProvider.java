@@ -111,6 +111,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -136,6 +137,7 @@ import static io.trino.parquet.predicate.PredicateUtils.buildPredicate;
 import static io.trino.parquet.predicate.PredicateUtils.getFilteredRowGroups;
 import static io.trino.plugin.hive.parquet.ParquetPageSourceFactory.createDataSource;
 import static io.trino.plugin.iceberg.ColumnIdentity.TypeCategory.PRIMITIVE;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_DYNAMIC_REPARTITIONING_VALUE_ID;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
 import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
@@ -268,6 +270,7 @@ public class IcebergPageSourceProvider
                 split.getFileSize(),
                 split.getFileRecordCount(),
                 split.getPartitionDataJson(),
+                split.getDynamicRepartitioningBound(),
                 split.getFileFormat(),
                 split.getFileIoProperties(),
                 split.getDataSequenceNumber(),
@@ -290,6 +293,7 @@ public class IcebergPageSourceProvider
             long fileSize,
             long fileRecordCount,
             String partitionDataJson,
+            OptionalInt dynamicRepartitioningBound,
             IcebergFileFormat fileFormat,
             Map<String, String> fileIoProperties,
             long dataSequenceNumber,
@@ -373,6 +377,7 @@ public class IcebergPageSourceProvider
                 fileSize,
                 partitionSpec.specId(),
                 partitionDataJson,
+                dynamicRepartitioningBound,
                 fileFormat,
                 tableSchema,
                 requiredColumns,
@@ -511,6 +516,7 @@ public class IcebergPageSourceProvider
                 delete.fileSizeInBytes(),
                 0,
                 "",
+                OptionalInt.empty(),
                 IcebergFileFormat.fromIceberg(delete.format()),
                 schemaFromHandles(columns),
                 columns,
@@ -529,6 +535,7 @@ public class IcebergPageSourceProvider
             long fileSize,
             int partitionSpecId,
             String partitionData,
+            OptionalInt dynamicRepartitioningBound,
             IcebergFileFormat fileFormat,
             Schema fileSchema,
             List<IcebergColumnHandle> dataColumns,
@@ -544,6 +551,7 @@ public class IcebergPageSourceProvider
                     partitionSpecId,
                     partitionData,
                     dataColumns,
+                    dynamicRepartitioningBound,
                     predicate,
                     orcReaderOptions
                             .withMaxMergeDistance(getOrcMaxMergeDistance(session))
@@ -566,6 +574,7 @@ public class IcebergPageSourceProvider
                     partitionSpecId,
                     partitionData,
                     dataColumns,
+                    dynamicRepartitioningBound,
                     parquetReaderOptions
                             .withMaxReadBlockSize(getParquetMaxReadBlockSize(session))
                             .withMaxReadBlockRowCount(getParquetMaxReadBlockRowCount(session))
@@ -633,6 +642,7 @@ public class IcebergPageSourceProvider
             int partitionSpecId,
             String partitionData,
             List<IcebergColumnHandle> columns,
+            OptionalInt dynamicRepartitioningBound,
             TupleDomain<IcebergColumnHandle> effectivePredicate,
             OrcReaderOptions options,
             FileFormatDataSourceStats stats,
@@ -699,6 +709,14 @@ public class IcebergPageSourceProvider
                 }
                 else if (column.getId() == TRINO_MERGE_PARTITION_DATA) {
                     columnAdaptations.add(ColumnAdaptation.constantColumn(nativeValueToBlock(column.getType(), utf8Slice(partitionData))));
+                }
+                else if (column.getId() == TRINO_DYNAMIC_REPARTITIONING_VALUE_ID) {
+                    if (dynamicRepartitioningBound.isPresent()) {
+                        columnAdaptations.add(ColumnAdaptation.dynamicRepartitioningValueColumn(dynamicRepartitioningBound.getAsInt()));
+                    }
+                    else {
+                        columnAdaptations.add(ColumnAdaptation.constantColumn(nativeValueToBlock(column.getType(), 0L)));
+                    }
                 }
                 else if (orcColumn != null) {
                     Type readType = getOrcReadType(column.getType(), typeManager);
@@ -909,6 +927,7 @@ public class IcebergPageSourceProvider
             int partitionSpecId,
             String partitionData,
             List<IcebergColumnHandle> regularColumns,
+            OptionalInt dynamicRepartitioningBound,
             ParquetReaderOptions options,
             TupleDomain<IcebergColumnHandle> effectivePredicate,
             FileFormatDataSourceStats fileFormatDataSourceStats,
@@ -999,6 +1018,14 @@ public class IcebergPageSourceProvider
                 }
                 else if (column.getId() == TRINO_MERGE_PARTITION_DATA) {
                     pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), utf8Slice(partitionData)));
+                }
+                else if (column.getId() == TRINO_DYNAMIC_REPARTITIONING_VALUE_ID) {
+                    if (dynamicRepartitioningBound.isPresent()) {
+                        pageSourceBuilder.addDynamicRepartitioningValueColumn(dynamicRepartitioningBound.getAsInt());
+                    }
+                    else {
+                        pageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), 0L));
+                    }
                 }
                 else {
                     org.apache.parquet.schema.Type parquetField = parquetFields.get(columnIndex);
@@ -1169,6 +1196,9 @@ public class IcebergPageSourceProvider
                 }
                 else if (column.getId() == TRINO_MERGE_PARTITION_DATA) {
                     constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), utf8Slice(partitionData)));
+                }
+                else if (column.getId() == TRINO_DYNAMIC_REPARTITIONING_VALUE_ID) {
+                    constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), 0L));
                 }
                 else if (field == null) {
                     constantPopulatingPageSourceBuilder.addConstantColumn(nativeValueToBlock(column.getType(), null));

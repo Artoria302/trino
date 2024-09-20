@@ -110,6 +110,7 @@ public final class IcebergSessionProperties
     private static final String INCREMENTAL_REFRESH_ENABLED = "incremental_refresh_enabled";
     private static final String LOCAL_CACHE_ENABLED = "local_cache_enabled";
     private static final String CACHE_NODE_COUNT = "cache_node_count";
+    public static final String OPTIMIZE_DYNAMIC_REPARTITIONING = "optimize_dynamic_repartitioning";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -398,6 +399,11 @@ public final class IcebergSessionProperties
                         "Enable Incremental refresh for MVs backed by Iceberg tables, when possible.",
                         icebergConfig.isIncrementalRefreshEnabled(),
                         false))
+                .add(booleanProperty(
+                        OPTIMIZE_DYNAMIC_REPARTITIONING,
+                        "Dynamic repartitioning when optimize table",
+                        icebergConfig.getOptimizeDynamicRepartitioning(),
+                        false))
                 .build();
     }
 
@@ -645,5 +651,10 @@ public final class IcebergSessionProperties
     public static int getCacheNodeCount(ConnectorSession session)
     {
         return session.getProperty(CACHE_NODE_COUNT, Integer.class);
+    }
+
+    public static boolean isOptimizeDynamicRepartitioning(ConnectorSession session)
+    {
+        return session.getProperty(OPTIMIZE_DYNAMIC_REPARTITIONING, Boolean.class);
     }
 }

@@ -72,6 +72,7 @@ public class TestIcebergConfig
                 .setSplitManagerThreads(Runtime.getRuntime().availableProcessors() * 2)
                 .setLocalCacheEnabled(true)
                 .setCacheNodeCount(1)
+                .setOptimizeDynamicRepartitioning(false)
                 .setIncrementalRefreshEnabled(true));
     }
 
@@ -108,6 +109,7 @@ public class TestIcebergConfig
                 .put("iceberg.incremental-refresh-enabled", "false")
                 .put("iceberg.local-cache-enabled", "false")
                 .put("iceberg.cache-node-count", "5")
+                .put("iceberg.optimize-dynamic-repartitioning", "true")
                 .buildOrThrow();
 
         IcebergConfig expected = new IcebergConfig()
@@ -139,6 +141,7 @@ public class TestIcebergConfig
                 .setSplitManagerThreads(42)
                 .setLocalCacheEnabled(false)
                 .setCacheNodeCount(5)
+                .setOptimizeDynamicRepartitioning(true)
                 .setIncrementalRefreshEnabled(false);
 
         assertFullMapping(properties, expected);
