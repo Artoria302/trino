@@ -89,6 +89,9 @@ public class IcebergConfig
     private int cacheNodeCount = 1;
     private boolean optimizeDynamicRepartitioning;
     private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
+    private int maxMetadataVersions = 5;
+    private boolean enableDeleteMetadataAfterCommit = true;
+    private boolean deleteDataAfterDropTableEnabled = true;
 
     public CatalogType getCatalogType()
     {
@@ -522,6 +525,43 @@ public class IcebergConfig
     public IcebergConfig setMetadataThreads(int metadataThreads)
     {
         this.metadataThreads = metadataThreads;
+        return this;
+    }
+
+    public int getMaxMetadataVersions()
+    {
+        return maxMetadataVersions;
+    }
+
+    @Config("iceberg.metadata.previous-versions-max")
+    @ConfigDescription("Maximum number of previous version for metadata")
+    public IcebergConfig setMaxMetadataVersions(int maxMetadataVersions)
+    {
+        this.maxMetadataVersions = maxMetadataVersions;
+        return this;
+    }
+
+    public boolean isEnableDeleteMetadataAfterCommit()
+    {
+        return enableDeleteMetadataAfterCommit;
+    }
+
+    @Config("iceberg.metadata.delete-after-commit.enabled")
+    public IcebergConfig setEnableDeleteMetadataAfterCommit(boolean enableDeleteMetadataAfterCommit)
+    {
+        this.enableDeleteMetadataAfterCommit = enableDeleteMetadataAfterCommit;
+        return this;
+    }
+
+    public boolean isDeleteDataAfterDropTableEnabled()
+    {
+        return deleteDataAfterDropTableEnabled;
+    }
+
+    @Config("iceberg.delete-data-after-drop-table-enabled")
+    public IcebergConfig setDeleteDataAfterDropTableEnabled(boolean deleteDataAfterDropTableEnabled)
+    {
+        this.deleteDataAfterDropTableEnabled = deleteDataAfterDropTableEnabled;
         return this;
     }
 }

@@ -100,6 +100,7 @@ import static io.trino.plugin.iceberg.IcebergMaterializedViewDefinition.encodeMa
 import static io.trino.plugin.iceberg.IcebergMaterializedViewDefinition.fromConnectorMaterializedViewDefinition;
 import static io.trino.plugin.iceberg.IcebergMaterializedViewProperties.STORAGE_SCHEMA;
 import static io.trino.plugin.iceberg.IcebergSchemaProperties.LOCATION_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isDeleteDataAfterDropTableEnabled;
 import static io.trino.plugin.iceberg.IcebergUtil.getIcebergTableWithMetadata;
 import static io.trino.plugin.iceberg.IcebergUtil.loadIcebergTable;
 import static io.trino.plugin.iceberg.IcebergUtil.quotedTableName;
@@ -120,7 +121,6 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.BaseMetastoreTableOperations.ICEBERG_TABLE_TYPE_VALUE;
 import static org.apache.iceberg.BaseMetastoreTableOperations.METADATA_LOCATION_PROP;
 import static org.apache.iceberg.BaseMetastoreTableOperations.TABLE_TYPE_PROP;
-import static org.apache.iceberg.CatalogUtil.dropTableData;
 
 public class TrinoHiveCatalog
         extends AbstractTrinoCatalog
@@ -384,7 +384,7 @@ public class TrinoHiveCatalog
     public void dropTable(ConnectorSession session, SchemaTableName schemaTableName)
     {
         BaseTable table = (BaseTable) loadTable(session, schemaTableName);
-        TableMetadata metadata = table.operations().current();
+        // TableMetadata metadata = table.operations().current();
         validateTableCanBeDropped(table);
 
         io.trino.metastore.Table metastoreTable = metastore.getTable(schemaTableName.getSchemaName(), schemaTableName.getTableName())
@@ -396,14 +396,17 @@ public class TrinoHiveCatalog
         try {
             // Use the Iceberg routine for dropping the table data because the data files
             // of the Iceberg table may be located in different locations
-            dropTableData(table.io(), metadata);
+            boolean deleteDataAfterDropTable = isDeleteDataAfterDropTableEnabled(session);
+            if (deleteDataAfterDropTable) {
+                // dropTableData(table.io(), metadata);
+                deleteTableDirectory(fileSystemFactory.create(session), schemaTableName, metastoreTable.getStorage().getLocation());
+            }
         }
         catch (RuntimeException e) {
             // If the snapshot file is not found, an exception will be thrown by the dropTableData function.
             // So log the exception and continue with deleting the table location
             log.warn(e, "Failed to delete table data referenced by metadata");
         }
-        deleteTableDirectory(fileSystemFactory.create(session), schemaTableName, metastoreTable.getStorage().getLocation());
         invalidateTableCache(schemaTableName);
     }
 

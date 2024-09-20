@@ -74,6 +74,9 @@ public class TestIcebergConfig
                 .setCacheNodeCount(1)
                 .setOptimizeDynamicRepartitioning(false)
                 .setMetadataThreads(Math.max(Runtime.getRuntime().availableProcessors() * 2, 8))
+                .setMaxMetadataVersions(5)
+                .setDeleteDataAfterDropTableEnabled(true)
+                .setEnableDeleteMetadataAfterCommit(true)
                 .setIncrementalRefreshEnabled(true));
     }
 
@@ -111,6 +114,9 @@ public class TestIcebergConfig
                 .put("iceberg.local-cache-enabled", "false")
                 .put("iceberg.cache-node-count", "5")
                 .put("iceberg.metadata-threads", "2")
+                .put("iceberg.metadata.previous-versions-max", "10")
+                .put("iceberg.metadata.delete-after-commit.enabled", "false")
+                .put("iceberg.delete-data-after-drop-table-enabled", "false")
                 .put("iceberg.optimize-dynamic-repartitioning", "true")
                 .buildOrThrow();
 
@@ -145,6 +151,9 @@ public class TestIcebergConfig
                 .setCacheNodeCount(5)
                 .setOptimizeDynamicRepartitioning(true)
                 .setMetadataThreads(2)
+                .setMaxMetadataVersions(10)
+                .setDeleteDataAfterDropTableEnabled(false)
+                .setEnableDeleteMetadataAfterCommit(false)
                 .setIncrementalRefreshEnabled(false);
 
         assertFullMapping(properties, expected);

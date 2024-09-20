@@ -111,6 +111,7 @@ public final class IcebergSessionProperties
     private static final String LOCAL_CACHE_ENABLED = "local_cache_enabled";
     private static final String CACHE_NODE_COUNT = "cache_node_count";
     public static final String OPTIMIZE_DYNAMIC_REPARTITIONING = "optimize_dynamic_repartitioning";
+    private static final String DELETE_DATA_AFTER_DROP_TABLE_ENABLED = "delete_data_after_drop_table_enabled";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -404,6 +405,11 @@ public final class IcebergSessionProperties
                         "Dynamic repartitioning when optimize table",
                         icebergConfig.getOptimizeDynamicRepartitioning(),
                         false))
+                .add(booleanProperty(
+                        DELETE_DATA_AFTER_DROP_TABLE_ENABLED,
+                        "Delete data after drop table",
+                        icebergConfig.isDeleteDataAfterDropTableEnabled(),
+                        false))
                 .build();
     }
 
@@ -656,5 +662,10 @@ public final class IcebergSessionProperties
     public static boolean isOptimizeDynamicRepartitioning(ConnectorSession session)
     {
         return session.getProperty(OPTIMIZE_DYNAMIC_REPARTITIONING, Boolean.class);
+    }
+
+    public static boolean isDeleteDataAfterDropTableEnabled(ConnectorSession session)
+    {
+        return session.getProperty(DELETE_DATA_AFTER_DROP_TABLE_ENABLED, Boolean.class);
     }
 }
