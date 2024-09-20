@@ -112,6 +112,7 @@ public final class IcebergSessionProperties
     private static final String CACHE_NODE_COUNT = "cache_node_count";
     public static final String OPTIMIZE_DYNAMIC_REPARTITIONING = "optimize_dynamic_repartitioning";
     private static final String DELETE_DATA_AFTER_DROP_TABLE_ENABLED = "delete_data_after_drop_table_enabled";
+    public static final String FORCE_ENGINE_REPARTITIONING = "force_engine_repartitioning";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -410,6 +411,11 @@ public final class IcebergSessionProperties
                         "Delete data after drop table",
                         icebergConfig.isDeleteDataAfterDropTableEnabled(),
                         false))
+                .add(booleanProperty(
+                        FORCE_ENGINE_REPARTITIONING,
+                        "Force let engine determine whether to repartition data or not even if not all partition transform is identity",
+                        icebergConfig.getForceEngineRepartitioning(),
+                        false))
                 .build();
     }
 
@@ -667,5 +673,10 @@ public final class IcebergSessionProperties
     public static boolean isDeleteDataAfterDropTableEnabled(ConnectorSession session)
     {
         return session.getProperty(DELETE_DATA_AFTER_DROP_TABLE_ENABLED, Boolean.class);
+    }
+
+    public static boolean isForceEngineRepartitioning(ConnectorSession session)
+    {
+        return session.getProperty(FORCE_ENGINE_REPARTITIONING, Boolean.class);
     }
 }

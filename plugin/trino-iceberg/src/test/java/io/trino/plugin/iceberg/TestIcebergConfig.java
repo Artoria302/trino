@@ -77,6 +77,7 @@ public class TestIcebergConfig
                 .setMaxMetadataVersions(5)
                 .setDeleteDataAfterDropTableEnabled(true)
                 .setEnableDeleteMetadataAfterCommit(true)
+                .setForceEngineRepartitioning(false)
                 .setIncrementalRefreshEnabled(true));
     }
 
@@ -118,6 +119,7 @@ public class TestIcebergConfig
                 .put("iceberg.metadata.delete-after-commit.enabled", "false")
                 .put("iceberg.delete-data-after-drop-table-enabled", "false")
                 .put("iceberg.optimize-dynamic-repartitioning", "true")
+                .put("iceberg.force-engine-repartitioning", "true")
                 .buildOrThrow();
 
         IcebergConfig expected = new IcebergConfig()
@@ -154,6 +156,7 @@ public class TestIcebergConfig
                 .setMaxMetadataVersions(10)
                 .setDeleteDataAfterDropTableEnabled(false)
                 .setEnableDeleteMetadataAfterCommit(false)
+                .setForceEngineRepartitioning(true)
                 .setIncrementalRefreshEnabled(false);
 
         assertFullMapping(properties, expected);

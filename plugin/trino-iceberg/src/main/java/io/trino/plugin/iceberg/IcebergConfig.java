@@ -92,6 +92,7 @@ public class IcebergConfig
     private int maxMetadataVersions = 5;
     private boolean enableDeleteMetadataAfterCommit = true;
     private boolean deleteDataAfterDropTableEnabled = true;
+    private boolean forceEngineRepartitioning;
 
     public CatalogType getCatalogType()
     {
@@ -562,6 +563,18 @@ public class IcebergConfig
     public IcebergConfig setDeleteDataAfterDropTableEnabled(boolean deleteDataAfterDropTableEnabled)
     {
         this.deleteDataAfterDropTableEnabled = deleteDataAfterDropTableEnabled;
+        return this;
+    }
+
+    public boolean getForceEngineRepartitioning()
+    {
+        return forceEngineRepartitioning;
+    }
+
+    @Config("iceberg.force-engine-repartitioning")
+    public IcebergConfig setForceEngineRepartitioning(boolean forceEngineRepartitioning)
+    {
+        this.forceEngineRepartitioning = forceEngineRepartitioning;
         return this;
     }
 }

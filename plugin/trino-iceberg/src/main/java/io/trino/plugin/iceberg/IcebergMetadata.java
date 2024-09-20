@@ -243,6 +243,7 @@ import static io.trino.plugin.iceberg.IcebergSessionProperties.getQueryPartition
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getRemoveOrphanFilesMinRetention;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isCollectExtendedStatisticsOnWrite;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isForceEngineRepartitioning;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isIncrementalRefreshEnabled;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isMergeManifestsOnWrite;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isOptimizeDynamicRepartitioning;
@@ -958,7 +959,8 @@ public class IcebergMetadata
     {
         Schema schema = schemaFromMetadata(tableMetadata.getColumns());
         PartitionSpec partitionSpec = parsePartitionFields(schema, getPartitioning(tableMetadata.getProperties()));
-        return getWriteLayout(schema, partitionSpec, false);
+        boolean forceEngineRepartitioning = isForceEngineRepartitioning(session);
+        return getWriteLayout(schema, partitionSpec, false, forceEngineRepartitioning);
     }
 
     @Override
@@ -1073,10 +1075,11 @@ public class IcebergMetadata
         PartitionSpec partitionSpec = PartitionSpecParser.fromJson(
                 schema,
                 table.getPartitionSpecJson().orElseThrow(() -> new VerifyException("Partition spec missing in the table handle")));
-        return getWriteLayout(schema, partitionSpec, false);
+        boolean forceEngineRepartitioning = isForceEngineRepartitioning(session);
+        return getWriteLayout(schema, partitionSpec, false, forceEngineRepartitioning);
     }
 
-    private Optional<ConnectorTableLayout> getWriteLayout(Schema tableSchema, PartitionSpec partitionSpec, boolean forceRepartitioning)
+    private Optional<ConnectorTableLayout> getWriteLayout(Schema tableSchema, PartitionSpec partitionSpec, boolean forceRepartitioning, boolean forceEngineRepartitioning)
     {
         if (partitionSpec.isUnpartitioned()) {
             return Optional.empty();
@@ -1114,7 +1117,7 @@ public class IcebergMetadata
                 .map(column -> column.getName().toLowerCase(ENGLISH))
                 .collect(toImmutableList());
 
-        if (!forceRepartitioning && partitionSpec.fields().stream().allMatch(field -> field.transform().isIdentity())) {
+        if (!forceRepartitioning && (forceEngineRepartitioning || partitionSpec.fields().stream().allMatch(field -> field.transform().isIdentity()))) {
             // Do not set partitioningHandle, to let engine determine whether to repartition data or not, on stat-based basis.
             return Optional.of(new ConnectorTableLayout(partitioningColumnNames));
         }
@@ -1509,7 +1512,7 @@ public class IcebergMetadata
             fields.add(TRINO_DYNAMIC_REPARTITIONING_VALUE_NAME);
             spec = parsePartitionFields(schema, fields);
         }
-        return getWriteLayout(schema, spec, true);
+        return getWriteLayout(schema, spec, true, false);
     }
 
     @Override
