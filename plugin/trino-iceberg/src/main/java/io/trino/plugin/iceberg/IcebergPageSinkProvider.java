@@ -149,6 +149,8 @@ public class IcebergPageSinkProvider
             case DROP_EXTENDED_STATS:
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
+            case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
                 // handled via ConnectorMetadata.executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure: " + executeHandle.procedureId());
