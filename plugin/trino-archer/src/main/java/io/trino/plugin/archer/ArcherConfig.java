@@ -68,6 +68,7 @@ public class ArcherConfig
     private Optional<String> materializedViewsStorageSchema = Optional.empty();
     private boolean hideMaterializedViewStorageTable = true;
     private int splitManagerThreads = Runtime.getRuntime().availableProcessors() * 2;
+    private int metadataThreads = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
     private boolean incrementalRefreshEnabled = true;
 
     private int maxMetadataVersions = 5;
@@ -490,6 +491,20 @@ public class ArcherConfig
     public ArcherConfig setInvertedIndexWriterBufferSize(DataSize invertedIndexWriterBufferSize)
     {
         this.invertedIndexWriterBufferSize = invertedIndexWriterBufferSize;
+        return this;
+    }
+
+    @Min(0)
+    public int getMetadataThreads()
+    {
+        return metadataThreads;
+    }
+
+    @Config("archer.metadata-threads")
+    @ConfigDescription("Number of threads to expire snapshots and remove orphan files")
+    public ArcherConfig setMetadataThreads(int metadataThreads)
+    {
+        this.metadataThreads = metadataThreads;
         return this;
     }
 }

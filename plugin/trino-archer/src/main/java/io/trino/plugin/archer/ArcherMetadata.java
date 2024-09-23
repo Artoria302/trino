@@ -158,6 +158,7 @@ import net.qihoo.archer.types.Types.LongType;
 import net.qihoo.archer.types.Types.NestedField;
 import net.qihoo.archer.types.Types.StringType;
 import net.qihoo.archer.types.Types.StructType;
+import net.qihoo.archer.util.Tasks;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -181,6 +182,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -333,6 +335,8 @@ public class ArcherMetadata
     private final TrinoCatalog catalog;
     private final TrinoFileSystemFactory fileSystemFactory;
 
+    private final ExecutorService metadataExecutorService;
+
     private final Map<ArcherTableHandle, TableStatistics> tableStatisticsCache = new ConcurrentHashMap<>();
 
     private Transaction transaction;
@@ -343,13 +347,15 @@ public class ArcherMetadata
             CatalogHandle trinoCatalogHandle,
             JsonCodec<CommitTaskData> commitTaskCodec,
             TrinoCatalog catalog,
-            TrinoFileSystemFactory fileSystemFactory)
+            TrinoFileSystemFactory fileSystemFactory,
+            ExecutorService metadataExecutorService)
     {
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.trinoCatalogHandle = requireNonNull(trinoCatalogHandle, "trinoCatalogHandle is null");
         this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
         this.catalog = requireNonNull(catalog, "catalog is null");
         this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+        this.metadataExecutorService = requireNonNull(metadataExecutorService, "metadataExecutorService is null");
     }
 
     @Override
@@ -1464,11 +1470,17 @@ public class ArcherMetadata
         List<Location> pathsToDelete = new ArrayList<>();
         // deleteFunction is not accessed from multiple threads unless .executeDeleteWith() is used
         Consumer<String> deleteFunction = path -> {
-            pathsToDelete.add(Location.of(path));
-            if (pathsToDelete.size() == DELETE_BATCH_SIZE) {
-                try {
-                    fileSystem.deleteFiles(pathsToDelete);
+            List<Location> tmp = null;
+            synchronized (pathsToDelete) {
+                pathsToDelete.add(Location.of(path));
+                if (pathsToDelete.size() == DELETE_BATCH_SIZE) {
+                    tmp = List.copyOf(pathsToDelete);
                     pathsToDelete.clear();
+                }
+            }
+            if (tmp != null) {
+                try {
+                    fileSystem.deleteFiles(tmp);
                 }
                 catch (IOException e) {
                     throw new TrinoException(ARCHER_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
@@ -1477,12 +1489,20 @@ public class ArcherMetadata
         };
 
         long expireTimestampMillis = session.getStart().toEpochMilli() - retention.toMillis();
-        table.expireSnapshots()
-                .expireOlderThan(expireTimestampMillis)
-                .deleteWith(deleteFunction)
-                .commit();
         try {
-            fileSystem.deleteFiles(pathsToDelete);
+            table.expireSnapshots()
+                    .expireOlderThan(expireTimestampMillis)
+                    .deleteWith(deleteFunction)
+                    .planWith(metadataExecutorService)
+                    .executeDeleteWith(metadataExecutorService)
+                    .commit();
+
+            synchronized (pathsToDelete) {
+                if (!pathsToDelete.isEmpty()) {
+                    fileSystem.deleteFiles(pathsToDelete);
+                    pathsToDelete.clear();
+                }
+            }
         }
         catch (IOException e) {
             throw new TrinoException(ARCHER_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
@@ -1552,35 +1572,39 @@ public class ArcherMetadata
 
     private void removeOrphanFiles(Table table, ConnectorSession session, SchemaTableName schemaTableName, Instant expiration)
     {
-        Set<String> processedManifestFilePaths = new HashSet<>();
+        Set<String> processedManifestFilePaths = ConcurrentHashMap.newKeySet();
         // Similarly to issues like https://github.com/trinodb/trino/issues/13759, equivalent paths may have different String
         // representations due to things like double slashes. Using file names may result in retaining files which could be removed.
         // However, in practice Archer metadata and data files have UUIDs in their names which makes this unlikely.
-        ImmutableSet.Builder<String> validMetadataFileNames = ImmutableSet.builder();
-        ImmutableSet.Builder<String> validSegmentFileNames = ImmutableSet.builder();
+        Set<String> validMetadataFileNames = ConcurrentHashMap.newKeySet();
+        Set<String> validSegmentFileNames = ConcurrentHashMap.newKeySet();
 
-        for (Snapshot snapshot : table.snapshots()) {
-            if (snapshot.manifestListLocation() != null) {
-                validMetadataFileNames.add(fileName(snapshot.manifestListLocation()));
-            }
-
-            for (ManifestFile manifest : snapshot.allManifests(table.io())) {
-                if (!processedManifestFilePaths.add(manifest.path())) {
-                    // Already read this manifest
-                    continue;
-                }
-
-                validMetadataFileNames.add(fileName(manifest.path()));
-                try (ManifestReader<? extends ContentFile<?>> manifestReader = readerForManifest(table, manifest)) {
-                    for (ContentFile<?> contentFile : manifestReader) {
-                        contentFile.fullPathFiles().forEach(file -> validSegmentFileNames.add(fileName(file)));
+        Tasks.foreach(table.snapshots())
+                .executeWith(metadataExecutorService)
+                .stopOnFailure()
+                .throwFailureWhenFinished()
+                .run(snapshot -> {
+                    if (snapshot.manifestListLocation() != null) {
+                        validMetadataFileNames.add(fileName(snapshot.manifestListLocation()));
                     }
-                }
-                catch (IOException e) {
-                    throw new TrinoException(ARCHER_FILESYSTEM_ERROR, "Unable to list manifest file content from " + manifest.path(), e);
-                }
-            }
-        }
+                    for (ManifestFile manifest : snapshot.allManifests(table.io())) {
+                        if (!processedManifestFilePaths.add(manifest.path())) {
+                            // Already read this manifest
+                            continue;
+                        }
+
+                        validMetadataFileNames.add(fileName(manifest.path()));
+                        try (ManifestReader<? extends ContentFile<?>> manifestReader = readerForManifest(table, manifest)) {
+                            for (ContentFile<?> contentFile : manifestReader) {
+                                // archer has many files in one segment
+                                validSegmentFileNames.addAll(contentFile.files());
+                            }
+                        }
+                        catch (IOException e) {
+                            throw new UncheckedIOException(format("Failed to read manifest file: %s", manifest), e);
+                        }
+                    }
+                });
 
         metadataFileLocations(table, false).stream()
                 .map(ArcherUtil::fileName)
@@ -1588,8 +1612,8 @@ public class ArcherMetadata
 
         validMetadataFileNames.add("version-hint.text");
 
-        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validSegmentFileNames.build(), "data");
-        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validMetadataFileNames.build(), "metadata");
+        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validSegmentFileNames, "data");
+        scanAndDeleteInvalidFiles(table, session, schemaTableName, expiration, validMetadataFileNames, "metadata");
     }
 
     private static ManifestReader<? extends ContentFile<?>> readerForManifest(Table table, ManifestFile manifest)
@@ -1606,26 +1630,69 @@ public class ArcherMetadata
             List<Location> filesToDelete = new ArrayList<>();
             TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity());
             FileIterator allFiles = fileSystem.listFiles(Location.of(table.location()).appendPath(subfolder));
-            while (allFiles.hasNext()) {
-                FileEntry entry = allFiles.next();
-                if (entry.lastModified().isBefore(expiration) && !validFiles.contains(entry.location().fileName())) {
-                    filesToDelete.add(entry.location());
-                    if (filesToDelete.size() >= DELETE_BATCH_SIZE) {
-                        log.debug("Deleting files while removing orphan files for table %s [%s]", schemaTableName, filesToDelete);
-                        fileSystem.deleteFiles(filesToDelete);
-                        filesToDelete.clear();
+            Iterator<FileEntry> iterator = new Iterator<>()
+            {
+                @Override
+                public boolean hasNext()
+                {
+                    try {
+                        return allFiles.hasNext();
+                    }
+                    catch (IOException e) {
+                        throw new UncheckedIOException(e);
                     }
                 }
-                else {
-                    log.debug("%s file retained while removing orphan files %s", entry.location(), schemaTableName.getTableName());
+
+                @Override
+                public FileEntry next()
+                {
+                    try {
+                        return allFiles.next();
+                    }
+                    catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            };
+            Tasks.foreach(iterator)
+                    .executeWith(metadataExecutorService)
+                    .stopOnFailure()
+                    .throwFailureWhenFinished()
+                    .run(file -> {
+                        List<Location> tmp = null;
+                        if (file.lastModified().isBefore(expiration) && !validFiles.contains(file.location().fileName())) {
+                            synchronized (filesToDelete) {
+                                filesToDelete.add(file.location());
+                                if (filesToDelete.size() >= DELETE_BATCH_SIZE) {
+                                    tmp = List.copyOf(filesToDelete);
+                                    filesToDelete.clear();
+                                }
+                            }
+                        }
+                        else {
+                            log.debug("%s file retained while removing orphan files %s", file.location(), schemaTableName.getTableName());
+                        }
+
+                        if (tmp != null) {
+                            log.debug("Deleting files while removing orphan files for table %s [%s]", schemaTableName, tmp);
+                            try {
+                                fileSystem.deleteFiles(tmp);
+                            }
+                            catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        }
+                    });
+
+            synchronized (filesToDelete) {
+                if (!filesToDelete.isEmpty()) {
+                    log.debug("Deleting files while removing orphan files for table %s %s", schemaTableName, filesToDelete);
+                    fileSystem.deleteFiles(filesToDelete);
+                    filesToDelete.clear();
                 }
             }
-            if (!filesToDelete.isEmpty()) {
-                log.debug("Deleting files while removing orphan files for table %s %s", schemaTableName, filesToDelete);
-                fileSystem.deleteFiles(filesToDelete);
-            }
         }
-        catch (IOException e) {
+        catch (IOException | UncheckedIOException e) {
             throw new TrinoException(ARCHER_FILESYSTEM_ERROR, "Failed accessing data for table: " + schemaTableName, e);
         }
     }

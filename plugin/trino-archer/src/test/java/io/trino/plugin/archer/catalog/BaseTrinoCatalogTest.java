@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static io.trino.metastore.TableInfo.ExtendedRelationType.TABLE;
 import static io.trino.metastore.TableInfo.ExtendedRelationType.TRINO_VIEW;
@@ -125,7 +126,8 @@ public abstract class BaseTrinoCatalogTest
                     catalog,
                     connectorIdentity -> {
                         throw new UnsupportedOperationException();
-                    });
+                    },
+                    newDirectExecutorService());
             assertThat(archerMetadata.schemaExists(SESSION, namespace)).as("archerMetadata.schemaExists(namespace)")
                     .isFalse();
             assertThat(archerMetadata.schemaExists(SESSION, schema)).as("archerMetadata.schemaExists(schema)")
