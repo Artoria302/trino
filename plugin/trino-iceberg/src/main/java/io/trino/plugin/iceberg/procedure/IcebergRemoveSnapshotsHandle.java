@@ -13,13 +13,18 @@
  */
 package io.trino.plugin.iceberg.procedure;
 
-public enum IcebergTableProcedureId
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
+
+public record IcebergRemoveSnapshotsHandle(List<Long> snapshots, boolean cleanFiles)
+        implements IcebergProcedureHandle
 {
-    OPTIMIZE,
-    DROP_EXTENDED_STATS,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    REMOVE_FILES,
-    REMOVE_MANIFESTS,
-    REMOVE_SNAPSHOTS,
+    public IcebergRemoveSnapshotsHandle
+    {
+        requireNonNull(snapshots, "snapshots is null");
+        for (Long snapshot : snapshots) {
+            requireNonNull(snapshot, "snapshot in snapshots is null");
+        }
+    }
 }

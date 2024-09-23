@@ -48,6 +48,7 @@ import io.trino.plugin.iceberg.procedure.IcebergOptimizeHandle;
 import io.trino.plugin.iceberg.procedure.IcebergRemoveFilesHandle;
 import io.trino.plugin.iceberg.procedure.IcebergRemoveManifestsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergRemoveOrphanFilesHandle;
+import io.trino.plugin.iceberg.procedure.IcebergRemoveSnapshotsHandle;
 import io.trino.plugin.iceberg.procedure.IcebergTableExecuteHandle;
 import io.trino.plugin.iceberg.procedure.IcebergTableProcedureId;
 import io.trino.plugin.iceberg.util.DataFileWithDeleteFiles;
@@ -127,6 +128,7 @@ import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.DeleteManifests;
+import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.IsolationLevel;
@@ -294,6 +296,9 @@ import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.OPTIMIZE
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_FILES;
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_MANIFESTS;
 import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_ORPHAN_FILES;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_SNAPSHOTS;
+import static io.trino.plugin.iceberg.procedure.RemoveSnapshotsTableProcedure.CLEAN_FILES;
+import static io.trino.plugin.iceberg.procedure.RemoveSnapshotsTableProcedure.SNAPSHOTS;
 import static io.trino.spi.StandardErrorCode.COLUMN_ALREADY_EXISTS;
 import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
 import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
@@ -1385,6 +1390,7 @@ public class IcebergMetadata
             case REMOVE_ORPHAN_FILES -> getTableHandleForRemoveOrphanFiles(session, tableHandle, executeProperties);
             case REMOVE_FILES -> getTableHandleForRemoveFiles(session, tableHandle, executeProperties);
             case REMOVE_MANIFESTS -> getTableHandleForRemoveManifests(session, tableHandle, executeProperties);
+            case REMOVE_SNAPSHOTS -> getTableHandleForRemoveSnapshots(session, tableHandle, executeProperties);
         };
     }
 
@@ -1479,6 +1485,20 @@ public class IcebergMetadata
                 icebergTable.io().properties()));
     }
 
+    private Optional<ConnectorTableExecuteHandle> getTableHandleForRemoveSnapshots(ConnectorSession session, IcebergTableHandle tableHandle, Map<String, Object> executeProperties)
+    {
+        List<Long> snapshots = (List<Long>) executeProperties.get(SNAPSHOTS);
+        boolean cleanFiles = (boolean) executeProperties.get(CLEAN_FILES);
+        Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+
+        return Optional.of(new IcebergTableExecuteHandle(
+                tableHandle.getSchemaTableName(),
+                REMOVE_SNAPSHOTS,
+                new IcebergRemoveSnapshotsHandle(snapshots, cleanFiles),
+                icebergTable.location(),
+                icebergTable.io().properties()));
+    }
+
     @Override
     public Optional<ConnectorTableLayout> getLayoutForTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle)
     {
@@ -1491,6 +1511,7 @@ public class IcebergMetadata
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
             case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1531,6 +1552,7 @@ public class IcebergMetadata
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
             case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1576,6 +1598,7 @@ public class IcebergMetadata
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
             case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1695,6 +1718,9 @@ public class IcebergMetadata
                 return;
             case REMOVE_MANIFESTS:
                 executeRemoveManifests(session, executeHandle);
+                return;
+            case REMOVE_SNAPSHOTS:
+                executeRemoveSnapshots(session, executeHandle);
                 return;
             default:
                 throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -2019,6 +2045,61 @@ public class IcebergMetadata
             throw new TrinoException(GENERIC_USER_ERROR, "Not found manifests " + manifestsToDelete + " in current snapshot");
         }
         deleteManifests.commit();
+    }
+
+    private void executeRemoveSnapshots(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
+    {
+        IcebergRemoveSnapshotsHandle removeSnapshotsHandle = (IcebergRemoveSnapshotsHandle) executeHandle.procedureHandle();
+
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        List<Long> snapshots = requireNonNull(removeSnapshotsHandle.snapshots(), "snapshots is null");
+
+        TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity(), table.io().properties());
+        List<Location> pathsToDelete = new ArrayList<>();
+        // deleteFunction is not accessed from multiple threads unless .executeDeleteWith() is used
+        Consumer<String> deleteFunction = path -> {
+            List<Location> tmp = null;
+            synchronized (pathsToDelete) {
+                pathsToDelete.add(Location.of(path));
+                if (pathsToDelete.size() == DELETE_BATCH_SIZE) {
+                    tmp = List.copyOf(pathsToDelete);
+                    pathsToDelete.clear();
+                }
+            }
+            if (tmp != null) {
+                try {
+                    fileSystem.deleteFiles(tmp);
+                }
+                catch (IOException e) {
+                    throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
+                }
+            }
+        };
+
+        try {
+            ExpireSnapshots expireSnapshots = table.expireSnapshots()
+                    .deleteWith(deleteFunction)
+                    .cleanExpiredFiles(removeSnapshotsHandle.cleanFiles())
+                    .planWith(metadataExecutorService)
+                    .executeDeleteWith(metadataExecutorService);
+
+            for (Long snapshot : snapshots) {
+                requireNonNull(snapshot, "snapshot is null");
+                expireSnapshots.expireSnapshotId(snapshot);
+            }
+
+            expireSnapshots.commit();
+
+            synchronized (pathsToDelete) {
+                if (!pathsToDelete.isEmpty()) {
+                    fileSystem.deleteFiles(pathsToDelete);
+                    pathsToDelete.clear();
+                }
+            }
+        }
+        catch (IOException e) {
+            throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
+        }
     }
 
     @Override

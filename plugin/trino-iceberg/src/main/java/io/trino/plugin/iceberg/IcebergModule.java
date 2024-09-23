@@ -41,6 +41,7 @@ import io.trino.plugin.iceberg.procedure.RegisterTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveFilesTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveManifestsTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveOrphanFilesTableProcedure;
+import io.trino.plugin.iceberg.procedure.RemoveSnapshotsTableProcedure;
 import io.trino.plugin.iceberg.procedure.UnregisterTableProcedure;
 import io.trino.spi.catalog.CatalogName;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
@@ -118,6 +119,7 @@ public class IcebergModule
         tableProcedures.addBinding().toProvider(RemoveOrphanFilesTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(RemoveFilesTableProcedure.class).in(Scopes.SINGLETON);
         tableProcedures.addBinding().toProvider(RemoveManifestsTableProcedure.class).in(Scopes.SINGLETON);
+        tableProcedures.addBinding().toProvider(RemoveSnapshotsTableProcedure.class).in(Scopes.SINGLETON);
 
         newSetBinder(binder, ConnectorTableFunction.class).addBinding().toProvider(TableChangesFunctionProvider.class).in(Scopes.SINGLETON);
         binder.bind(FunctionProvider.class).to(IcebergFunctionProvider.class).in(Scopes.SINGLETON);
