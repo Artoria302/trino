@@ -24,5 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = ArcherExpireSnapshotsHandle.class, name = "expire_snapshots"),
         @JsonSubTypes.Type(value = ArcherRemoveOrphanFilesHandle.class, name = "remove_orphan_files"),
         @JsonSubTypes.Type(value = ArcherRemoveFilesHandle.class, name = "remove_files"),
+        @JsonSubTypes.Type(value = ArcherRemoveManifestsHandle.class, name = "remove_manifests"),
+        @JsonSubTypes.Type(value = ArcherRemoveSnapshotsHandle.class, name = "remove_snapshots"),
 })
 public interface ArcherProcedureHandle {}

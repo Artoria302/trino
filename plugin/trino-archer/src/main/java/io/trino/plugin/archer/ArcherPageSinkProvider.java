@@ -131,6 +131,8 @@ public class ArcherPageSinkProvider
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via ConnectorMetadata.executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure: " + executeHandle.procedureId());

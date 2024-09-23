@@ -37,7 +37,9 @@ import io.trino.plugin.archer.catalog.TrinoCatalog;
 import io.trino.plugin.archer.procedure.ArcherExpireSnapshotsHandle;
 import io.trino.plugin.archer.procedure.ArcherOptimizeHandle;
 import io.trino.plugin.archer.procedure.ArcherRemoveFilesHandle;
+import io.trino.plugin.archer.procedure.ArcherRemoveManifestsHandle;
 import io.trino.plugin.archer.procedure.ArcherRemoveOrphanFilesHandle;
+import io.trino.plugin.archer.procedure.ArcherRemoveSnapshotsHandle;
 import io.trino.plugin.archer.procedure.ArcherTableExecuteHandle;
 import io.trino.plugin.archer.procedure.ArcherTableProcedureId;
 import io.trino.plugin.archer.util.ScannedDataFiles;
@@ -115,6 +117,7 @@ import net.qihoo.archer.DataFiles;
 import net.qihoo.archer.DeleteFiles;
 import net.qihoo.archer.Deletion;
 import net.qihoo.archer.DeletionParser;
+import net.qihoo.archer.ExpireSnapshots;
 import net.qihoo.archer.FileFormat;
 import net.qihoo.archer.FileScanTask;
 import net.qihoo.archer.GenericPartialFile;
@@ -132,6 +135,7 @@ import net.qihoo.archer.PartitionField;
 import net.qihoo.archer.PartitionSpec;
 import net.qihoo.archer.PartitionSpecParser;
 import net.qihoo.archer.RewriteFiles;
+import net.qihoo.archer.RewriteManifests;
 import net.qihoo.archer.Schema;
 import net.qihoo.archer.SchemaParser;
 import net.qihoo.archer.Snapshot;
@@ -189,6 +193,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -247,6 +252,7 @@ import static io.trino.plugin.archer.ArcherUtil.deserializePartitionValue;
 import static io.trino.plugin.archer.ArcherUtil.fileName;
 import static io.trino.plugin.archer.ArcherUtil.firstSnapshot;
 import static io.trino.plugin.archer.ArcherUtil.firstSnapshotAfter;
+import static io.trino.plugin.archer.ArcherUtil.fixBrokenMetadataLocation;
 import static io.trino.plugin.archer.ArcherUtil.getArcherTableProperties;
 import static io.trino.plugin.archer.ArcherUtil.getColumnHandle;
 import static io.trino.plugin.archer.ArcherUtil.getColumns;
@@ -273,13 +279,18 @@ import static io.trino.plugin.archer.catalog.hms.TrinoHiveCatalog.TRINO_QUERY_ST
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.EXPIRE_SNAPSHOTS;
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.OPTIMIZE;
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.REMOVE_FILES;
+import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.REMOVE_MANIFESTS;
 import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.REMOVE_ORPHAN_FILES;
+import static io.trino.plugin.archer.procedure.ArcherTableProcedureId.REMOVE_SNAPSHOTS;
 import static io.trino.plugin.archer.procedure.OptimizeTableProcedure.FILE_SIZE_THRESHOLD;
 import static io.trino.plugin.archer.procedure.OptimizeTableProcedure.REFRESH_INVERTED_INDEX;
 import static io.trino.plugin.archer.procedure.OptimizeTableProcedure.REFRESH_PARTITION;
+import static io.trino.plugin.archer.procedure.RemoveSnapshotsTableProcedure.CLEAN_FILES;
+import static io.trino.plugin.archer.procedure.RemoveSnapshotsTableProcedure.SNAPSHOTS;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.extractSupportedProjectedColumns;
 import static io.trino.plugin.base.projection.ApplyProjectionUtil.replaceWithNewVariables;
 import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
+import static io.trino.spi.StandardErrorCode.GENERIC_USER_ERROR;
 import static io.trino.spi.StandardErrorCode.INVALID_ARGUMENTS;
 import static io.trino.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -322,6 +333,7 @@ public class ArcherMetadata
     private static final int CLEANING_UP_PROCEDURES_MAX_SUPPORTED_TABLE_VERSION = 2;
     private static final String RETENTION_THRESHOLD = "retention_threshold";
     private static final String FILES = "files";
+    private static final String MANIFESTS = "manifests";
     private static final String UNKNOWN_SNAPSHOT_TOKEN = "UNKNOWN";
     public static final Set<String> UPDATABLE_TABLE_PROPERTIES = ImmutableSet.of(PARTITIONING_PROPERTY, INVERTED_INDEXED_BY_PROPERTY);
 
@@ -1213,6 +1225,8 @@ public class ArcherMetadata
             case EXPIRE_SNAPSHOTS -> getTableHandleForExpireSnapshots(session, tableHandle, executeProperties);
             case REMOVE_ORPHAN_FILES -> getTableHandleForRemoveOrphanFiles(session, tableHandle, executeProperties);
             case REMOVE_FILES -> getTableHandleForRemoveFiles(session, tableHandle, executeProperties);
+            case REMOVE_MANIFESTS -> getTableHandleForRemoveManifests(session, tableHandle, executeProperties);
+            case REMOVE_SNAPSHOTS -> getTableHandleForRemoveSnapshots(session, tableHandle, executeProperties);
         };
     }
 
@@ -1276,6 +1290,31 @@ public class ArcherMetadata
                 archerTable.location()));
     }
 
+    private Optional<ConnectorTableExecuteHandle> getTableHandleForRemoveManifests(ConnectorSession session, ArcherTableHandle tableHandle, Map<String, Object> executeProperties)
+    {
+        List<String> files = (List<String>) executeProperties.get(MANIFESTS);
+        Table archerTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+
+        return Optional.of(new ArcherTableExecuteHandle(
+                tableHandle.getSchemaTableName(),
+                REMOVE_MANIFESTS,
+                new ArcherRemoveManifestsHandle(files),
+                archerTable.location()));
+    }
+
+    private Optional<ConnectorTableExecuteHandle> getTableHandleForRemoveSnapshots(ConnectorSession session, ArcherTableHandle tableHandle, Map<String, Object> executeProperties)
+    {
+        List<Long> snapshots = (List<Long>) executeProperties.get(SNAPSHOTS);
+        boolean cleanFiles = (boolean) executeProperties.get(CLEAN_FILES);
+        Table archerTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+
+        return Optional.of(new ArcherTableExecuteHandle(
+                tableHandle.getSchemaTableName(),
+                REMOVE_SNAPSHOTS,
+                new ArcherRemoveSnapshotsHandle(snapshots, cleanFiles),
+                archerTable.location()));
+    }
+
     @Override
     public Optional<ConnectorTableLayout> getLayoutForTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle)
     {
@@ -1286,6 +1325,8 @@ public class ArcherMetadata
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1325,6 +1366,8 @@ public class ArcherMetadata
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1374,6 +1417,8 @@ public class ArcherMetadata
             case EXPIRE_SNAPSHOTS:
             case REMOVE_ORPHAN_FILES:
             case REMOVE_FILES:
+            case REMOVE_MANIFESTS:
+            case REMOVE_SNAPSHOTS:
                 // handled via executeTableExecute
         }
         throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
@@ -1447,6 +1492,8 @@ public class ArcherMetadata
             case EXPIRE_SNAPSHOTS -> executeExpireSnapshots(session, executeHandle);
             case REMOVE_ORPHAN_FILES -> executeRemoveOrphanFiles(session, executeHandle);
             case REMOVE_FILES -> executeRemoveFiles(session, executeHandle);
+            case REMOVE_MANIFESTS -> executeRemoveManifests(session, executeHandle);
+            case REMOVE_SNAPSHOTS -> executeRemoveSnapshots(session, executeHandle);
             default -> throw new IllegalArgumentException("Unknown procedure '" + executeHandle.procedureId() + "'");
         }
     }
@@ -1718,6 +1765,96 @@ public class ArcherMetadata
             deleteFiles.deleteFile(file);
         }
         deleteFiles.commit();
+    }
+
+    private void executeRemoveManifests(ConnectorSession session, ArcherTableExecuteHandle executeHandle)
+    {
+        ArcherRemoveManifestsHandle removeManifestsHandle = (ArcherRemoveManifestsHandle) executeHandle.procedureHandle();
+
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        List<String> files = requireNonNull(removeManifestsHandle.files(), "files is null");
+
+        if (table.currentSnapshot() == null) {
+            log.debug("Skipping remove_manifests procedure for empty table " + table);
+            return;
+        }
+
+        if (files.isEmpty()) {
+            return;
+        }
+
+        Set<String> manifestsToDelete = files.stream().map(ArcherUtil::fixBrokenMetadataLocation).collect(Collectors.toSet());
+
+        RewriteManifests deleteManifests = table
+                .rewriteManifests()
+                .notValidateFilesCounts();
+        List<ManifestFile> manifestFiles = table.currentSnapshot().allManifests(table.io());
+        for (ManifestFile manifestFile : manifestFiles) {
+            String fixedLocation = fixBrokenMetadataLocation(manifestFile.path());
+            if (manifestsToDelete.contains(fixedLocation)) {
+                deleteManifests.deleteManifest(manifestFile);
+                manifestsToDelete.remove(fixedLocation);
+            }
+        }
+        if (!manifestsToDelete.isEmpty()) {
+            throw new TrinoException(GENERIC_USER_ERROR, "Not found manifests " + manifestsToDelete + " in current snapshot");
+        }
+        deleteManifests.commit();
+    }
+
+    private void executeRemoveSnapshots(ConnectorSession session, ArcherTableExecuteHandle executeHandle)
+    {
+        ArcherRemoveSnapshotsHandle removeSnapshotsHandle = (ArcherRemoveSnapshotsHandle) executeHandle.procedureHandle();
+
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        List<Long> snapshots = requireNonNull(removeSnapshotsHandle.snapshots(), "snapshots is null");
+
+        TrinoFileSystem fileSystem = fileSystemFactory.create(session.getIdentity());
+        List<Location> pathsToDelete = new ArrayList<>();
+        // deleteFunction is not accessed from multiple threads unless .executeDeleteWith() is used
+        Consumer<String> deleteFunction = path -> {
+            List<Location> tmp = null;
+            synchronized (pathsToDelete) {
+                pathsToDelete.add(Location.of(path));
+                if (pathsToDelete.size() == DELETE_BATCH_SIZE) {
+                    tmp = List.copyOf(pathsToDelete);
+                    pathsToDelete.clear();
+                }
+            }
+            if (tmp != null) {
+                try {
+                    fileSystem.deleteFiles(tmp);
+                }
+                catch (IOException e) {
+                    throw new TrinoException(ARCHER_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
+                }
+            }
+        };
+
+        try {
+            ExpireSnapshots expireSnapshots = table.expireSnapshots()
+                    .deleteWith(deleteFunction)
+                    .cleanExpiredFiles(removeSnapshotsHandle.cleanFiles())
+                    .planWith(metadataExecutorService)
+                    .executeDeleteWith(metadataExecutorService);
+
+            for (Long snapshot : snapshots) {
+                requireNonNull(snapshot, "snapshot is null");
+                expireSnapshots.expireSnapshotId(snapshot);
+            }
+
+            expireSnapshots.commit();
+
+            synchronized (pathsToDelete) {
+                if (!pathsToDelete.isEmpty()) {
+                    fileSystem.deleteFiles(pathsToDelete);
+                    pathsToDelete.clear();
+                }
+            }
+        }
+        catch (IOException e) {
+            throw new TrinoException(ARCHER_FILESYSTEM_ERROR, "Failed to delete files during snapshot expiration", e);
+        }
     }
 
     @Override

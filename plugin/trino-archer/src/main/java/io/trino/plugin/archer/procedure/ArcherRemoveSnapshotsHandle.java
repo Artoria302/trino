@@ -13,12 +13,18 @@
  */
 package io.trino.plugin.archer.procedure;
 
-public enum ArcherTableProcedureId
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
+
+public record ArcherRemoveSnapshotsHandle(List<Long> snapshots, boolean cleanFiles)
+        implements ArcherProcedureHandle
 {
-    OPTIMIZE,
-    EXPIRE_SNAPSHOTS,
-    REMOVE_ORPHAN_FILES,
-    REMOVE_FILES,
-    REMOVE_MANIFESTS,
-    REMOVE_SNAPSHOTS,
+    public ArcherRemoveSnapshotsHandle
+    {
+        requireNonNull(snapshots, "snapshots is null");
+        for (Long snapshot : snapshots) {
+            requireNonNull(snapshot, "snapshot in snapshots is null");
+        }
+    }
 }
