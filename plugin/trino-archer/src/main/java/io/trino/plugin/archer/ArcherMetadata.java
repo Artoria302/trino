@@ -1500,9 +1500,14 @@ public class ArcherMetadata
 
     private void executeExpireSnapshots(ConnectorSession session, ArcherTableExecuteHandle executeHandle)
     {
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        executeExpireSnapshots(session, table, executeHandle);
+    }
+
+    public void executeExpireSnapshots(ConnectorSession session, Table table, ArcherTableExecuteHandle executeHandle)
+    {
         ArcherExpireSnapshotsHandle expireSnapshotsHandle = (ArcherExpireSnapshotsHandle) executeHandle.procedureHandle();
 
-        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
         Duration retention = requireNonNull(expireSnapshotsHandle.retentionThreshold(), "retention is null");
         validateTableExecuteParameters(
                 table,
@@ -1593,11 +1598,16 @@ public class ArcherMetadata
                 sessionMinRetentionParameterName);
     }
 
-    public void executeRemoveOrphanFiles(ConnectorSession session, ArcherTableExecuteHandle executeHandle)
+    private void executeRemoveOrphanFiles(ConnectorSession session, ArcherTableExecuteHandle executeHandle)
+    {
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        executeRemoveOrphanFiles(session, table, executeHandle);
+    }
+
+    public void executeRemoveOrphanFiles(ConnectorSession session, Table table, ArcherTableExecuteHandle executeHandle)
     {
         ArcherRemoveOrphanFilesHandle removeOrphanFilesHandle = (ArcherRemoveOrphanFilesHandle) executeHandle.procedureHandle();
 
-        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
         Duration retention = requireNonNull(removeOrphanFilesHandle.retentionThreshold(), "retention is null");
         validateTableExecuteParameters(
                 table,

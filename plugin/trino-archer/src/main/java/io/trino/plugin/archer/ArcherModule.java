@@ -22,10 +22,12 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.trino.filesystem.cache.CacheKeyProvider;
 import io.trino.plugin.archer.cache.ArcherCacheKeyProvider;
+import io.trino.plugin.archer.procedure.ExpireSnapshotsForMaterializedViewProcedure;
 import io.trino.plugin.archer.procedure.ExpireSnapshotsTableProcedure;
 import io.trino.plugin.archer.procedure.OptimizeTableProcedure;
 import io.trino.plugin.archer.procedure.RemoveFilesTableProcedure;
 import io.trino.plugin.archer.procedure.RemoveManifestsTableProcedure;
+import io.trino.plugin.archer.procedure.RemoveOrphanFilesForMaterializedViewProcedure;
 import io.trino.plugin.archer.procedure.RemoveOrphanFilesTableProcedure;
 import io.trino.plugin.archer.procedure.RemoveSnapshotsTableProcedure;
 import io.trino.plugin.archer.runtime.ArcherRuntimeManager;
@@ -93,6 +95,8 @@ public class ArcherModule
 
         Multibinder<Procedure> procedures = newSetBinder(binder, Procedure.class);
         procedures.addBinding().toProvider(RollbackToSnapshotProcedure.class).in(Scopes.SINGLETON);
+        procedures.addBinding().toProvider(ExpireSnapshotsForMaterializedViewProcedure.class).in(Scopes.SINGLETON);
+        procedures.addBinding().toProvider(RemoveOrphanFilesForMaterializedViewProcedure.class).in(Scopes.SINGLETON);
 
         Multibinder<TableProcedureMetadata> tableProcedures = newSetBinder(binder, TableProcedureMetadata.class);
         tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);
