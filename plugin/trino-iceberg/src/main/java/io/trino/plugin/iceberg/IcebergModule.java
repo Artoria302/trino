@@ -35,11 +35,13 @@ import io.trino.plugin.iceberg.functions.IcebergFunctionProvider;
 import io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionProcessorProviderFactory;
 import io.trino.plugin.iceberg.functions.tablechanges.TableChangesFunctionProvider;
 import io.trino.plugin.iceberg.procedure.DropExtendedStatsTableProcedure;
+import io.trino.plugin.iceberg.procedure.ExpireSnapshotsForMaterializedViewProcedure;
 import io.trino.plugin.iceberg.procedure.ExpireSnapshotsTableProcedure;
 import io.trino.plugin.iceberg.procedure.OptimizeTableProcedure;
 import io.trino.plugin.iceberg.procedure.RegisterTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveFilesTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveManifestsTableProcedure;
+import io.trino.plugin.iceberg.procedure.RemoveOrphanFilesForMaterializedViewProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveOrphanFilesTableProcedure;
 import io.trino.plugin.iceberg.procedure.RemoveSnapshotsTableProcedure;
 import io.trino.plugin.iceberg.procedure.UnregisterTableProcedure;
@@ -111,6 +113,8 @@ public class IcebergModule
         procedures.addBinding().toProvider(RollbackToSnapshotProcedure.class).in(Scopes.SINGLETON);
         procedures.addBinding().toProvider(RegisterTableProcedure.class).in(Scopes.SINGLETON);
         procedures.addBinding().toProvider(UnregisterTableProcedure.class).in(Scopes.SINGLETON);
+        procedures.addBinding().toProvider(ExpireSnapshotsForMaterializedViewProcedure.class).in(Scopes.SINGLETON);
+        procedures.addBinding().toProvider(RemoveOrphanFilesForMaterializedViewProcedure.class).in(Scopes.SINGLETON);
 
         Multibinder<TableProcedureMetadata> tableProcedures = newSetBinder(binder, TableProcedureMetadata.class);
         tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);

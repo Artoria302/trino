@@ -1744,9 +1744,14 @@ public class IcebergMetadata
 
     private void executeExpireSnapshots(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
     {
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        executeExpireSnapshots(session, table, executeHandle);
+    }
+
+    public void executeExpireSnapshots(ConnectorSession session, Table table, IcebergTableExecuteHandle executeHandle)
+    {
         IcebergExpireSnapshotsHandle expireSnapshotsHandle = (IcebergExpireSnapshotsHandle) executeHandle.procedureHandle();
 
-        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
         Duration retention = requireNonNull(expireSnapshotsHandle.retentionThreshold(), "retention is null");
         validateTableExecuteParameters(
                 table,
@@ -1837,11 +1842,16 @@ public class IcebergMetadata
                 sessionMinRetentionParameterName);
     }
 
-    public void executeRemoveOrphanFiles(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
+    private void executeRemoveOrphanFiles(ConnectorSession session, IcebergTableExecuteHandle executeHandle)
+    {
+        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
+        executeRemoveOrphanFiles(session, table, executeHandle);
+    }
+
+    public void executeRemoveOrphanFiles(ConnectorSession session, Table table, IcebergTableExecuteHandle executeHandle)
     {
         IcebergRemoveOrphanFilesHandle removeOrphanFilesHandle = (IcebergRemoveOrphanFilesHandle) executeHandle.procedureHandle();
 
-        Table table = catalog.loadTable(session, executeHandle.schemaTableName());
         Duration retention = requireNonNull(removeOrphanFilesHandle.retentionThreshold(), "retention is null");
         validateTableExecuteParameters(
                 table,
